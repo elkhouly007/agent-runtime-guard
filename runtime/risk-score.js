@@ -48,6 +48,12 @@ function score(input = {}) {
     value += 7;
     reasons.push("destructive-database-pattern");
   }
+  // Global package install (npm/pip/gem install -g/--global) — system-wide mutation
+  if (/\b(npm|yarn)\s+(install|add|i)\b.*\s(-g|--global)\b|\b(npm|yarn)\s+(-g|--global)\s+(install|add|i)\b/.test(ctx.command) ||
+      /\b(pip3?|gem)\s+install\b.*(--user|-U)\s+/.test(ctx.command)) {
+    value += 3;
+    reasons.push("global-package-install");
+  }
 
   if (ctx.targetPath === "/" || ctx.targetPath === "/*") {
     value += 4;

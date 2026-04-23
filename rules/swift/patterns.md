@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Swift Design Patterns
 
 Swift-specific patterns for safe, idiomatic code.

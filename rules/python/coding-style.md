@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Python Coding Style
 
 Python-specific coding standards. These extend the common coding-style rules.

@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Git Workflow
 
 Standards for using git in a way that produces a useful, honest history.

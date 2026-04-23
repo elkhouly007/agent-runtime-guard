@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Design Patterns
 
 Universal design patterns and principles that apply across languages and domains.

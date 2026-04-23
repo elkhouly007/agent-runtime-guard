@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # C++ Coding Style
 
 Modern C++ (C++17 and later) coding standards.

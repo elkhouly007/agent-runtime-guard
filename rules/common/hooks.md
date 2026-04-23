@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # ARG Hooks
 
 Configuration rules for Agent Runtime Guard hooks. These hooks protect the tool call execution layer.

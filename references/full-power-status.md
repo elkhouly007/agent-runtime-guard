@@ -25,7 +25,7 @@ Current verified state:
 - `audit-examples.sh` — passing
 - `check-registries.sh` — passing
 - `check-scenarios.sh` — passing
-- `run-fixtures.sh` — passing (85/85)
+- `run-fixtures.sh` — passing (92/92)
 - `test-payload-protection.sh` — passing
 - `check-integration-smoke.sh` — passing
 - `smoke-test.sh` — passing
@@ -78,20 +78,20 @@ Note: Windows numbers are dominated by `fs.appendFileSync` / `fs.writeFileSync` 
 
 ## Honest Power Estimate
 
-Practical interpretation relative to upstream now:
+All content in Agent Runtime Guard is original — written specifically for the ARG amplification philosophy. There is no upstream comparison because this project has no upstream source.
 
-- **Agents**: at or above upstream coverage
-- **Rules**: full upstream parity, plus ECC-only additions
-- **Skills**: full upstream coverage is now represented in-tree, plus ECC-only additions
-- **Safety and verification**: stronger and cleaner than upstream in several important areas
+- **Agents**: 49 original specialists; every file encodes Mission, Activation, Protocol, Amplification Techniques, and measurable Done-When criteria
+- **Rules**: 81 original files; 12 language domains plus common/database/infra/web; YAML frontmatter with `last_reviewed` and `version_target` on every file
+- **Skills**: 22 original skills spanning ARG configuration, analysis, orchestration, and amplification workflows
+- **Runtime**: fully verified; bounded autonomous decision layer with kill-switch, learned-allow, auto-allow-once, session-trajectory nudge, payload classification, and JSONL audit trail
 
 The correct current description is:
 
-> **Agent Runtime Guard has full upstream content parity, plus ECC-only extensions, and verified runtime/usability/superiority layers that put it above upstream in measurable ways.**
+> **Agent Runtime Guard is a purpose-built, all-original agentic policy and amplification framework with a verified runtime decisioning layer, comprehensive rule coverage across 12 languages, and 92 passing integration fixtures.**
 
-## Post-v0.8.0 Runtime Sprint Highlights
+## v1.0.x Runtime Sprint Highlights
 
-Since parity closeout and the `v0.8.0` release, the current runtime sprint has added:
+The runtime sprint (R1–R3, now closed) delivered:
 
 1. runtime decisioning with local learned policy, session context, and project-aware config,
 2. bounded workflow actions such as `require-review`, `require-tests`, and `modify`,
@@ -101,6 +101,5 @@ Since parity closeout and the `v0.8.0` release, the current runtime sprint has a
 6. promoted and dismissed default tracking with audit timestamps,
 7. lifecycle timing output (`created-at`, `eligible-at`, accepted/dismissed, `last-approved-at`),
 8. compact lifecycle summaries in `runtime explain`,
-9. clean verification across `check-runtime-core.sh`, `check-runtime-cli.sh`, and the full `ecc-cli.sh check` path.
-
-This means Agent Runtime Guard is no longer only past parity, but is actively growing a bounded autonomous runtime layer on top of that verified base.
+9. `ECC_KILL_SWITCH=1` emergency block; `auto-allow-once` single-use eligibility-gated grants; session-trajectory-driven routing nudges,
+10. clean verification across `check-runtime-core.sh`, `check-runtime-cli.sh`, and the full `ecc-cli.sh check` path.

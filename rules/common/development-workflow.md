@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Development Workflow
 
 Standards for how development work should be structured to maximize quality and velocity.

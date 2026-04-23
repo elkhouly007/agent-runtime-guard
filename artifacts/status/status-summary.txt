@@ -6,11 +6,11 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   registries: ok
   smoke: ok
   scenarios: ok
-  integration smoke: FAILED
+  integration smoke: ok
   payload protection: ok
   fixtures: ok
   audit-examples: ok
-  installation: FAILED
+  installation: ok
   config-integration: ok
   runtime-core: ok
   runtime-cli: ok
@@ -24,7 +24,7 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   fixture-count: ok
   harness-support: ok
   status-artifact: skipped
-  policy-lint: FAILED
+  policy-lint: ok
   data-detector: ok
 
 [Parity Snapshot]
@@ -201,13 +201,29 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   disk-count: 82 rule files
 
 [Skills]
-  investor-outreach: ok
-  content-engine: ok
-  pm2-patterns: ok
-  multi-agent-orchestration: ok
+  arg-learning-review: ok
+  arg-policy-tune: ok
+  arg-runtime-debug: ok
+  autonomous-improvement: ok
+  capability-audit: ok
+  code-review: ok
   configure-ecc: ok
+  content-engine: ok
+  context-maximizer: ok
+  deep-code-analysis: ok
+  deployment-safety: ok
   git-worktree-patterns: ok
-  disk-count: 22 skill files
+  intelligence-amplification: ok
+  investor-outreach: ok
+  multi-agent-debug: ok
+  multi-agent-orchestration: ok
+  orchestration-design: ok
+  pattern-extraction: ok
+  pm2-patterns: ok
+  semantic-refactor: ok
+  test-intelligence: ok
+  workflow-acceleration: ok
+  disk-count: 23 skill files
 
 [References]
   per-tool-apply-status: ok

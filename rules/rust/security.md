@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Rust Security
 
 Rust-specific security rules. Rust eliminates many classes of memory safety bugs — but not all security issues.

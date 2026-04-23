@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Code Review
 
 Standards for effective code review — both for authors and reviewers.

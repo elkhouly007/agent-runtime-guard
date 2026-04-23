@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Agent Design Rules
 
 Standards for writing well-formed agents in the ARG ecosystem. These rules apply to all agent definitions in `agents/`.

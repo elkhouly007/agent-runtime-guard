@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Security
 
 Universal security principles that apply to all code regardless of language or framework.
