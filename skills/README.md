@@ -1,38 +1,36 @@
 # Skills
 
-High-level workflow definitions that orchestrate agents, rules, and tools for common development tasks. **199 skills** are available across development, security, testing, content, infrastructure, research, and ECC meta domains.
+High-level workflow definitions that orchestrate agents, rules, and tools for common development tasks. **22 skills** are available across ARG runtime management, code analysis, testing, security, deployment, and intelligence amplification.
 
 ## Core Skills
 
 | Skill | Use When |
 |---|---|
-| `code-review` | Reviewing any code change or PR |
-| `security-review` | Auditing for vulnerabilities or reviewing security-sensitive changes |
-| `plan-feature` | Starting a complex feature that spans multiple files or components |
-| `refactor` | Improving code structure without changing behavior |
-| `fix-build` | Diagnosing and fixing build or CI failures |
-| `performance-audit` | Diagnosing and fixing performance bottlenecks |
-| `tdd` | Test-driven development workflows |
-| `deep-research` | Multi-source research with synthesis |
-| `checkpoint` | Point-in-time project snapshot before large changes |
-| `verification-loop` | Iterative verification until tests pass |
+| `configure-ecc` | Setting up or reconfiguring ARG components for a new project |
+| `arg-runtime-debug` | A command was blocked or allowed unexpectedly by ARG |
+| `arg-policy-tune` | Adjusting what ARG permits or blocks |
+| `arg-learning-review` | Auditing accumulated ARG policies before a release |
+| `deep-code-analysis` | Getting comprehensive architectural and risk analysis of a codebase |
+| `intelligence-amplification` | Getting 10x more value from agent interactions |
+| `semantic-refactor` | Safe, test-protected code restructuring |
+| `test-intelligence` | Finding blind spots and highest-value tests to add |
+| `deployment-safety` | Pre-deployment safety checklist |
+| `orchestration-design` | Planning a multi-agent workflow |
 
 ## Category Overview
 
-This table is a set of selected examples, not an exhaustive index of all 199 skills.
+This table is a set of selected examples, not an exhaustive index of all 22 skills.
 
 | Category | Skills |
 |---|---|
-| **Code quality** | code-review, refactor, fix-build, quality-gate, verification-loop, tdd, tdd-workflow |
-| **Security** | security-review, security-scan, django-security, laravel-security, perl-security, springboot-security |
-| **Planning** | plan-feature, architect, multi-plan, multi-workflow, setup-pm |
-| **Testing** | tdd, e2e-testing, eval-harness, eval, learn-eval, test-coverage, cpp-testing, golang-testing, python-testing |
-| **Languages** | python-patterns, golang-patterns, cpp-coding-standards, java-coding-standards, laravel-patterns, django-patterns, perl-testing, swift-concurrency-6-2 |
-| **Infrastructure** | docker-patterns, deployment-patterns, database-migrations, postgres-patterns |
-| **Agents/LLM** | claude-api, model-route, orchestrate, multi-agent-orchestration, multi-execute, sessions, coding-standards |
-| **Content/Docs** | article-writing, crosspost, update-docs, documentation-lookup, brand-voice, market-research |
-| **ECC / Meta** | configure-ecc, skill-create, skill-stocktake, update-codemaps, prune, learn, evolve |
-| **Observability** | ecc-tools-cost-audit, strategic-compact, loop-start, loop-status, search-first |
+| **ARG runtime** | arg-runtime-debug, arg-policy-tune, arg-learning-review, capability-audit |
+| **Code analysis** | deep-code-analysis, pattern-extraction, semantic-refactor |
+| **Testing** | test-intelligence |
+| **Intelligence** | intelligence-amplification, context-maximizer, autonomous-improvement |
+| **Multi-agent** | multi-agent-debug, orchestration-design, multi-agent-orchestration |
+| **Deployment** | deployment-safety, workflow-acceleration |
+| **Setup / meta** | configure-ecc, git-worktree-patterns, pm2-patterns |
+| **Content** | investor-outreach, content-engine |
 
 ## How to Use
 

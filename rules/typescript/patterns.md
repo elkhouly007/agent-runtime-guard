@@ -1,99 +1,59 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-
 # TypeScript Design Patterns
 
-## React Patterns
+TypeScript-specific patterns for type-safe, maintainable code.
 
-### Component Composition
-Prefer composition over large monolithic components.
+## Discriminated Unions
+
+Model state machines and sum types with discriminated unions:
+
 ```typescript
-// Prefer: small focused components composed together
-<Card>
-  <CardHeader title="User" />
-  <CardBody>
-    <UserDetails user={user} />
-  </CardBody>
-  <CardFooter>
-    <ActionButtons onSave={handleSave} />
-  </CardFooter>
-</Card>
-```
-
-### Custom Hooks for Logic Reuse
-Extract stateful logic into custom hooks.
-```typescript
-function useUserData(userId: string) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    fetchUser(userId)
-      .then(setUser)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, [userId]);
-
-  return { user, loading, error };
-}
-```
-
-### Context for Cross-Cutting Concerns
-Use context for theme, auth, locale — not for frequently-changing state.
-
-## Node.js Patterns
-
-### Repository Pattern
-Separate data access from business logic.
-```typescript
-interface UserRepository {
-  findById(id: UserId): Promise<User | null>;
-  save(user: User): Promise<void>;
-}
-```
-
-### Service Layer
-Business logic lives in services, not controllers or routes.
-```typescript
-class UserService {
-  constructor(private readonly repo: UserRepository) {}
-
-  async activateUser(id: UserId): Promise<void> {
-    const user = await this.repo.findById(id);
-    if (!user) throw new NotFoundError(`User ${id} not found`);
-    user.activate();
-    await this.repo.save(user);
-  }
-}
-```
-
-### Middleware Pattern
-Chain request processing steps — keep each middleware focused.
-
-## General TypeScript
-
-### Builder Pattern for Complex Objects
-```typescript
-class QueryBuilder {
-  private filters: Filter[] = [];
-  
-  where(filter: Filter): this {
-    this.filters.push(filter);
-    return this;
-  }
-  
-  build(): Query {
-    return new Query(this.filters);
-  }
-}
-```
-
-### Result Type for Expected Failures
-```typescript
-type Result<T, E = Error> =
+type Result<T, E> =
   | { ok: true; value: T }
   | { ok: false; error: E };
+```
+
+Always use exhaustive checking with switch statements over discriminated unions. The compiler catches missing cases when noImplicitReturns is enabled.
+
+## Branded Types
+
+Prevent primitive type confusion with branded types:
+
+```typescript
+type UserId = string & { readonly _brand: "UserId" };
+type OrderId = string & { readonly _brand: "OrderId" };
+function makeUserId(id: string): UserId { return id as UserId; }
+```
+
+`UserId` and `OrderId` are both strings at runtime but distinct types at compile time. Passing an `OrderId` where a `UserId` is expected is a compile error.
+
+## Builder Pattern for Complex Objects
+
+For objects with many optional fields, the builder pattern provides a type-safe construction API:
+
+```typescript
+class QueryBuilder {
+  private query: Partial<Query> = {};
+  where(condition: Condition): this { ... }
+  limit(n: number): this { ... }
+  build(): Query { ... }
+}
+```
+
+## Mapped Types for Transformations
+
+Use mapped types for systematic transformations:
+
+```typescript
+type ReadOnly<T> = { readonly [K in keyof T]: T[K] };
+type Partial<T> = { [K in keyof T]?: T[K] };
+type Required<T> = { [K in keyof T]-?: T[K] };
+```
+
+## Template Literal Types
+
+For string-based APIs, template literal types catch string construction errors at compile time:
+
+```typescript
+type EventName = `on${Capitalize<string>}`;
+type CSSProperty = `${string}-${string}`;
 ```

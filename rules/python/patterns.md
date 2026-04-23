@@ -1,65 +1,37 @@
----
-paths:
-  - "**/*.py"
-  - "**/*.pyi"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Python Patterns
+# Python Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with Python-specific content.
+Python-specific design patterns and idioms for amplifying code quality.
 
-## Protocol (Duck Typing)
+## Protocols and ABCs
 
-Prefer structural typing for pluggable dependencies:
+- Prefer `Protocol` (from `typing`) over abstract base classes for interface definition. Protocols enable structural subtyping (duck typing with static checking).
+- Use ABCs when you need `isinstance` checks or want to enforce method implementation at class creation time.
+- Document the expected interface with a Protocol even if you do not enforce it. This makes intentions explicit.
 
-```python
-from typing import Protocol
+## Functional Patterns
 
-class Repository(Protocol):
-    def find_by_id(self, id: str) -> dict | None: ...
-    def save(self, entity: dict) -> dict: ...
-```
+- `functools.lru_cache` or `functools.cache` for memoizing expensive pure functions.
+- `functools.partial` for creating specialized versions of general functions.
+- Generator functions for lazy sequences that avoid loading all data into memory.
+- `itertools` for composing iterators: `chain`, `groupby`, `islice`, `product`.
 
-Use Protocols when consumers care about behavior, not inheritance trees.
+## Context Managers
 
-## Dataclasses as DTOs
+- Implement `__enter__` and `__exit__` for any resource that needs guaranteed cleanup.
+- `contextlib.contextmanager` for simpler context manager construction via generators.
+- `contextlib.suppress` for swallowing specific exceptions cleanly.
+- `contextlib.ExitStack` for dynamically composing multiple context managers.
 
-Use dataclasses for explicit request/response and transport objects:
+## Dataclasses and Attrs
 
-```python
-from dataclasses import dataclass
+- `@dataclass` for simple data containers. Set `frozen=True` for immutable data.
+- `@dataclass(slots=True)` for memory efficiency in high-frequency objects.
+- `attrs` for more control: validators, converters, and factory defaults.
+- `pydantic.BaseModel` for data with validation requirements (especially at API boundaries).
 
-@dataclass
-class CreateUserRequest:
-    name: str
-    email: str
-    age: int | None = None
-```
+## Error Handling Patterns
 
-Prefer immutable DTOs (`frozen=True`) when mutation is not required.
-
-## Context Managers and Generators
-
-- Use context managers (`with`) for resource management
-- Use generators for lazy evaluation and memory-efficient iteration
-- Prefer iterators/streams for large datasets over loading everything at once
-
-## Dependency Injection by Construction
-
-Pass collaborators in explicitly rather than constructing them inside functions or classes:
-
-```python
-class UserService:
-    def __init__(self, repo: UserRepo, mailer: Mailer) -> None:
-        self.repo = repo
-        self.mailer = mailer
-```
-
-## Value Objects Over Naked Dicts
-
-Use small typed objects for domain concepts when meaning matters. Reserve raw dicts for loose transport boundaries.
-
-## References
-
-See skill: `python-patterns` for broader guidance including decorators, concurrency, and package organization.
+- Custom exception hierarchy: `ApplicationError` as base, specific errors inheriting from it.
+- Include context in exceptions: the invalid value, the constraint violated, the operation attempted.
+- Result pattern with `typing.Union` or `typing.TypeVar` for functions that want to return errors without raising.
+- `contextlib.suppress` for known, expected exceptions that should not propagate.

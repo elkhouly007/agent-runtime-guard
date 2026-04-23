@@ -1,105 +1,50 @@
-# Skill: Code Review
+# Skill: code-review
 
-## Trigger
+# Code Review
 
-Use when reviewing a PR, a changed file, or a block of code before merging.
+Comprehensive code review that surfaces security vulnerabilities, logic errors, maintainability issues, and standard violations.
 
-## Pre-Review Checklist
+## When to Use
 
-Before starting analysis:
-- [ ] Read the PR description and linked issue/ticket.
-- [ ] Understand the intended behavior — do not judge code you don't understand yet.
-- [ ] Identify the change type: feature, bugfix, refactor, chore, security patch.
-- [ ] Note the blast radius: how many files, which systems are affected.
+Use when reviewing any code change — PR review, pre-merge check, or ad-hoc quality review of a file or module. Delegates to the appropriate specialist agents based on language and concern.
+
+## Overview
+
+This skill orchestrates the right review agents for the code being reviewed. It applies language-specific rules, common security checks, and architectural review as appropriate.
 
 ## Process
 
-### 1. Understand the change
-```bash
-git diff main...HEAD           # all changes vs base
-git log --oneline main..HEAD   # commits in this PR
-git diff --stat                # which files changed, how much
-```
+1. Identify the language(s) and frameworks in the code to review.
+2. Apply the relevant language reviewer (python-reviewer, typescript-reviewer, go-reviewer, etc.).
+3. Apply security-reviewer for any security-sensitive paths (auth, crypto, I/O, external calls).
+4. Apply code-reviewer for overall quality, naming, structure, and test coverage.
+5. Report findings grouped by: Critical → High → Medium → Low → Suggestions.
 
-### 2. Read changed files in full context
-- Read the full function/class around each change, not just the diff hunk.
-- Understand caller sites before judging a signature change.
-- Check test changes alongside production changes.
+## What Gets Checked
 
-### 3. Delegate to specialist agents
-| Concern | Agent |
-|---------|-------|
-| General quality / logic | `code-reviewer` |
-| Security vulnerabilities | `security-reviewer` |
-| TypeScript / JavaScript | `typescript-reviewer` |
-| Python | `python-reviewer` |
-| Go | `go-reviewer` |
-| Rust | `rust-reviewer` |
-| Java | `java-reviewer` |
-| Kotlin | `kotlin-reviewer` |
-| C++ | `cpp-reviewer` |
-| C# | `csharp-reviewer` |
-| Flutter / Dart | `flutter-reviewer` |
-| Database / SQL | `database-reviewer` |
-| Architecture decisions | `architect` |
-
-### 4. Apply rules
-- `rules/common/coding-style.md` — applies to all changes
-- `rules/common/security.md` — always check
-- `rules/common/testing.md` — test coverage and quality
-- `rules/<language>/` — language-specific rules for the PR's primary language
-
-### 5. Check what's missing
-- New code without tests → flag.
-- Changed behavior without updated docs → flag.
-- New dependency without justification → flag.
-- Database migration without rollback plan → flag.
-
-## Severity Levels
-
-| Level | Meaning | Action |
-|-------|---------|--------|
-| CRITICAL | Security hole, data loss, correctness bug | Block merge, fix required |
-| HIGH | Will break in production, missing error handling | Block merge |
-| MEDIUM | Code quality, performance, maintainability | Request changes |
-| LOW | Style, naming, minor suggestions | Comment only, non-blocking |
-| NIT | Preference, not a problem | Optional, clearly labeled |
+- **Security**: injection, auth bypass, secrets exposure, insecure crypto, OWASP concerns
+- **Logic**: edge cases, null handling, error propagation, race conditions
+- **Maintainability**: naming, function length, single responsibility, duplication
+- **Tests**: coverage of changed code, assertion quality, missing edge cases
+- **Standards**: language-specific rules from `rules/<lang>/`
 
 ## Output Format
 
 ```
-## Summary
-What this change does in 2–3 sentences.
+## Review Summary
+Severity counts: Critical: N, High: N, Medium: N, Low: N
 
 ## Findings
+### [CRITICAL] Description
+Location: file.ts:42
+Issue: ...
+Fix: ...
 
-### CRITICAL: [Title] — file.ts:42
-**Problem:** What's wrong and why it matters.
-**Exploitation/impact:** What could go wrong.
-**Fix:**
-```code example```
-
-### HIGH: ...
-### MEDIUM: ...
-### LOW: ...
-
-## Verdict
-[ ] Approve
-[ ] Approve with minor fixes (LOW/NIT only)
-[ ] Request changes (MEDIUM+)
-[ ] Block (CRITICAL/HIGH present)
+### [HIGH] ...
 ```
 
-## Common Review Traps to Avoid
+## Constraints
 
-- **Do not approve because tests pass** — tests can be wrong too.
-- **Do not approve because it "looks fine"** — read the logic path under error conditions.
-- **Do not block on style if a linter handles it** — let tools own style.
-- **Do not suggest refactors unrelated to the PR scope** — open a separate issue.
-
-## Safe Behavior
-
-- Read-only analysis — no file modifications.
-- No external calls.
-- Does not approve its own output.
-- CRITICAL findings require Ahmed's attention before merge.
+- Does not auto-fix. Reports findings; the developer makes changes.
+- Does not review generated files, lock files, or binary assets.
+- Does not enforce style preferences — only rule-backed standards.

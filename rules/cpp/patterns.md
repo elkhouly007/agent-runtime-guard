@@ -1,53 +1,68 @@
----
-paths:
-  - "**/*.cpp"
-  - "**/*.hpp"
-  - "**/*.cc"
-  - "**/*.hh"
-  - "**/*.cxx"
-  - "**/*.h"
-  - "**/CMakeLists.txt"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# C++ Patterns
+# C++ Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with C++-specific content.
+Modern C++ patterns for safe, expressive, high-performance code.
 
-## RAII (Resource Acquisition Is Initialization)
+## RAII Wrappers
 
-Tie resource lifetime to object lifetime:
+Wrap every resource in an RAII class that acquires on construction and releases on destruction:
 
 ```cpp
-class FileHandle {
+class DatabaseConnection {
+    PGconn* conn_;
 public:
-    explicit FileHandle(const std::string& path) : file_(std::fopen(path.c_str(), "r")) {}
-    ~FileHandle() { if (file_) std::fclose(file_); }
-    FileHandle(const FileHandle&) = delete;
-    FileHandle& operator=(const FileHandle&) = delete;
-private:
-    std::FILE* file_;
+    explicit DatabaseConnection(std::string_view dsn)
+        : conn_(PQconnectdb(std::string(dsn).c_str())) {
+        if (PQstatus(conn_) != CONNECTION_OK) throw DatabaseError("Connection failed");
+    }
+    ~DatabaseConnection() { PQfinish(conn_); }
+    DatabaseConnection(const DatabaseConnection&) = delete;
+    DatabaseConnection& operator=(const DatabaseConnection&) = delete;
 };
 ```
 
-## Rule of Five / Rule of Zero
+## Type Erasure
 
-- **Rule of Zero**: prefer classes that need no custom destructor, copy/move constructors, or assignment operators
-- **Rule of Five**: if you define any of destructor/copy-ctor/copy-assign/move-ctor/move-assign, define all five intentionally
+Use `std::function`, `std::any`, or custom type-erased wrappers to decouple interface from implementation without virtual dispatch overhead in hot paths.
 
-## Value Semantics
+## Policy-Based Design (Templates)
 
-- Pass small or trivial types by value
-- Pass large types by `const&`
-- Return by value and rely on RVO/NRVO
-- Use move semantics for sink parameters
+Inject behavior through template parameters for zero-overhead abstraction:
 
-## Error Handling
+```cpp
+template<typename Allocator = DefaultAllocator,
+         typename Logger = NoOpLogger>
+class Buffer {
+    Allocator allocator_;
+    Logger logger_;
+public:
+    Buffer() : allocator_{}, logger_{} {}
+};
+```
 
-- Use exceptions for exceptional conditions
-- Use `std::optional` for values that may not exist
-- Use `std::expected` (C++23) or a result type for expected failures
+## Variant for Sum Types
 
-## Reference
+Replace inheritance hierarchies with `std::variant` for closed sets of types:
 
-See skill: `cpp-coding-standards` for broader C++ patterns and anti-patterns.
+```cpp
+using ParseResult = std::variant<int, float, std::string, ParseError>;
+
+std::visit(overloaded {
+    [](int v)           { use_int(v); },
+    [](float v)         { use_float(v); },
+    [](std::string& s)  { use_string(s); },
+    [](ParseError& e)   { handle_error(e); }
+}, result);
+```
+
+## Expected/Result Types
+
+Use `std::expected<T, E>` (C++23) or `tl::expected` for error handling without exceptions:
+
+```cpp
+auto result = parse_config(path);
+if (!result) {
+    log_error(result.error());
+    return result.error();
+}
+use_config(*result);
+```

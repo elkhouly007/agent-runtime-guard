@@ -1,84 +1,79 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Web Architecture Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with web-specific patterns.
-
-# Web Patterns
+Patterns for scalable, maintainable web applications.
 
 ## Component Composition
 
-### Compound Components
-
-Use compound components when related UI shares state and interaction semantics:
+Prefer composition over configuration:
 
 ```tsx
-<Tabs defaultValue="overview">
-  <Tabs.List>
-    <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
-    <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
-  </Tabs.List>
-  <Tabs.Content value="overview">...</Tabs.Content>
-  <Tabs.Content value="settings">...</Tabs.Content>
-</Tabs>
+// Composable: caller controls structure
+<Card>
+  <CardHeader>Title</CardHeader>
+  <CardBody>Content</CardBody>
+  <CardFooter><Button>Action</Button></CardFooter>
+</Card>
+
+// Monolithic: limited flexibility
+<Card title="Title" content="Content" actionLabel="Action" />
 ```
 
-- Parent owns state
-- Children consume via context
-- Prefer this over prop drilling for complex widgets
+## Custom Hooks (React)
 
-### Render Props / Slots
+Extract stateful logic into hooks:
 
-- Use render props or slot patterns when behavior is shared but markup must vary
-- Keep keyboard handling, ARIA, and focus logic in the headless layer
+```tsx
+function useUserProfile(userId: string) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-### Container / Presentational Split
+  useEffect(() => {
+    fetchUser(userId)
+      .then(setUser)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [userId]);
 
-- Container components own data loading and side effects
-- Presentational components receive props and render UI
-- Presentational components should stay pure
+  return { user, loading, error };
+}
+```
 
-## State Management
+## Server-Side Rendering Patterns
 
-Treat these separately:
+- Static Generation for content that changes infrequently (docs, marketing).
+- Server-Side Rendering for personalized or real-time content.
+- ISR (Incremental Static Regeneration) for content that changes on a schedule.
+- Client-side data fetching only for user-specific, post-auth content.
 
-| Concern | Tooling |
-|---------|---------|
-| Server state | TanStack Query, SWR, tRPC |
-| Client state | Zustand, Jotai, signals |
-| URL state | search params, route segments |
-| Form state | React Hook Form or equivalent |
+## State Architecture
 
-- Do not duplicate server state into client stores
-- Derive values instead of storing redundant computed state
+Divide state by scope:
+- Server state: React Query / SWR — caching, revalidation, background sync
+- URL state: query params — shareable, bookmarkable
+- Local UI state: component `useState` — transient, ephemeral
+- Global app state: Zustand/Jotai — only for truly cross-cutting concerns
 
-## URL as State
+## Error Boundaries
 
-Persist shareable state in the URL where it improves navigation:
-- filters
-- sort order
-- pagination
-- active tab
-- search query
+Wrap sections in error boundaries to isolate failures:
 
-## Data Fetching
+```tsx
+<ErrorBoundary fallback={<SectionErrorState />}>
+  <DataTable query={complexQuery} />
+</ErrorBoundary>
+```
 
-### Stale-While-Revalidate
+## Route-Based Code Splitting
 
-- Return cached data immediately
-- Revalidate in the background
-- Prefer existing libraries instead of rolling this by hand
+```tsx
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Settings  = lazy(() => import('./pages/Settings'));
 
-### Optimistic Updates
-
-- Snapshot current state
-- Apply optimistic update
-- Roll back on failure
-- Emit visible error feedback when rolling back
-
-### Parallel Loading
-
-- Fetch independent data in parallel
-- Avoid parent-child request waterfalls
-- Prefetch likely next routes or states when justified
+<Suspense fallback={<PageSkeleton />}>
+  <Routes>
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/settings"  element={<Settings />} />
+  </Routes>
+</Suspense>
+```

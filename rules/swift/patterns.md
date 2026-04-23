@@ -1,68 +1,75 @@
----
-paths:
-  - "**/*.swift"
-  - "**/Package.swift"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Swift Patterns
+# Swift Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with Swift-specific content.
+Swift-specific patterns for safe, idiomatic code.
 
-## Protocol-Oriented Design
+## Protocol-Oriented Programming
 
-Define small, focused protocols. Use protocol extensions for shared defaults:
+Define behavior through protocols:
 
 ```swift
-protocol Repository: Sendable {
-    associatedtype Item: Identifiable & Sendable
-    func find(by id: Item.ID) async throws -> Item?
-    func save(_ item: Item) async throws
+protocol DataStore {
+    func fetch<T: Decodable>(_ type: T.Type, id: UUID) async throws -> T?
+    func save<T: Encodable>(_ value: T) async throws
+}
+
+// Production implementation
+final class CoreDataStore: DataStore { ... }
+// Test implementation
+final class InMemoryStore: DataStore { ... }
+```
+
+## Result Builders
+
+Use `@resultBuilder` for DSLs:
+
+```swift
+@resultBuilder struct ValidationBuilder {
+    static func buildBlock(_ rules: ValidationRule...) -> [ValidationRule] { rules }
+}
+
+func validate(@ValidationBuilder _ rules: () -> [ValidationRule]) -> ValidationResult {
+    return rules().reduce(.valid) { $0.and($1.check()) }
 }
 ```
 
-## Value Types
+## Property Wrappers
 
-- Use structs for DTOs and plain models
-- Use enums with associated values to model distinct states clearly
-
-```swift
-enum LoadState<T: Sendable>: Sendable {
-    case idle
-    case loading
-    case loaded(T)
-    case failed(Error)
-}
-```
-
-## Actor Pattern
-
-Use actors for shared mutable state instead of locks or ad hoc queues:
+Encapsulate cross-cutting concerns:
 
 ```swift
-actor Cache<Key: Hashable & Sendable, Value: Sendable> {
-    private var storage: [Key: Value] = [:]
-
-    func get(_ key: Key) -> Value? { storage[key] }
-    func set(_ key: Key, value: Value) { storage[key] = value }
-}
-```
-
-## Dependency Injection
-
-Inject protocols with sensible default parameters so production uses defaults and tests inject mocks:
-
-```swift
-struct UserService {
-    private let repository: any UserRepository
-
-    init(repository: any UserRepository = DefaultUserRepository()) {
-        self.repository = repository
+@propertyWrapper struct Clamped<T: Comparable> {
+    private var value: T
+    let range: ClosedRange<T>
+    var wrappedValue: T {
+        get { value }
+        set { value = min(max(newValue, range.lowerBound), range.upperBound) }
     }
 }
 ```
 
-## References
+## Async Sequences
 
-See skill: `swift-actor-persistence` for actor-based persistence patterns.
-See skill: `swift-protocol-di-testing` for protocol-based DI and testing.
+```swift
+struct EventStream: AsyncSequence {
+    typealias Element = Event
+    func makeAsyncIterator() -> EventIterator { EventIterator() }
+}
+
+for await event in EventStream() {
+    handle(event)
+}
+```
+
+## Value Types with Copy-on-Write
+
+Implement copy-on-write for expensive value types:
+
+```swift
+struct LargeData {
+    private var _storage: StorageClass
+    mutating func modify() {
+        if !isKnownUniquelyReferenced(&_storage) { _storage = _storage.copy() }
+        _storage.mutate()
+    }
+}
+```

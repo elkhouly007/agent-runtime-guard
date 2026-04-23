@@ -1,114 +1,72 @@
----
-paths:
-  - "**/*.kt"
-  - "**/*.kts"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Kotlin Patterns
+# Kotlin Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with Kotlin and Android/KMP-specific content.
+Kotlin-specific patterns for idiomatic, safe, expressive code.
 
-## Dependency Injection
-
-Prefer constructor injection. Use Koin (KMP) or Hilt (Android-only):
+## Sealed Classes as State Machines
 
 ```kotlin
-val dataModule = module {
-    single<ItemRepository> { ItemRepositoryImpl(get(), get()) }
-    factory { GetItemsUseCase(get()) }
-    viewModelOf(::ItemListViewModel)
+sealed class UiState<out T> {
+    object Loading : UiState<Nothing>()
+    data class Success<T>(val data: T) : UiState<T>()
+    data class Error(val message: String) : UiState<Nothing>()
 }
 
-@HiltViewModel
-class ItemListViewModel @Inject constructor(
-    private val getItems: GetItemsUseCase
-) : ViewModel()
+when (state) {
+    is UiState.Loading -> showSpinner()
+    is UiState.Success -> showData(state.data)
+    is UiState.Error   -> showError(state.message)
+}
 ```
 
-## ViewModel Pattern
+The `when` expression is exhaustive — the compiler catches missing cases.
 
-Use a single state object, event sink, and one-way data flow:
+## Result Wrapping with Arrow or Kotlin Result
 
 ```kotlin
-data class ScreenState(
-    val items: List<Item> = emptyList(),
-    val isLoading: Boolean = false
-)
+fun findUser(id: UserId): Result<User> = runCatching {
+    repository.findById(id) ?: throw NotFoundException("User $id not found")
+}
 
-class ScreenViewModel(private val useCase: GetItemsUseCase) : ViewModel() {
-    private val _state = MutableStateFlow(ScreenState())
-    val state = _state.asStateFlow()
+findUser(id)
+    .onSuccess { user -> render(user) }
+    .onFailure { error -> logError(error) }
+```
 
-    fun onEvent(event: ScreenEvent) {
-        when (event) {
-            is ScreenEvent.Load -> load()
-            is ScreenEvent.Delete -> delete(event.id)
-        }
+## Delegation Pattern
+
+```kotlin
+interface Logger { fun log(message: String) }
+class FileLogger(private val path: Path) : Logger { ... }
+
+class Service(logger: Logger) : Logger by logger {
+    // Service delegates Logger methods to the injected logger
+    // without implementing them manually
+}
+```
+
+## Builder with DSL
+
+```kotlin
+data class ServerConfig(val host: String, val port: Int, val timeout: Duration)
+
+fun serverConfig(block: ServerConfigBuilder.() -> Unit): ServerConfig {
+    return ServerConfigBuilder().apply(block).build()
+}
+
+val config = serverConfig {
+    host = "localhost"
+    port = 8080
+    timeout = 30.seconds
+}
+```
+
+## Flow for Reactive Streams
+
+```kotlin
+fun userUpdates(userId: UserId): Flow<User> = flow {
+    while (true) {
+        emit(repository.findById(userId))
+        delay(5.seconds)
     }
-}
+}.distinctUntilChanged()
 ```
-
-## Repository Pattern
-
-- `suspend` functions return `Result<T>` or a custom error type
-- `Flow` for reactive streams
-- Coordinate local and remote data sources explicitly
-
-```kotlin
-interface ItemRepository {
-    suspend fun getById(id: String): Result<Item>
-    suspend fun getAll(): Result<List<Item>>
-    fun observeAll(): Flow<List<Item>>
-}
-```
-
-## UseCase Pattern
-
-Give each use case one responsibility and prefer `operator fun invoke`:
-
-```kotlin
-class GetItemUseCase(private val repository: ItemRepository) {
-    suspend operator fun invoke(id: String): Result<Item> {
-        return repository.getById(id)
-    }
-}
-```
-
-## expect/actual (KMP)
-
-Use `expect`/`actual` only for truly platform-specific behavior:
-
-```kotlin
-expect fun platformName(): String
-expect class SecureStorage {
-    fun save(key: String, value: String)
-    fun get(key: String): String?
-}
-```
-
-## Coroutine Patterns
-
-- Use `viewModelScope` in ViewModels
-- Use `coroutineScope` for structured child work
-- Use `stateIn(..., SharingStarted.WhileSubscribed(...), initialValue)` for StateFlow from cold flows
-- Use `supervisorScope` when child failures should remain isolated
-
-## Builder Pattern with DSL
-
-```kotlin
-class HttpClientConfig {
-    var baseUrl: String = ""
-    var timeout: Long = 30_000
-}
-
-fun httpClient(block: HttpClientConfig.() -> Unit): HttpClient {
-    val config = HttpClientConfig().apply(block)
-    return HttpClient(config)
-}
-```
-
-## References
-
-See skill: `kotlin-coroutines-flows` for detailed coroutine patterns.
-See skill: `android-clean-architecture` for module and layer patterns.

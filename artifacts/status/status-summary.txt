@@ -6,15 +6,15 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   registries: ok
   smoke: ok
   scenarios: ok
-  integration smoke: ok
+  integration smoke: FAILED
   payload protection: ok
-  fixtures: FAILED
+  fixtures: ok
   audit-examples: ok
   installation: FAILED
-  config-integration: FAILED
-  runtime-core: FAILED
-  runtime-cli: FAILED
-  hook-edge-cases: FAILED
+  config-integration: ok
+  runtime-core: ok
+  runtime-cli: ok
+  hook-edge-cases: ok
   apply-status: ok
   executables: ok
   setup-wizard: ok
@@ -24,13 +24,13 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   fixture-count: ok
   harness-support: ok
   status-artifact: skipped
-  policy-lint: ok
+  policy-lint: FAILED
   data-detector: ok
 
 [Parity Snapshot]
-  agents: upstream=38 adopted=38 deferred=0 ecc-only=10
-  rules: upstream=87 adopted=87 deferred=0 ecc-only=4
-  skills: upstream=156 adopted=156 deferred=0 ecc-only=43
+  agents: upstream=0 adopted=0 deferred=0 ecc-only=49
+  rules: upstream=0 adopted=0 deferred=0 ecc-only=81
+  skills: upstream=0 adopted=0 deferred=0 ecc-only=22
 
 [Capability Packs]
   mcp-pack: ok
@@ -53,10 +53,7 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   redaction-policy: ok
 
 [Upstream Workflow]
-  upstream-sync: ok
   vendor-policy: ok
-  import-checklist: ok
-  import-report-template: ok
 
 [Scenario Coverage]
   approval-boundary: ok
@@ -119,7 +116,7 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   comment-analyzer: ok
   conversation-analyzer: ok
   devops-reviewer: ok
-  disk-count: 50 agent files
+  disk-count: 51 agent files
 
 [Rules]
   common/coding-style: ok
@@ -201,94 +198,19 @@ Agent Runtime Guard Status Summary  (v1.0.2)
   web/hooks: ok
   database/patterns: ok
   infrastructure/patterns: ok
-  zh/agents: ok
-  zh/code-review: ok
-  zh/coding-style: ok
-  zh/development-workflow: ok
-  zh/git-workflow: ok
-  zh/hooks: ok
-  zh/patterns: ok
-  zh/performance: ok
-  zh/security: ok
-  zh/testing: ok
-  disk-count: 92 rule files
+  disk-count: 82 rule files
 
 [Skills]
-  code-review: ok
-  security-review: ok
-  plan-feature: ok
-  refactor: ok
-  fix-build: ok
-  performance-audit: ok
-  tdd: ok
-  git-review: ok
-  upstream-import: ok
-  orchestrate: ok
-  checkpoint: ok
-  accessibility-review: ok
-  django-patterns: ok
-  springboot-patterns: ok
-  nestjs-patterns: ok
-  fastapi-patterns: ok
-  bun-runtime: ok
-  nextjs-turbopack: ok
-  mcp-server-patterns: ok
-  pytorch-patterns: ok
-  search-first: ok
-  cost-aware-llm-pipeline: ok
-  swift-actor-persistence: ok
-  swift-protocol-di-testing: ok
-  continuous-learning: ok
-  skill-stocktake: ok
-  regex-vs-llm-structured-text: ok
-  content-hash-cache-pattern: ok
-  frontend-slides: ok
-  perl-patterns: ok
-  documentation-lookup: ok
-  article-writing: ok
-  market-research: ok
-  investor-materials: ok
   investor-outreach: ok
   content-engine: ok
   pm2-patterns: ok
   multi-agent-orchestration: ok
   configure-ecc: ok
   git-worktree-patterns: ok
-  api-design: ok
-  backend-patterns: ok
-  coding-standards: ok
-  e2e-testing: ok
-  eval-harness: ok
-  frontend-patterns: ok
-  verification-loop: ok
-  strategic-compact: ok
-  deep-research: ok
-  brand-voice: ok
-  crosspost: ok
-  dmux-workflows: ok
-  x-api: ok
-  video-editing: ok
-  manim-video: ok
-  fal-ai-media: ok
-  social-graph-ranker: ok
-  connections-optimizer: ok
-  customer-billing-ops: ok
-  ecc-tools-cost-audit: ok
-  google-workspace-ops: ok
-  project-flow-ops: ok
-  workspace-surface-audit: ok
-  exa-search: ok
-  remotion-video-creation: ok
-  claude-api: ok
-  quality-gate: ok
-  model-route: ok
-  harness-audit: ok
-  codex-setup: ok
-  disk-count: 200 skill files
+  disk-count: 22 skill files
 
 [References]
   per-tool-apply-status: ok
-  import-log: ok
 
 [Hook Wiring]
   hook paths: ok (no /ABS_PATH/ placeholders found)

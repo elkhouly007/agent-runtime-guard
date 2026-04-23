@@ -1,26 +1,38 @@
----
-paths:
-  - "**/*.php"
-  - "**/composer.json"
-  - "**/phpstan.neon"
-  - "**/phpstan.neon.dist"
-  - "**/psalm.xml"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# PHP Hooks
+# PHP + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with PHP specific content.
+PHP-specific ARG hook considerations.
 
-## PostToolUse Hooks
+## Composer Operations
 
-Configure in `~/.claude/settings.json`:
+Commands that may trigger ARG:
+- `composer install` / `composer update`: downloads and executes packages
+- `composer require vendor/package`: adds new code to the project
+- Composer scripts in `composer.json` run arbitrary shell commands on install/update
 
-- **Pint / PHP-CS-Fixer**: Auto-format edited `.php` files.
-- **PHPStan / Psalm**: Run static analysis after PHP edits in typed codebases.
-- **PHPUnit / Pest**: Run targeted tests for touched files or modules when edits affect behavior.
+## Artisan and Framework Commands
 
-## Warnings
+- `php artisan migrate`: modifies database schema
+- `php artisan migrate:fresh` or `migrate:rollback`: destructive database operations
+- `php artisan db:seed`: bulk inserts or data manipulation
+- `php artisan key:generate`: regenerates application key (invalidates encrypted data)
 
-- Warn on `var_dump`, `dd`, `dump`, or `die()` left in edited files.
-- Warn when edited PHP files add raw SQL or disable CSRF/session protections.
+## PHP CLI Execution
+
+- `php -r "..."`: inline PHP execution (arbitrary code)
+- Scripts calling `exec()`, `system()`, `shell_exec()`, or `passthru()`
+- `eval()` usage in any context
+
+## Web Server and Config Changes
+
+- `php -S 0.0.0.0:8080`: starts development server on all interfaces
+- `.htaccess` modifications that change PHP configuration
+- `php.ini` overrides affecting security settings (`disable_functions`, `open_basedir`)
+
+## Secrets in PHP Projects
+
+Common locations:
+- `.env` files with `DB_PASSWORD`, `APP_KEY`, `API_SECRET`
+- `config/` files that may read env vars
+- Hardcoded credentials in legacy code outside the env system
+
+ARG flags hardcoded credential patterns and `exec()`/`shell_exec()` calls with non-literal arguments.

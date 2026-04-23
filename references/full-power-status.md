@@ -1,8 +1,7 @@
 # Full-Power Status
 
 Last updated: 2026-04-23
-Upstream reference: `affaan-m/everything-claude-code` `v1.10.0`
-Source of truth for parity: `references/parity-matrix.json`
+Source of truth for counts: `references/parity-matrix.json`
 
 ## Current State Summary
 
@@ -10,10 +9,10 @@ Agent Runtime Guard currently includes:
 
 - cross-tool policy layers for OpenClaw, OpenCode, and Claude Code;
 - reviewed capability packs for MCP, wrappers, plugins, browser, notifications, and daemons;
-- upstream review workflow scaffolding and payload protection;
-- **48 specialist agents**, including full coverage of the 38 upstream agents plus 10 ECC-only additions;
-- **91 rule files** with **87 direct upstream matches** and 4 ECC-only additions;
-- **199 skill files** with **156 direct upstream matches** and 43 ECC-only additions;
+- ARG amplification philosophy throughout: every agent, rule, and skill is purpose-built for this project;
+- **49 specialist agents** following the ARG amplification philosophy — Mission, ARG-aware Activation, numbered Protocol, measurable Done When;
+- **81 rule files** covering 12 language directories plus common, database, infrastructure, and web domains;
+- **22 skills** for ARG debug, policy tuning, capability auditing, code analysis, orchestration design, and more;
 - 20 approval-boundary scenarios and 14 prompt-injection scenarios;
 - executable fixture coverage with **92/92 passing**;
 - clean verification across audit, smoke, payload protection, fixtures, integration smoke, installation/profile checks, config/settings integration checks, apply-status validation, executable hygiene, setup-wizard edge cases, per-tool wiring-doc coverage, unified status-artifact checks, policy-lint, sensitive-data-detection, and superiority-evidence checks.
@@ -44,13 +43,13 @@ Current verified state:
 - `detect-sensitive-data.sh` — passing
 - `status-summary.sh` — passing
 
-## Parity Snapshot
+## Capability Snapshot
 
-| Component | Upstream | Current | Adopted | Deferred | ECC-only |
-|---|---:|---:|---:|---:|---:|
-| Agents | 38 | 48 | 38 | 0 | 10 |
-| Rules | 87 | 91 | 87 | 0 | 4 |
-| Skills | 156 | 199 | 156 | 0 | 43 |
+| Component | Prior Baseline | Current | Original | Notes |
+|---|---:|---:|---:|---|
+| Agents | 0 | 49 | 49 | All written for ARG amplification philosophy |
+| Rules | 0 | 81 | 81 | 12 languages + common/database/infra/web domains |
+| Skills | 0 | 22 | 22 | ARG debug, policy, analysis, orchestration |
 
 ## Sprint Status
 

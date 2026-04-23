@@ -1,94 +1,39 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Git Workflow
 
-# Git Workflow — Common Rules
+Standards for using git in a way that produces a useful, honest history.
 
 ## Commits
 
-- Each commit represents one logical change — not a day's work, not "misc fixes".
-- Commit message format: `type(scope): short description` (Conventional Commits).
-  - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `security`, `ci`.
-  - Example: `fix(auth): prevent session token reuse after logout`.
-- Short description: imperative, present tense, under 72 characters.
-- Body (optional): explain *why* the change was made, not what the diff shows.
-- Never commit secrets, credentials, or `.env` files.
-- Never commit commented-out code blocks.
-- Never commit debug statements (`console.log`, `print`, `debugger`, `pdb.set_trace`).
-- Never commit with `--no-verify` unless you understand every hook you're bypassing.
+- Every commit should represent one logical change. If you need "and" to describe the commit, it should be two commits.
+- Commit messages: one-line summary under 72 characters describing WHAT changed. Body paragraph (when needed) explaining WHY.
+- Present tense imperative: "Add rate limiting to API endpoints" not "Added" or "Adding."
+- Never include implementation details in the commit message. The diff shows what changed. The message explains why.
+- Do not commit commented-out code, debug statements, or temporary scaffolding.
+- Commit working code only. A commit that breaks the build creates problems for everyone who bases work on it.
 
 ## Branches
 
-| Branch | Purpose | Merge strategy |
-|--------|---------|----------------|
-| `main` / `master` | Production-ready code only | Protected — PR required |
-| `feature/<name>` | New functionality | Squash or rebase into main |
-| `fix/<name>` | Bug fix | Squash or rebase into main |
-| `hotfix/<name>` | Urgent production fix | Direct merge (then tag) |
-| `chore/<name>` | Deps, tooling, config | Squash into main |
-
-- Branches should be short-lived — merge and delete within days, not weeks.
-- A branch older than 2 weeks with no activity is a smell. Review or close it.
-- Delete merged branches promptly — keep the repo clean.
+- Branch names: descriptive, lowercase, hyphenated. `feature/user-auth-refresh-tokens`, not `johns-branch` or `fix1`.
+- Short-lived branches are better than long-lived ones. Long-lived branches accumulate merge debt.
+- Keep branches focused on one change. A branch that touches authentication and billing and logging is harder to review and harder to revert.
+- Delete branches after merging. Dead branches are noise.
 
 ## Pull Requests
 
-- Every PR has a description: what changed, why, and how to test it.
-- Link the relevant issue or ticket in the description.
-- PR size: aim for changes reviewable in under 30 minutes.
-- Large PRs must be split unless splitting would be more confusing than the large diff.
-- Address all review comments before merging — do not resolve conversations unilaterally.
-- Keep the branch up to date with main before merging (`git rebase main` preferred over merge).
-- Self-review the diff before requesting review — no "rough drafts" in PRs.
-
-## Merge Strategy
-
-| Scenario | Preferred strategy | Reason |
-|----------|--------------------|--------|
-| Feature PR, single logical change | **Squash merge** | Clean linear history |
-| Feature PR, meaningful commit sequence | **Rebase merge** | Preserves history, no merge commit |
-| Hotfix into main | **Merge commit** | Traceable merge point |
-| Long-running integration branch | **Merge commit** | Preserves branch history |
-
-**Never rewrite history on shared branches.** No `push --force` on `main`, `develop`, or any branch others are working on. `push --force-with-lease` on your own feature branch is acceptable if no one else is on it.
-
-## Code Review Etiquette
-
-- Review within one business day.
-- Approving means you are confident the change is correct and safe.
-- Label your comments:
-  - `nit:` — style preference, non-blocking.
-  - `?:` — question, must be answered before merge.
-  - `suggestion:` — improvement idea, non-blocking.
-  - Unlabeled = blocking concern that must be resolved.
-- Praise good work when you see it.
+- A PR should be reviewable in one sitting. If reviewing takes more than 30 minutes, the PR is too large.
+- The PR description should explain: what changed, why it changed, and how to verify it works.
+- Link the PR to the issue it resolves. Context for reviewers and for future bisecting.
+- Tests must pass before requesting review. Requesting review on failing tests wastes reviewer time.
+- Respond to review comments before requesting re-review. Let the reviewer know each comment was addressed.
 
 ## History Hygiene
 
-- Do not rewrite history on shared branches.
-- Tags for every release: `v1.2.3` (semantic versioning). Annotated tags preferred.
-- Keep `git log --oneline main` readable — each entry should describe one meaningful change.
-- Avoid empty merge commits — use rebase to keep history linear.
+- Never rewrite history on a shared branch. Rebasing or amending commits that others have built on creates divergent histories.
+- Squash micro-commits (wip, typo fix, forgot to add file) before merging to main. Every commit on main should be meaningful.
+- `git bisect` requires a meaningful history. A history full of squashed and noise commits is useless for bisecting bugs.
 
-## Emergency Hotfix Process
+## Sensitive Data
 
-```bash
-git checkout main
-git pull
-git checkout -b hotfix/<description>
-# make the fix
-git commit -m "fix(<scope>): <description>"
-git checkout main
-git merge hotfix/<description>      # merge commit — traceable
-git tag v<major>.<minor>.<patch+1>
-git push origin main --tags
-git branch -d hotfix/<description>
-```
-
-## Common Mistakes to Avoid
-
-- `git add .` — stages everything including `.env`, binaries, OS files. Use `git add -p` or specific paths.
-- `git commit -m "WIP"` — not a commit message. Squash before merging.
-- Resolving conflicts by accepting "ours" or "theirs" blindly — read the conflict and understand both sides.
-- Leaving `<<<<<<`, `======`, `>>>>>>` markers in committed code — always verify with `git diff --staged`.
+- Never commit secrets, credentials, or PII to git. Git history is permanent — even after deletion, the data exists in forks and clones.
+- Use pre-commit hooks to scan for secrets. ARG hooks (`secret-warning.js`) provide this protection.
+- If a secret is accidentally committed: invalidate it immediately, then remove it from history using git-filter-repo.

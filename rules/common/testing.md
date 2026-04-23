@@ -1,160 +1,37 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Testing
 
-# Testing — Common Rules
+Universal testing principles. Tests are not a chore — they are the specification of how the system should behave, and the mechanism that makes change safe.
 
-## Test Pyramid
+## What to Test
 
-| Layer       | Scope                          | Speed    | Recommended Share |
-|-------------|--------------------------------|----------|-------------------|
-| Unit        | Single function / class        | < 1 s    | ~70%              |
-| Integration | Component interactions, DB/API | 1–30 s   | ~20%              |
-| E2E         | Full user journey through UI   | 30 s–min | ~10%              |
+- Test behaviors, not implementations. "Given input X, expect output Y" — not "expect function A to call function B."
+- Test at the level where the behavior is defined: unit tests for algorithms, integration tests for component interactions, end-to-end tests for user journeys.
+- Test the unhappy paths as thoroughly as the happy path. Production failures live in error conditions, edge cases, and boundary values.
+- Every bug fix must include a regression test that would have caught the bug. This prevents reintroduction.
 
-Keep the pyramid proportional. A project with more E2E than unit tests is inverted and will be slow and brittle.
+## Test Structure
 
----
-
-## Coverage Targets
-
-- 80%+ line coverage as a minimum for production code.
-- 100% coverage for security-critical and payment-related paths.
-- New features without tests are not complete.
-
-**Coverage commands:**
-```bash
-# Node.js
-npm test -- --coverage
-
-# Python
-pytest --cov=src --cov-report=term-missing --cov-fail-under=80
-
-# Go
-go test -cover ./...
-go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
-```
-
----
-
-## Test Types
-
-### Unit Tests
-
-- Test a single function or class in isolation.
-- Mock all external dependencies (network, database, filesystem, time).
-- Fast: the full unit suite must run in seconds.
-- Name tests to describe behavior: `[unit] should [behavior] when [condition]`.
-
-**BAD test name:**
-```python
-def test_user():  # tells you nothing about what is tested or expected
-    ...
-```
-
-**GOOD test name:**
-```python
-def test_create_user_raises_validation_error_when_email_is_missing():
-    ...
-```
-
-**GOOD fixture example (pytest):**
-```python
-@pytest.fixture
-def valid_user_payload():
-    return {"name": "Alice", "email": "alice@example.com", "role": "viewer"}
-
-def test_create_user_succeeds_with_valid_payload(valid_user_payload):
-    result = create_user(valid_user_payload)
-    assert result.id is not None
-```
-
-### Integration Tests
-
-- Test interactions between components: API + database, service + external API.
-- Use a real database (test instance, Docker) rather than mocks where possible.
-- Verify the contract between components, not implementation internals.
-
-### End-to-End Tests
-
-- Test complete user journeys through the UI or API.
-- Cover the critical happy path and the most important failure paths.
-- Keep E2E tests focused — they are slow and expensive.
-
----
+- One test, one assertion of interest. Tests with multiple unrelated assertions are hard to diagnose when they fail.
+- Name tests as specifications: `when_token_is_expired_returns_401`, not `test_auth`.
+- Arrange-Act-Assert (AAA) structure: set up state, perform the action, verify the result. One clear section per phase.
+- Tests should be hermetic: they set up their own state and clean up after themselves. Tests that depend on run order are fragile.
 
 ## Test Quality
 
-### Good Test Checklist
+- Tests that always pass regardless of the implementation are not tests — they are noise. Verify each test can fail by breaking the behavior it tests.
+- Mutation testing is the gold standard: if you can change a line of implementation without failing any test, the test coverage is incomplete.
+- Flaky tests must be fixed or removed immediately. A test suite with flaky tests teaches everyone to ignore test failures.
+- Test data should be minimal and meaningful. Large, realistic-looking test data masks what the test is actually testing.
 
-- Tests one behavior.
-- Is independent — does not rely on execution order or shared mutable state.
-- Is deterministic — same result every run.
-- Has a clear assertion that explains what was expected.
-- Fails when the behavior it tests breaks.
+## Coverage
 
-**GOOD assertion (explicit failure message):**
-```js
-expect(result.status).toBe(201);
-expect(result.body.id).toBeDefined();
-expect(result.body.email).toBe('alice@example.com');
-```
+- Coverage metrics measure how much code is executed by tests, not how well the behavior is specified. 100% coverage with bad tests means nothing.
+- Focus coverage efforts on: critical paths, security-sensitive code, complex algorithms, and code that has had bugs before.
+- Untested code is a maintenance liability. Changes to untested code cannot be verified without manual testing.
 
-**BAD assertion (hides failures):**
-```js
-expect(result).toBeTruthy();  // passes even if result is a wrong object
-```
+## Test Performance
 
-### Mocking Principles
-
-- Mock at the boundary of the system under test (HTTP clients, DB adapters, clocks).
-- Do not mock what you own — mock what you do not (external APIs, OS resources).
-- Excessive mocking is a sign the code needs better separation of concerns.
-
-**GOOD mock example (Jest):**
-```js
-jest.mock('../lib/emailClient', () => ({
-  send: jest.fn().mockResolvedValue({ messageId: 'test-id' })
-}));
-
-test('registers user and sends welcome email', async () => {
-  await registerUser({ email: 'alice@example.com' });
-  expect(emailClient.send).toHaveBeenCalledWith(
-    expect.objectContaining({ to: 'alice@example.com' })
-  );
-});
-```
-
----
-
-## Edge Cases to Always Test
-
-- Null or empty inputs.
-- Boundary values (0, -1, max integer, empty string, single character).
-- Invalid types or malformed input.
-- Error and rejection paths.
-- Concurrent or repeated calls where applicable.
-
----
-
-## Test Isolation
-
-- Each test cleans up after itself or uses a fresh context.
-- No shared mutable state between tests.
-- Tests can run in any order and in parallel.
-
----
-
-## Anti-Patterns
-
-| Anti-Pattern                        | Problem                                        | Fix                                          |
-|-------------------------------------|------------------------------------------------|----------------------------------------------|
-| `test_1`, `test_a`, `test_stuff`    | Unintelligible failure messages                | Name: `should [behavior] when [condition]`   |
-| `assert True` / `expect(x).toBe(x)` | Test always passes; behavior never verified    | Assert the actual expected value             |
-| Sleep/delay in tests                | Flaky, environment-dependent timing            | Use mocked clocks or event-driven waits      |
-| Tests that share DB rows            | Order-dependent failures                       | Truncate/seed fresh data per test            |
-| Mocking internal implementation     | Breaks on refactoring, not on real bugs        | Mock at external boundaries only             |
-| Hitting production services         | Slow, costly, non-deterministic                | Use test doubles or sandbox environments     |
-| One giant test method               | Hard to diagnose failures; tests multiple things | Split into focused single-behavior tests   |
-| No assertion, just no exception     | Passes when method silently fails              | Assert on return value or observable effect  |
+- Fast tests run frequently; slow tests are skipped. Keep unit tests under 100ms each.
+- Separate slow tests (integration, end-to-end) from fast tests. Run fast tests on every save; slow tests on every commit.
+- Parallelize tests where possible. Sequential test execution is a velocity tax.
+- Mock external dependencies at the integration boundary. Do not mock internal components — that tests the mock, not the system.

@@ -1,35 +1,102 @@
----
-paths:
-  - "**/*.php"
-  - "**/composer.json"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# PHP Patterns
+# PHP Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with PHP-specific content.
+PHP-specific patterns for clean architecture.
 
-## Thin Controllers, Explicit Services
+## Repository Pattern
 
-- Keep controllers focused on transport: auth, validation, serialization, and status codes
-- Move business rules into application or domain services that are easy to test without full HTTP bootstrapping
+Separate domain from persistence:
 
-## DTOs and Value Objects
+```php
+interface UserRepository
+{
+    public function findById(int $id): ?User;
+    public function save(User $user): void;
+    public function delete(int $id): void;
+}
 
-- Replace shape-heavy associative arrays with DTOs for requests, commands, and external API payloads
-- Use value objects for money, identifiers, date ranges, and other constrained concepts
+final class EloquentUserRepository implements UserRepository
+{
+    public function findById(int $id): ?User
+    {
+        return UserModel::find($id)?->toDomain();
+    }
+}
+```
 
-## Dependency Injection
+## Service Layer
 
-- Depend on interfaces or narrow service contracts, not framework globals
-- Pass collaborators through constructors so services remain testable without service-locator lookups
+Encapsulate business logic in services, not controllers:
 
-## Boundaries
+```php
+final class RegisterUserService
+{
+    public function __construct(
+        private readonly UserRepository $users,
+        private readonly Mailer $mailer,
+        private readonly PasswordHasher $hasher,
+    ) {}
 
-- Isolate ORM models from domain decisions when the model layer is doing more than persistence
-- Wrap third-party SDKs behind small adapters so the rest of the codebase depends on your contract, not theirs
+    public function execute(RegisterUserCommand $command): User
+    {
+        $user = new User(
+            name: $command->name,
+            email: new Email($command->email),
+            password: $this->hasher->hash($command->password),
+        );
+        $this->users->save($user);
+        $this->mailer->sendWelcome($user);
+        return $user;
+    }
+}
+```
 
-## Reference
+## Value Objects
 
-See skill: `api-design` for endpoint conventions and response-shape guidance.
-See skill: `laravel-patterns` for Laravel-specific architecture guidance.
+Wrap primitives in domain types:
+
+```php
+final readonly class Email
+{
+    public string $value;
+
+    public function __construct(string $value)
+    {
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException("Invalid email: $value");
+        }
+        $this->value = strtolower($value);
+    }
+}
+```
+
+## Command/Query Separation
+
+Commands mutate, queries return:
+
+```php
+// Command — void return
+final class ActivateUserCommand { public function __construct(public readonly int $userId) {} }
+
+// Query — returns data
+final class GetUserByIdQuery { public function __construct(public readonly int $userId) {} }
+```
+
+## PHP 8 Enums
+
+```php
+enum OrderStatus: string
+{
+    case Pending  = 'pending';
+    case Active   = 'active';
+    case Closed   = 'closed';
+
+    public function canTransitionTo(self $next): bool
+    {
+        return match($this) {
+            self::Pending => $next === self::Active,
+            self::Active  => $next === self::Closed,
+            default       => false,
+        };
+    }
+}
+```

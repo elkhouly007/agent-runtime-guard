@@ -1,41 +1,34 @@
----
-paths:
-  - "**/*.cpp"
-  - "**/*.hpp"
-  - "**/*.cc"
-  - "**/*.hh"
-  - "**/*.cxx"
-  - "**/*.h"
-  - "**/CMakeLists.txt"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# C++ Hooks
+# C++ + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with C++ specific content.
+C++-specific ARG hook considerations.
 
-## Build Hooks
+## Build System Commands
 
-Run these checks before committing C++ changes:
+C++ build commands that may trigger ARG:
+- `make install` writing to system directories
+- CMake `install()` targets that deploy to system paths
+- `sudo ldconfig` after installing shared libraries
+- Cross-compilation toolchain downloads and executions
 
-```bash
-# Format check
-clang-format --dry-run --Werror src/*.cpp src/*.hpp
+## Compiler and Linker Behavior
 
-# Static analysis
-clang-tidy src/*.cpp -- -std=c++17
+C++ builds invoke compilers and linkers that may write to many locations:
+- Build artifacts in system `lib` or `bin` directories should trigger review
+- `pkg-config --libs` may reveal library paths that indicate system-wide dependencies
+- Sanitizer builds may write instrumented binaries to unusual locations
 
-# Build
-cmake --build build
+## Memory Debugging Tools
 
-# Tests
-ctest --test-dir build --output-on-failure
-```
+Commands involving memory analysis tools that may trigger ARG:
+- `valgrind ./program` on code reading sensitive files
+- `heaptrack` and similar tools that trace all allocations
+- Core dump generation (`ulimit -c unlimited`) in environments with sensitive process memory
 
-## Recommended CI Pipeline
+## Sensitive Compilation Targets
 
-1. **clang-format** — formatting check
-2. **clang-tidy** — static analysis
-3. **cppcheck** — additional analysis
-4. **cmake build** — compilation
-5. **ctest** — test execution with sanitizers
+Be aware when compiling code that:
+- Links against system security libraries (OpenSSL, libcrypto)
+- Implements cryptographic primitives
+- Accesses system resources (/proc, /dev)
+
+These are legitimate operations but may warrant additional review before execution in shared environments.

@@ -1,27 +1,35 @@
----
-paths:
-  - "**/*.cs"
-  - "**/*.csx"
-  - "**/*.csproj"
-  - "**/*.sln"
-  - "**/Directory.Build.props"
-  - "**/Directory.Build.targets"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# C# Hooks
+# C# + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with C#-specific content.
+C#-specific ARG hook considerations.
 
-## PostToolUse Hooks
+## .NET CLI Commands
 
-Configure in `~/.claude/settings.json`:
+.NET commands that may trigger ARG:
+- `dotnet publish --runtime win-x64 --self-contained` deploying to production paths
+- `dotnet ef database update` running migrations against production databases
+- `dotnet nuget push` publishing packages to NuGet
 
-- **dotnet format**: Auto-format edited C# files and apply analyzer fixes
-- **dotnet build**: Verify the solution or project still compiles after edits
-- **dotnet test --no-build**: Re-run the nearest relevant test project after behavior changes
+## Secrets Management
 
-## Stop Hooks
+C# projects commonly use:
+- `appsettings.json` with connection strings and API keys (check for production secrets)
+- `secrets.json` via `dotnet user-secrets` (local development, not committed)
+- Environment variables read via `IConfiguration`
 
-- Run a final `dotnet build` before ending a session with broad C# changes
-- Warn on modified `appsettings*.json` files so secrets do not get committed
+ARG will intercept these if they appear in Bash tool call inputs. Use Azure Key Vault, AWS Secrets Manager, or HashiCorp Vault for production.
+
+## Entity Framework Migrations
+
+Database migration commands carry risk:
+- `dotnet ef migrations add` is safe (generates files only)
+- `dotnet ef database update` applies migrations to a real database — confirm the target connection string
+- `dotnet ef database drop` is destructive — ARG may flag this
+
+## IIS and Windows Service Deployment
+
+Windows-specific deployment commands:
+- `iisreset` and `net stop/start` affect running services
+- Windows service installation commands (`sc create`, `sc start`)
+- Registry modifications for service configuration
+
+These are legitimate operations but should be reviewed before execution.

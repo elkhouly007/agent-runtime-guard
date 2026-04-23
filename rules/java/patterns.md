@@ -1,144 +1,70 @@
----
-paths:
-  - "**/*.java"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Java Patterns
+# Java Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with Java-specific content.
+Java-specific patterns for modern, maintainable code.
+
+## Dependency Injection
+
+Prefer constructor injection over field injection in Spring components:
+
+```java
+@Service
+public class OrderService {
+    private final OrderRepository repository;
+    private final PaymentGateway paymentGateway;
+
+    public OrderService(OrderRepository repository, PaymentGateway paymentGateway) {
+        this.repository = repository;
+        this.paymentGateway = paymentGateway;
+    }
+}
+```
+
+Constructor injection: dependencies are explicit, the class is testable without Spring context, dependencies are immutable.
+
+## Value Objects
+
+Use records for immutable value objects:
+
+```java
+public record Money(BigDecimal amount, Currency currency) {
+    public Money {
+        Objects.requireNonNull(amount);
+        Objects.requireNonNull(currency);
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Amount cannot be negative");
+        }
+    }
+}
+```
 
 ## Repository Pattern
 
-Encapsulate data access behind an interface:
+Separate data access from business logic:
 
 ```java
-public interface OrderRepository {
-    Optional<Order> findById(Long id);
-    List<Order> findAll();
-    Order save(Order order);
-    void deleteById(Long id);
+public interface UserRepository {
+    Optional<User> findById(UserId id);
+    void save(User user);
+    List<User> findActiveUsers();
 }
 ```
 
-Concrete implementations handle storage details (JPA, JDBC, in-memory for tests).
+Business logic tests use a fake or mock `UserRepository`. The real implementation uses JPA.
 
-## Service Layer
+## Command/Query Separation
 
-Business logic belongs in service classes. Keep controllers and repositories thin:
+Separate commands (state-changing operations) from queries (read-only operations):
+- Commands: `void placeOrder(OrderRequest request)` — returns nothing, changes state
+- Queries: `List<Order> getOrdersByUser(UserId userId)` — returns data, changes nothing
 
-```java
-public class OrderService {
-    private final OrderRepository orderRepository;
-    private final PaymentGateway paymentGateway;
-
-    public OrderService(OrderRepository orderRepository, PaymentGateway paymentGateway) {
-        this.orderRepository = orderRepository;
-        this.paymentGateway = paymentGateway;
-    }
-
-    public OrderSummary placeOrder(CreateOrderRequest request) {
-        var order = Order.from(request);
-        paymentGateway.charge(order.total());
-        var saved = orderRepository.save(order);
-        return OrderSummary.from(saved);
-    }
-}
-```
-
-## Constructor Injection
-
-Always use constructor injection rather than field injection:
+## Optional Idioms
 
 ```java
-// GOOD — constructor injection
-public class NotificationService {
-    private final EmailSender emailSender;
+// Avoid: checking and using separately
+if (optional.isPresent()) { use(optional.get()); }
 
-    public NotificationService(EmailSender emailSender) {
-        this.emailSender = emailSender;
-    }
-}
-
-// BAD — field injection
-public class NotificationService {
-    @Inject
-    private EmailSender emailSender;
-}
+// Prefer: functional style
+optional.ifPresent(this::use);
+optional.map(this::transform).orElse(defaultValue);
+optional.orElseThrow(() -> new ResourceNotFoundException("..."));
 ```
-
-## DTO Mapping
-
-Use records for DTOs when possible. Map at service or controller boundaries:
-
-```java
-public record OrderResponse(Long id, String customer, BigDecimal total) {
-    public static OrderResponse from(Order order) {
-        return new OrderResponse(order.getId(), order.getCustomerName(), order.getTotal());
-    }
-}
-```
-
-## Builder Pattern
-
-Use builders for objects with many optional parameters:
-
-```java
-public class SearchCriteria {
-    private final String query;
-    private final int page;
-    private final int size;
-    private final String sortBy;
-
-    private SearchCriteria(Builder builder) {
-        this.query = builder.query;
-        this.page = builder.page;
-        this.size = builder.size;
-        this.sortBy = builder.sortBy;
-    }
-
-    public static class Builder {
-        private String query = "";
-        private int page = 0;
-        private int size = 20;
-        private String sortBy = "id";
-
-        public Builder query(String query) { this.query = query; return this; }
-        public Builder page(int page) { this.page = page; return this; }
-        public Builder size(int size) { this.size = size; return this; }
-        public Builder sortBy(String sortBy) { this.sortBy = sortBy; return this; }
-        public SearchCriteria build() { return new SearchCriteria(this); }
-    }
-}
-```
-
-## Sealed Types for Domain Models
-
-Use sealed interfaces and exhaustive handling for closed business states:
-
-```java
-public sealed interface PaymentResult permits PaymentSuccess, PaymentFailure {
-    record PaymentSuccess(String transactionId, BigDecimal amount) implements PaymentResult {}
-    record PaymentFailure(String errorCode, String message) implements PaymentResult {}
-}
-```
-
-## API Response Envelope
-
-Use a consistent response shape for APIs:
-
-```java
-public record ApiResponse<T>(boolean success, T data, String error) {
-    public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(true, data, null);
-    }
-    public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, null, message);
-    }
-}
-```
-
-## References
-
-See skill: `springboot-patterns` for Spring Boot architecture patterns.
-See skill: `jpa-patterns` for entity design and query optimization.

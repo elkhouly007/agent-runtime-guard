@@ -1,22 +1,34 @@
----
-paths:
-  - "**/*.swift"
-  - "**/Package.swift"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Swift Hooks
+# Swift + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with Swift specific content.
+Swift-specific ARG hook considerations.
 
-## PostToolUse Hooks
+## Xcode and Build Commands
 
-Configure in `~/.claude/settings.json`:
+Swift/iOS commands that may trigger ARG:
+- `xcodebuild archive` with distribution certificates: triggers code signing and provisioning
+- `xcrun altool --upload-app` or `xcrun notarytool`: uploads to App Store Connect
+- Fastlane `deliver` and `pilot` commands: automated distribution
 
-- **SwiftFormat**: Auto-format `.swift` files after edit
-- **SwiftLint**: Run lint checks after editing `.swift` files
-- **swift build**: Type-check modified packages after edit
+## Swift Package Manager
 
-## Warning
+- `swift package resolve` downloads packages from the internet
+- `swift package update` may upgrade to newer versions with different behavior
+- Local packages with `path:` dependencies run arbitrary Swift code
 
-Flag `print()` statements — use `os.Logger` or structured logging instead for production code.
+## Keychain and Security Framework
+
+When working with iOS security APIs via the Bash tool or generated scripts:
+- `security` CLI commands on macOS for certificate and keychain operations
+- Importing certificates or private keys into the keychain
+- Deleting keychain items
+
+These are legitimate operations but sensitive enough to warrant review.
+
+## Secrets in Swift Projects
+
+Common locations:
+- `.xcconfig` files referenced in Build Settings (may contain API keys)
+- `Info.plist` with service endpoints or keys
+- Build phase scripts with embedded credentials
+
+Prefer `xcconfig` files excluded via `.gitignore` for development keys. Use a secrets manager for production keys fetched at runtime.

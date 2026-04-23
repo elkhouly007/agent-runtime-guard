@@ -1,69 +1,45 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Web Performance
 
-> This file extends [common/performance.md](../common/performance.md) with web-specific performance content.
-
-# Web Performance Rules
+Standards for fast web applications.
 
 ## Core Web Vitals Targets
 
-| Metric | Target |
-|--------|--------|
-| LCP | < 2.5s |
-| INP | < 200ms |
-| CLS | < 0.1 |
-| FCP | < 1.5s |
-| TBT | < 200ms |
+- LCP (Largest Contentful Paint): < 2.5s
+- INP (Interaction to Next Paint): < 200ms
+- CLS (Cumulative Layout Shift): < 0.1
 
-## Bundle Budget
+## Asset Optimization
 
-| Page Type | JS Budget (gzipped) | CSS Budget |
-|-----------|---------------------|------------|
-| Landing page | < 150kb | < 30kb |
-| App page | < 300kb | < 50kb |
-| Microsite | < 80kb | < 15kb |
+- Images: WebP/AVIF format, `width`+`height` attributes to prevent CLS, lazy-load below fold.
+- `<img loading="lazy">` for images below the fold.
+- Fonts: `font-display: swap`, preload critical fonts, subset to used characters.
+- SVGs inlined for critical icons, external for large or reused ones.
+- Bundle splitting: vendor chunk separated from application code.
+
+## JavaScript Performance
+
+- Avoid blocking the main thread: long tasks > 50ms hurt INP.
+- Virtualize long lists (react-virtual, tanstack-virtual) over rendering thousands of DOM nodes.
+- `useMemo` and `useCallback` only when profiling shows a real problem — they add cognitive overhead.
+- Debounce search inputs and resize handlers.
+- Web Workers for CPU-intensive computation.
 
 ## Loading Strategy
 
-1. Inline critical above-the-fold CSS only when justified
-2. Preload the hero image and primary font only
-3. Defer non-critical CSS or JS
-4. Dynamically import heavy libraries
+- Preload critical resources: `<link rel="preload" as="font">`.
+- Prefetch likely next pages: `<link rel="prefetch">`.
+- Lazy-load routes and heavy components with `React.lazy`.
+- Critical CSS inlined; non-critical CSS loaded asynchronously.
 
-```js
-const gsapModule = await import('gsap');
-const { ScrollTrigger } = await import('gsap/ScrollTrigger');
-```
+## Caching
 
-## Image Optimization
+- Static assets: long `Cache-Control: max-age` with content-hashed filenames.
+- API responses: `Cache-Control: no-store` for sensitive data; `stale-while-revalidate` for tolerant endpoints.
+- Service worker caching for offline-capable apps and repeat visits.
 
-- Explicit `width` and `height`
-- `loading="eager"` plus `fetchpriority="high"` for hero media only
-- `loading="lazy"` for below-the-fold assets
-- Prefer AVIF or WebP with fallbacks
-- Never ship source images far beyond rendered size
+## Measurement
 
-## Font Loading
-
-- Max two font families unless there is a clear exception
-- `font-display: swap`
-- Subset where possible
-- Preload only the truly critical weight/style
-
-## Animation Performance
-
-- Animate compositor-friendly properties only
-- Use `will-change` narrowly and remove it when done
-- Prefer CSS for simple transitions
-- Use `requestAnimationFrame` or established animation libraries for JS motion
-- Avoid scroll handler churn; use IntersectionObserver or well-behaved libraries
-
-## Checklist
-
-- [ ] All images have explicit dimensions
-- [ ] No accidental render-blocking resources
-- [ ] No layout shifts from dynamic content
-- [ ] Motion stays on compositor-friendly properties
-- [ ] Third-party scripts load async/defer and only when needed
+- Lighthouse CI in PR pipeline. Gate on regression.
+- Real User Monitoring (RUM) with Core Web Vitals reporting (web-vitals library).
+- Performance budget: define and alert on bundle size regressions.
+- `performance.mark()` / `performance.measure()` for custom timing of critical user flows.

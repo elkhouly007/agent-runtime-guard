@@ -1,24 +1,39 @@
----
-paths:
-  - "**/*.pl"
-  - "**/*.pm"
-  - "**/*.t"
-  - "**/*.psgi"
-  - "**/*.cgi"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Perl Hooks
+# Perl + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with Perl-specific content.
+Perl-specific ARG hook considerations.
 
-## PostToolUse Hooks
+## CPAN and Package Operations
 
-Configure in `~/.claude/settings.json`:
+Commands that may trigger ARG:
+- `cpan install Module::Name` or `cpanm Module::Name`: installs third-party code
+- `cpanm --installdeps .`: resolves and installs all dependencies
+- Makefile.PL or Build.PL execution during install can run arbitrary Perl
 
-- **perltidy**: Auto-format `.pl` and `.pm` files after edit
-- **perlcritic**: Run lint check after editing `.pm` files
+## File and Process Operations
 
-## Warnings
+Perl one-liners with system effects:
+- `perl -i -pe 's/old/new/g' file`: in-place file editing
+- `perl -e 'unlink glob "*.tmp"'`: file deletion
+- Scripts using `system()`, `exec()`, or backtick operators
 
-- Warn about `print` in non-script `.pm` files — use `say` or a logging module (e.g., `Log::Any`)
+## DBI and Database Connections
+
+- Scripts executing schema migrations via DBI
+- `perl script.pl` that drops or truncates tables
+- Bulk updates or deletes via DBI
+
+## Secrets in Perl Projects
+
+Common locations:
+- Hardcoded credentials in `DBI->connect()` calls
+- `.env` files loaded via `Dotenv` modules
+- Config files (`.conf`, `.ini`, `.yaml`) with database passwords
+
+## CGI and Web Scripts
+
+Legacy CGI scripts may:
+- Execute shell commands based on form input (high injection risk)
+- Write to filesystem paths derived from URL parameters
+- Use `eval` on user-supplied data
+
+ARG will flag `system()`, `exec()`, and backtick usage in scripts that appear to process external input.

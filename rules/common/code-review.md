@@ -1,134 +1,43 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Code Review
 
-# Code Review Standards
+Standards for effective code review — both for authors and reviewers.
 
-## Purpose
+## Author Responsibilities
 
-Code review ensures quality, security, and maintainability before code is merged. This rule defines when and how to conduct code reviews.
+**Before submitting for review**:
+- The code works. You have tested the change manually and/or with automated tests.
+- The tests pass. Do not ask someone else to debug your CI failures.
+- The PR is focused. One logical change per PR. Not three bug fixes and a refactor.
+- The description is complete: what changed, why it changed, how to verify it.
 
-## When to Review
+**Making reviews easy**:
+- Small PRs get faster, better reviews. If a change is large, explain why it must be large.
+- Self-review before requesting review. A five-minute self-review catches 50% of issues and saves reviewer time.
+- Respond to every comment. Not resolving comments implies they are ignored.
 
-**MANDATORY review triggers:**
+## Reviewer Responsibilities
 
-- After writing or modifying code
-- Before any commit to shared branches
-- When security-sensitive code is changed (auth, payments, user data)
-- When architectural changes are made
-- Before merging pull requests
+**What to look for**:
+- Correctness: does the code do what it claims? Under all inputs, including edge cases?
+- Security: are there injection vectors, auth bypasses, secret exposure, or input validation gaps?
+- Maintainability: will the next person understand this? Is the complexity justified?
+- Tests: does the test suite verify the behavior, including failure modes?
+- Documentation: is the behavior change documented where it should be?
 
-**Pre-Review Requirements:**
+**What not to block on**:
+- Style that is handled by the formatter. Automated tools own style.
+- Personal preference in design choices where the author's choice is reasonable.
+- Theoretical future requirements that are not actual requirements.
 
-Before requesting review, ensure:
+## Review Mindset
 
-- All automated checks (CI/CD) are passing
-- Merge conflicts are resolved
-- Branch is up to date with target branch
+- The goal of review is to improve the code, not to demonstrate the reviewer's expertise.
+- "Why did you choose X over Y?" is more useful than "Y is better than X."
+- Distinguish between: must-fix (blocking merge), should-fix (strong recommendation), and suggestion (optional improvement). Make the distinction explicit in the comment.
+- Approve when you would be comfortable merging this code. Not when it is perfect.
 
-## Review Checklist
+## Escalation
 
-Before marking code complete:
-
-- [ ] Code is readable and well-named
-- [ ] Functions are focused (<50 lines unless clearly justified)
-- [ ] Files are cohesive (<800 lines unless generated or framework-driven)
-- [ ] No deep nesting (>4 levels) without strong reason
-- [ ] Errors are handled explicitly
-- [ ] No hardcoded secrets or credentials
-- [ ] No console.log or stray debug statements
-- [ ] Tests exist for new functionality
-- [ ] Coverage is appropriate for the change and risk level
-
-## Security Review Triggers
-
-**STOP and use `security-reviewer` when:**
-
-- Authentication or authorization code
-- User input handling
-- Database queries
-- File system operations
-- External API calls
-- Cryptographic operations
-- Payment or financial code
-
-## Review Severity Levels
-
-| Level | Meaning | Action |
-|-------|---------|--------|
-| CRITICAL | Security vulnerability or data loss risk | **BLOCK** - Must fix before merge |
-| HIGH | Bug or significant quality issue | **WARN** - Should fix before merge |
-| MEDIUM | Maintainability concern | **INFO** - Consider fixing |
-| LOW | Style or minor suggestion | **NOTE** - Optional |
-
-## Agent Usage
-
-Use these agents for code review:
-
-| Agent | Purpose |
-|-------|---------|
-| **code-reviewer** | General code quality, patterns, best practices |
-| **security-reviewer** | Security vulnerabilities, OWASP Top 10 |
-| **typescript-reviewer** | TypeScript/JavaScript specific issues |
-| **python-reviewer** | Python specific issues |
-| **go-reviewer** | Go specific issues |
-| **rust-reviewer** | Rust specific issues |
-| **java-reviewer** | Java specific issues |
-| **kotlin-reviewer** | Kotlin specific issues |
-| **cpp-reviewer** | C/C++ specific issues |
-| **csharp-reviewer** | C# specific issues |
-| **flutter-reviewer** | Flutter and Dart specific issues |
-
-## Review Workflow
-
-```text
-1. Run git diff to understand changes
-2. Check security checklist first
-3. Review code quality checklist
-4. Run relevant tests
-5. Verify the claimed behavior actually works
-6. Use the appropriate agent for detailed review when needed
-```
-
-## Common Issues to Catch
-
-### Security
-
-- Hardcoded credentials (API keys, passwords, tokens)
-- SQL injection (string concatenation in queries)
-- XSS vulnerabilities (unescaped user input)
-- Path traversal (unsanitized file paths)
-- CSRF protection missing
-- Authentication bypasses
-
-### Code Quality
-
-- Large functions (>50 lines), split into smaller units when practical
-- Large files (>800 lines), extract modules where cohesion is weak
-- Deep nesting (>4 levels), prefer guard clauses and early returns
-- Missing error handling, handle explicitly
-- Mutation-heavy code, prefer clearer immutable or isolated state transitions
-- Missing tests, add coverage for critical paths
-
-### Performance
-
-- N+1 queries, use JOINs or batching
-- Missing pagination, add bounds to list endpoints
-- Unbounded queries, add limits and filters
-- Missing caching where repeated expensive work is obvious
-
-## Approval Criteria
-
-- **Approve**: No CRITICAL or HIGH issues
-- **Warning**: Only HIGH issues remain and are explicitly accepted
-- **Block**: CRITICAL issues found, or unverified risky behavior remains
-
-## Integration with Other Rules
-
-This rule works with:
-
-- [testing.md](testing.md) - test and verification requirements
-- [security.md](security.md) - security checklist
-- [git-workflow.md](git-workflow.md) - commit standards
-- [agents.md](agents.md) - agent delegation guidance
+- If review is taking more than 2 rounds without resolution, discuss synchronously. Async comment threads are inefficient for complex disagreements.
+- If a reviewer and author disagree on something important, escalate to a third reviewer rather than deadlocking.
+- Security findings are always blocking. No exceptions.

@@ -1,161 +1,37 @@
----
-paths:
-  - "**/*.dart"
-  - "**/pubspec.yaml"
-  - "**/analysis_options.yaml"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Dart/Flutter Coding Style
+# Dart Coding Style
 
-> This file extends [common/coding-style.md](../common/coding-style.md) with Dart and Flutter-specific content.
+Dart-specific coding standards following official Dart style guide.
 
 ## Formatting
 
-- **dart format** for all `.dart` files — enforced in CI (`dart format --set-exit-if-changed .`)
-- Line length: 80 characters (dart format default)
-- Trailing commas on multi-line argument/parameter lists to improve diffs and formatting
-
-## Immutability
-
-- Prefer `final` for local variables and `const` for compile-time constants
-- Use `const` constructors wherever all fields are `final`
-- Return unmodifiable collections from public APIs (`List.unmodifiable`, `Map.unmodifiable`)
-- Use `copyWith()` for state mutations in immutable state classes
-
-```dart
-// BAD
-var count = 0;
-List<String> items = ['a', 'b'];
-
-// GOOD
-final count = 0;
-const items = ['a', 'b'];
-```
+- `dart format` for automatic formatting. Enforce in CI.
+- `dart analyze` for static analysis. Zero warnings before committing.
 
 ## Naming
 
-Follow Dart conventions:
-- `camelCase` for variables, parameters, and named constructors
-- `PascalCase` for classes, enums, typedefs, and extensions
-- `snake_case` for file names and library names
-- `SCREAMING_SNAKE_CASE` for constants declared with `const` at top level
-- Prefix private members with `_`
-- Extension names describe the type they extend: `StringExtensions`, not `MyHelpers`
+- Classes, enums, typedefs: `UpperCamelCase`.
+- Variables, parameters, named parameters, methods: `lowerCamelCase`.
+- Constants: `lowerCamelCase` (Dart convention — not UPPER_SNAKE_CASE).
+- Library and file names: `snake_case`.
+- Private identifiers: `_leadingUnderscore`.
 
-## Null Safety
+## Type Annotations
 
-- Avoid `!` (bang operator) — prefer `?.`, `??`, `if (x != null)`, or Dart 3 pattern matching; reserve `!` only where a null value is a programming error and crashing is the right behaviour
-- Avoid `late` unless initialization is guaranteed before first use (prefer nullable or constructor init)
-- Use `required` for constructor parameters that must always be provided
+- Annotate public API with types. Omit types for local variables when they are obvious.
+- Prefer `final` over `var` for variables that are not reassigned.
+- Use `late` only when the variable will definitely be initialized before use — with a comment if the initialization is non-obvious.
 
-```dart
-// BAD — crashes at runtime if user is null
-final name = user!.name;
+## Dart Idioms
 
-// GOOD — null-aware operators
-final name = user?.name ?? 'Unknown';
+- Use `??` for null coalescing and `?.` for null-safe access.
+- Prefer `const` constructors for objects used as compile-time constants.
+- Use `factory` constructors for caching or for constructors that can fail.
+- `typedef` for complex function types: `typedef Predicate<T> = bool Function(T item)`.
+- Use collection if/for in collection literals for conditionally adding elements.
 
-// GOOD — Dart 3 pattern matching (exhaustive, compiler-checked)
-final name = switch (user) {
-  User(:final name) => name,
-  null => 'Unknown',
-};
+## Async Patterns
 
-// GOOD — early-return null guard
-String getUserName(User? user) {
-  if (user == null) return 'Unknown';
-  return user.name; // promoted to non-null after the guard
-}
-```
-
-## Sealed Types and Pattern Matching (Dart 3+)
-
-Use sealed classes to model closed state hierarchies:
-
-```dart
-sealed class AsyncState<T> {
-  const AsyncState();
-}
-
-final class Loading<T> extends AsyncState<T> {
-  const Loading();
-}
-
-final class Success<T> extends AsyncState<T> {
-  const Success(this.data);
-  final T data;
-}
-
-final class Failure<T> extends AsyncState<T> {
-  const Failure(this.error);
-  final Object error;
-}
-```
-
-Always use exhaustive `switch` with sealed types — no default/wildcard:
-
-```dart
-// BAD
-if (state is Loading) { ... }
-
-// GOOD
-return switch (state) {
-  Loading() => const CircularProgressIndicator(),
-  Success(:final data) => DataWidget(data),
-  Failure(:final error) => ErrorWidget(error.toString()),
-};
-```
-
-## Error Handling
-
-- Specify exception types in `on` clauses — never use bare `catch (e)`
-- Never catch `Error` subtypes — they indicate programming bugs
-- Use `Result`-style types or sealed classes for recoverable errors
-- Avoid using exceptions for control flow
-
-```dart
-// BAD
-try {
-  await fetchUser();
-} catch (e) {
-  log(e.toString());
-}
-
-// GOOD
-try {
-  await fetchUser();
-} on NetworkException catch (e) {
-  log('Network error: ${e.message}');
-} on NotFoundException {
-  handleNotFound();
-}
-```
-
-## Async / Futures
-
-- Always `await` Futures or explicitly call `unawaited()` to signal intentional fire-and-forget
-- Never mark a function `async` if it never `await`s anything
-- Use `Future.wait` / `Future.any` for concurrent operations
-- Check `context.mounted` before using `BuildContext` after any `await` (Flutter 3.7+)
-
-```dart
-// BAD — ignoring Future
-fetchData(); // fire-and-forget without marking intent
-
-// GOOD
-unawaited(fetchData()); // explicit fire-and-forget
-await fetchData();      // or properly awaited
-```
-
-## Imports
-
-- Use `package:` imports throughout — never relative imports (`../`) for cross-feature or cross-layer code
-- Order: `dart:` → external `package:` → internal `package:` (same package)
-- No unused imports — `dart analyze` enforces this with `unused_import`
-
-## Code Generation
-
-- Generated files (`.g.dart`, `.freezed.dart`, `.gr.dart`) must be committed or gitignored consistently — pick one strategy per project
-- Never manually edit generated files
-- Keep generator annotations (`@JsonSerializable`, `@freezed`, `@riverpod`, etc.) on the canonical source file only
+- Use `async/await` over raw `Future` chaining.
+- `Stream` for sequences of values over time.
+- `StreamController` for creating custom streams — always close it when done.
+- `unawaited()` (from `package:flutter/foundation.dart`) to explicitly mark fire-and-forget futures.

@@ -1,52 +1,59 @@
----
-paths:
-  - "**/*.cs"
-  - "**/*.csx"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# C# Patterns
+# C# Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with C#-specific content.
+C#-specific patterns for modern, maintainable code.
 
-## API Response Pattern
+## CQRS with MediatR
+
+Separate read and write operations:
 
 ```csharp
-public sealed record ApiResponse<T>(
-    bool Success,
-    T? Data = default,
-    string? Error = null,
-    object? Meta = null);
+// Command: changes state
+public record CreateOrderCommand(UserId UserId, IReadOnlyList<OrderLine> Lines) : IRequest<OrderId>;
+
+public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, OrderId> {
+    public async Task<OrderId> Handle(CreateOrderCommand cmd, CancellationToken ct) { ... }
+}
+
+// Query: reads state
+public record GetOrderQuery(OrderId OrderId) : IRequest<OrderDto?>;
 ```
 
-## Repository Pattern
+## Result Pattern
+
+Return explicit success/failure without exceptions for expected failure modes:
 
 ```csharp
-public interface IRepository<T>
-{
-    Task<IReadOnlyList<T>> FindAllAsync(CancellationToken cancellationToken);
-    Task<T?> FindByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task<T> CreateAsync(T entity, CancellationToken cancellationToken);
-    Task<T> UpdateAsync(T entity, CancellationToken cancellationToken);
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+public record Result<T> {
+    public bool IsSuccess { get; }
+    public T? Value { get; }
+    public string? Error { get; }
+    public static Result<T> Success(T value) => new(true, value, null);
+    public static Result<T> Failure(string error) => new(false, default, error);
 }
 ```
 
 ## Options Pattern
 
-Use strongly typed options for configuration instead of reading raw strings throughout the codebase.
+Configuration with `IOptions<T>`:
 
 ```csharp
-public sealed class PaymentsOptions
-{
-    public const string SectionName = "Payments";
-    public required string BaseUrl { get; init; }
-    public required string ApiKeySecretName { get; init; }
+public record FeatureFlags {
+    public bool EnableNewCheckout { get; init; }
+    public int MaxUploadSizeMB { get; init; }
 }
+// In DI: services.Configure<FeatureFlags>(configuration.GetSection("FeatureFlags"));
+// In service: constructor inject IOptions<FeatureFlags>
 ```
 
-## Dependency Injection
+## Specification Pattern
 
-- Depend on interfaces at service boundaries
-- Keep constructors focused; if a service needs too many dependencies, split responsibilities
-- Register lifetimes intentionally: singleton for stateless/shared services, scoped for request data, transient for lightweight pure workers
+Encapsulate query predicates as reusable objects:
+
+```csharp
+public abstract class Specification<T> {
+    public abstract Expression<Func<T, bool>> ToExpression();
+    public Specification<T> And(Specification<T> other) => new AndSpecification<T>(this, other);
+}
+
+// Usage: repository.Find(new ActiveUserSpec().And(new PremiumUserSpec()))
+```

@@ -1,95 +1,68 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Agent Design Rules
 
-# Rules for Writing Agents
+Standards for writing well-formed agents in the ARG ecosystem. These rules apply to all agent definitions in `agents/`.
 
-## Frontmatter (Required)
+## Frontmatter
 
-Every agent file must have YAML frontmatter with these fields:
+Every agent must have a valid YAML frontmatter block:
 
 ```yaml
 ---
-name: agent-name           # kebab-case, matches the filename
-description: |             # One sentence: what triggers this agent + what it does.
-  Expert [role]. Activate for [trigger]. Does [action].
-tools: Read, Grep, Bash    # Comma-separated list — only tools the agent actually needs
-model: sonnet              # Default model. Use 'opus' only for complex multi-step reasoning.
+name: agent-name
+description: [rich description for routing — include what it amplifies and specific trigger conditions]
+tools: [minimal set of tools needed]
+model: sonnet
 ---
 ```
 
-- `name` must match the filename exactly (without `.md`).
-- `description` must be specific enough that an orchestrator can route to this agent correctly — vague descriptions cause misrouting.
-- `tools` must be minimal — do not grant tools the agent does not use. Fewer tools = smaller attack surface and clearer intent.
-- Omit `model` to inherit the harness default. Only set it if this agent has different requirements.
+- `name`: lowercase, hyphenated, matches the filename.
+- `description`: used by routing systems to decide when to activate this agent. Make it specific. Include domain, trigger conditions, and what the agent produces.
+- `tools`: minimum set. Do not include tools the agent does not use. WebSearch requires justification.
+- `model`: default to `sonnet`. Use `opus` only for agents requiring extended reasoning on complex problems.
 
-## Tool Constraints
+## Structure
 
-- Grant only the tools the agent needs for its stated task:
-  - Read-only analysis agents: `Read, Grep` — no `Bash`, no `Edit`, no `Write`
-  - Code reviewers: `Read, Grep, Bash` (for `git diff`) — no `Edit`, no `Write`
-  - Code generators/fixers: `Read, Grep, Bash, Edit, Write`
-  - Orchestrators: `Read, Grep, Bash, Agent` (for spawning sub-agents)
-- Never grant `WebFetch` or `WebSearch` unless the agent's purpose explicitly requires external lookups.
-- Never grant `Agent` unless the agent is an orchestrator that spawns sub-agents.
+Every agent document must have:
+1. A **Mission** section: one sentence stating exactly what capability this agent amplifies.
+2. An **Activation** section: specific conditions (both when to use and when NOT to use).
+3. A **Protocol** section: numbered steps for autonomous execution.
+4. An **Amplification Techniques** section: what makes this agent produce 10x the baseline value.
+5. A **Done When** section: measurable, specific completion criteria.
 
-## Safe Behavior Rules
+## Mission Statement
 
-- **No silent side effects.** Agents that make changes (edit, write, delete) must report what they changed.
-- **No destructive operations without explicit justification.** Deleting files, dropping data, or overwriting configs must be requested by the user — not inferred.
-- **Validate inputs before acting.** If the agent receives a file path or identifier, verify it exists before operating on it.
-- **Scope creep is forbidden.** An agent asked to review a file must not silently edit it. An agent asked to plan must not silently implement.
-- **Surface uncertainty.** If the agent cannot determine the correct action with high confidence, it must say so and ask — not guess and act.
+The mission must be one sentence. It must describe what the agent amplifies, not just what it does. Agents amplify capability — they do not just perform tasks.
 
-## Description Writing Guidelines
+Bad: "Reviews Python code."
+Good: "Find every bug, vulnerability, and missed opportunity in Python code and provide concrete, runnable fixes."
 
-Good descriptions enable correct routing. A good description answers:
-1. **When to activate** — what user request or context triggers this agent?
-2. **What it does** — the specific action or output it produces.
-3. **What it does NOT do** — if there's a common confusion, clarify the boundary.
+## Activation Conditions
 
-```yaml
-# BAD — too vague
-description: Helps with code.
+Activation conditions must be specific enough to be used for automated routing. Vague conditions produce poor routing decisions.
 
-# BAD — too long / narrative
-description: |
-  This agent is an expert in reviewing TypeScript code. It uses its deep knowledge
-  of the TypeScript ecosystem to find bugs and suggest improvements. You should use
-  it when you want a TypeScript code review.
+Bad: "Use when reviewing code."
+Good: "Activate for PR review, pre-commit quality gate, or any change touching security, auth, data persistence, or external APIs."
 
-# GOOD — specific trigger + specific action
-description: |
-  TypeScript specialist. Activate for TS/TSX code review, type system questions,
-  or tsconfig issues. Reviews for type safety, strict-mode compliance, and common
-  TS anti-patterns. Does NOT handle runtime logic bugs — use code-reviewer for those.
-```
+Include negative conditions (when NOT to use) for agents with overlapping scope.
 
-## Prompt Body Structure
+## Protocol Steps
 
-Structure the agent's instructions in this order:
+- Each step must be actionable without human interpretation.
+- Each step produces a verifiable output or state change.
+- Steps should be ordered by dependency, not by importance.
+- Maximum 8 steps. More steps indicate the agent is doing too many things.
 
-1. **Role statement** — one sentence establishing expertise and perspective.
-2. **Process** — numbered steps the agent follows for its primary task.
-3. **Checklist or criteria** — what the agent looks for / produces.
-4. **Output format** — how results should be structured (e.g., severity-ranked findings, structured plan, numbered list).
-5. **Constraints** — what the agent must not do (scope boundaries).
+## Done When
 
-## Model Selection
+The Done When section defines when the agent has completed its work. Criteria must be:
+- Specific (not "review is complete")
+- Measurable (not "code is better")
+- Binary (done or not done, not "mostly done")
 
-| Task type | Model |
-|---|---|
-| Syntax/style review, simple transforms | `haiku` |
-| Code review, analysis, planning, most agents | `sonnet` (default) |
-| Multi-step reasoning, architecture design, complex orchestration | `opus` |
+## Amplification Mindset
 
-- Default to `sonnet`. Do not use `opus` unless the task demonstrably requires it.
-- Do not hardcode model IDs — use the canonical name (`haiku`, `sonnet`, `opus`).
-
-## Anti-Patterns to Avoid
-
-- **God agents** — one agent that does everything. Split by domain or phase (plan vs. implement vs. review).
-- **Overlapping descriptions** — two agents with similar descriptions cause routing ambiguity. Make boundaries explicit.
-- **Missing output format** — agents without a defined output format produce inconsistent results. Always specify how findings or output should be structured.
-- **Unbounded tool grants** — granting all tools "just in case" violates the principle of least privilege.
+Every agent in the ARG ecosystem is an intelligence amplifier. This means:
+- It does not just report — it produces actionable output.
+- It does not just identify problems — it proposes specific solutions.
+- It does not just complete the task — it leaves the system in a better state than it found it.
+- It captures what it learned so the next session starts smarter.

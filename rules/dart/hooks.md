@@ -1,68 +1,36 @@
----
-paths:
-  - "**/*.dart"
-  - "**/pubspec.yaml"
-  - "**/analysis_options.yaml"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Dart/Flutter Hooks
+# Dart + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with Dart and Flutter-specific content.
+Dart and Flutter-specific ARG hook considerations.
 
-## PostToolUse Hooks
+## Flutter Build Commands
 
-Configure in `~/.claude/settings.json`:
+Flutter commands that may trigger ARG:
+- `flutter build ipa --release` with distribution provisioning: uploads to App Store
+- `flutter build appbundle` followed by deployment scripts
+- `fastlane` commands for automated deployment
 
-- **dart format**: Auto-format `.dart` files after edit
-- **dart analyze**: Run static analysis after editing Dart files and surface warnings
-- **flutter test**: Optionally run affected tests after significant changes
+## pub.dev and Package Security
 
-## Recommended Hook Configuration
+- `dart pub get` from pubspec.yaml: downloads and executes build_runner scripts
+- `dart run build_runner build`: executes code generation that runs Dart code
+- Review new `pubspec.yaml` dependencies before `dart pub get` in unfamiliar projects
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": { "tool_name": "Edit", "file_paths": ["**/*.dart"] },
-        "hooks": [
-          { "type": "command", "command": "dart format $CLAUDE_FILE_PATHS" }
-        ]
-      }
-    ]
-  }
-}
-```
+## Dart Native and FFI
 
-## Pre-commit Checks
+Dart Native and FFI (Foreign Function Interface) can call C code:
+- FFI calls to system libraries may trigger ARG if they invoke dangerous operations
+- Dart Native binaries have access to the full file system
+- Review FFI bindings before running code that invokes native libraries
 
-Run before committing Dart/Flutter changes:
+## Platform Channel Commands
 
-```bash
-dart format --set-exit-if-changed .
-dart analyze --fatal-infos
-flutter test
-```
+Flutter platform channel code runs native code (Kotlin/Swift/ObjC/Java). If generating or running native code via platform channels, apply the native-language hook considerations.
 
-## Useful One-liners
+## Secrets in Flutter Projects
 
-```bash
-# Format all Dart files
-dart format .
+Common secret locations:
+- `lib/config/` files with hardcoded API keys
+- `google-services.json` and `GoogleService-Info.plist` (Firebase credentials)
+- `android/key.properties` (signing keystore passwords)
 
-# Analyze and report issues
-dart analyze
-
-# Run all tests with coverage
-flutter test --coverage
-
-# Regenerate code-gen files
-dart run build_runner build --delete-conflicting-outputs
-
-# Check for outdated packages
-flutter pub outdated
-
-# Upgrade packages within constraints
-flutter pub upgrade
-```
+All of these should be excluded from version control and stored in secure locations.

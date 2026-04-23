@@ -1,57 +1,43 @@
----
-paths:
-  - "**/*.go"
-  - "**/go.mod"
-  - "**/go.sum"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Go Patterns
+# Go Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with Go-specific content.
+Go-specific patterns for idiomatic, maintainable code.
 
-## Functional Options
+## Interface Design
 
-Use functional options for constructors that have several optional settings:
-
-```go
-type Option func(*Server)
-
-func WithPort(port int) Option {
-    return func(s *Server) { s.port = port }
-}
-
-func NewServer(opts ...Option) *Server {
-    s := &Server{port: 8080}
-    for _, opt := range opts {
-        opt(s)
-    }
-    return s
-}
-```
-
-## Small Interfaces
-
-Define interfaces where they are used, not where they are implemented. Keep them narrow.
-
-## Dependency Injection
-
-Use constructor functions to inject dependencies:
-
-```go
-func NewUserService(repo UserRepository, logger Logger) *UserService {
-    return &UserService{repo: repo, logger: logger}
-}
-```
-
-## Explicit Context Flow
-
-Pass `context.Context` explicitly through request and I/O boundaries. Do not hide it in globals or structs without need.
+- Interfaces belong in the package that uses them, not the package that implements them.
+- Small interfaces: prefer `io.Reader` (one method) over large interfaces with many methods.
+- Accept interfaces, return concrete types. This enables callers to provide any compatible implementation.
+- Compose interfaces from smaller ones: `io.ReadWriter` composes `io.Reader` and `io.Writer`.
 
 ## Error Wrapping
 
-Wrap errors with context using `%w` so callers can inspect root causes with `errors.Is` and `errors.As`.
+- Wrap errors at each boundary with context: `fmt.Errorf("operation X failed: %w", err)`.
+- Unwrap with `errors.Is()` and `errors.As()`. These work through the full error chain.
+- Custom error types for errors that need programmatic inspection:
+  ```go
+  type ValidationError struct { Field string; Message string }
+  func (e *ValidationError) Error() string { return e.Field + ": " + e.Message }
+  ```
 
-## References
+## Options Pattern
 
-See skill: `golang-patterns` for broader Go patterns including concurrency, error handling, and package organization.
+For functions with many optional parameters, the options pattern scales better than boolean flags:
+
+```go
+type ServerOption func(*Server)
+func WithTimeout(d time.Duration) ServerOption { return func(s *Server) { s.timeout = d } }
+func NewServer(addr string, opts ...ServerOption) *Server { ... }
+```
+
+## Context Propagation
+
+- First parameter of any function that performs I/O or long-running work should be `context.Context`.
+- Never store a context in a struct. Pass it per-call.
+- Use `context.WithTimeout` and `context.WithCancel` to propagate deadlines through call chains.
+- Check `ctx.Err()` at the start of long-running loops to respect cancellation.
+
+## Concurrency Patterns
+
+- Worker pool: a fixed number of goroutines reading from a shared work channel limits concurrency.
+- Pipeline: stages connected by channels. Each stage processes items and sends results downstream.
+- fan-out / fan-in: distribute work to multiple goroutines, collect results through a single output channel.

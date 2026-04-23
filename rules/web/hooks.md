@@ -1,125 +1,42 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Web + ARG Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with web-specific hook recommendations.
+Web development commands that may trigger ARG.
 
-# Web Hooks
+## Build and Bundler Operations
 
-## Recommended PostToolUse Hooks
+- `npm run build` or `vite build`: executes arbitrary build scripts and plugins
+- `webpack --config custom.js`: runs a custom config file
+- PostCSS and Babel plugins execute during build — can modify files or make network calls
 
-Prefer project-local tooling. Do not wire hooks to remote one-off package execution.
+## Package Management
 
-### Format on Save
+- `npm install` / `yarn install` / `pnpm install`: executes lifecycle scripts (`preinstall`, `postinstall`)
+- Lifecycle scripts in packages can run arbitrary code with full filesystem access
+- `npm publish`: uploads package to the public registry
 
-Use the project's existing formatter entrypoint after edits:
+## Dev Server Operations
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "command": "pnpm prettier --write \"$FILE_PATH\"",
-        "description": "Format edited frontend files"
-      }
-    ]
-  }
-}
-```
+- `vite --host 0.0.0.0`: exposes dev server on all interfaces
+- `next dev` or `nuxt dev`: starts a server with hot-reload
+- Custom `--port` flags that conflict with other services
 
-Equivalent local commands via `yarn prettier` or `npm exec prettier --` are fine when they use repo-owned dependencies.
+## Code Generation
 
-### Lint Check
+- `npx` commands execute remote packages inline
+- Framework generators (`ng generate`, `vue create`, `create-react-app`) write files
+- OpenAPI codegen scripts overwrite existing source files
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "command": "pnpm eslint --fix \"$FILE_PATH\"",
-        "description": "Run ESLint on edited frontend files"
-      }
-    ]
-  }
-}
-```
+## Browser Automation
 
-### Type Check
+- Playwright or Puppeteer scripts that:
+  - Clear cookies or localStorage
+  - Perform authenticated actions (form submits, purchases)
+  - Export or download user data
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "command": "pnpm tsc --noEmit --pretty false",
-        "description": "Type-check after frontend edits"
-      }
-    ]
-  }
-}
-```
+## Sensitive Web Assets
 
-### CSS Lint
+- `.env.local`, `.env.production` files with API keys
+- `src/config/` files with backend URLs and service credentials
+- Private keys for code signing or VAPID web push
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "command": "pnpm stylelint --fix \"$FILE_PATH\"",
-        "description": "Lint edited stylesheets"
-      }
-    ]
-  }
-}
-```
-
-## PreToolUse Hooks
-
-### Guard File Size
-
-Block oversized writes from tool input content, not from a file that may not exist yet:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write",
-        "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const c=i.tool_input?.content||'';const lines=c.split('\\n').length;if(lines>800){console.error('[Hook] BLOCKED: File exceeds 800 lines ('+lines+' lines)');console.error('[Hook] Split into smaller modules');process.exit(2)}console.log(d)})\"",
-        "description": "Block writes that exceed 800 lines"
-      }
-    ]
-  }
-}
-```
-
-## Stop Hooks
-
-### Final Build Verification
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "command": "pnpm build",
-        "description": "Verify the production build at session end"
-      }
-    ]
-  }
-}
-```
-
-## Ordering
-
-Recommended order:
-1. format
-2. lint
-3. type check
-4. build verification
+ARG pays extra attention to `npx` with non-pinned packages and lifecycle scripts in freshly installed packages.

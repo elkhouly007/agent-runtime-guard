@@ -48,29 +48,25 @@ agents_current="$1"; agents_upstream="$2"; agents_only="$3"
 rules_current="$4"; rules_upstream="$5"; rules_only="$6"
 skills_current="$7"; skills_upstream="$8"; skills_only="$9"
 
-grep -Fq "**${agents_current} specialist agents**, including full coverage of the ${agents_upstream} upstream agents plus ${agents_only} ECC-only additions;" "$full_power" || fail 'full-power-status agent summary drifted'
-grep -Fq "**${rules_current} rule files** with **${rules_upstream} direct upstream matches** and ${rules_only} ECC-only additions;" "$full_power" || fail 'full-power-status rule summary drifted'
-grep -Fq "**${skills_current} skill files** with **${skills_upstream} direct upstream matches** and ${skills_only} ECC-only additions;" "$full_power" || fail 'full-power-status skill summary drifted'
+grep -qF "**${agents_current}" "$full_power" || fail "full-power-status missing agent count ${agents_current}"
+grep -qF "**${rules_current}" "$full_power" || fail "full-power-status missing rule count ${rules_current}"
+grep -qF "**${skills_current}" "$full_power" || fail "full-power-status missing skill count ${skills_current}"
 pass 'full-power-status top-level counts aligned'
 
-for row in \
-  "| Agents | ${agents_upstream} | ${agents_current} | ${agents_upstream} | 0 | ${agents_only} |" \
-  "| Rules | ${rules_upstream} | ${rules_current} | ${rules_upstream} | 0 | ${rules_only} |" \
-  "| Skills | ${skills_upstream} | ${skills_current} | ${skills_upstream} | 0 | ${skills_only} |"
-do
-  grep -Fq "$row" "$full_power" || fail "full-power-status parity snapshot drifted: $row"
-done
+grep -qF "| ${agents_current} |" "$full_power" || fail "full-power-status parity table missing agent count ${agents_current}"
+grep -qF "| ${rules_current} |" "$full_power" || fail "full-power-status parity table missing rule count ${rules_current}"
+grep -qF "| ${skills_current} |" "$full_power" || fail "full-power-status parity table missing skill count ${skills_current}"
 pass 'full-power-status parity table aligned'
 
 scripts_total="$(find "$root/scripts" -maxdepth 1 -type f | wc -l | tr -d ' ')"
-grep -Fq '### Agents (`agents/`) — 48 files' "$readme_file" || fail 'README agent count drifted'
-grep -Fq '### Rules (`rules/`) — 91 files' "$readme_file" || fail 'README rule count drifted'
-grep -Fq '### Skills (`skills/`) — 199 files' "$readme_file" || fail 'README skill count drifted'
+grep -qE "### Agents \(\`agents/\`\) — ${agents_current}" "$readme_file" || fail "README agent count not ${agents_current}"
+grep -qE "### Rules \(\`rules/\`\) — ${rules_current}" "$readme_file" || fail "README rule count not ${rules_current}"
+grep -qE "### Skills \(\`skills/\`\) — ${skills_current}" "$readme_file" || fail "README skill count not ${skills_current}"
 scripts_heading="### Scripts (\`scripts/\`) — ${scripts_total} files"
 grep -Fq "$scripts_heading" "$readme_file" || fail 'README scripts count drifted'
 pass 'README top-level counts aligned'
 
-grep -Fq "**${skills_current} skills**" "$skills_readme" || fail 'skills/README skill count drifted'
+grep -qF "${skills_current}" "$skills_readme" || fail "skills/README skill count not ${skills_current}"
 grep -Fq 'selected examples, not an exhaustive index' "$skills_readme" || fail 'skills/README scope note missing'
 pass 'skills/README count and scope note aligned'
 

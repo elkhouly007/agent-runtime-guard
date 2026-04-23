@@ -71,17 +71,17 @@ Set `ECC_ENFORCE=1` to activate block mode (exit 2) for secret-warning, dangerou
 Set `ECC_HOOK_LOG=1` to log all detection events to `~/.openclaw/ecc-safe-plus/hook-events.log`.
 Set `ECC_KILL_SWITCH=1` to immediately block all `runtime.decide()` calls regardless of risk score — emergency override for unsafe sessions.
 
-### Agents (`agents/`) — 48 files
+### Agents (`agents/`) — 49 agents
 
-Specialist reviewers, planners, and resolvers: security-reviewer, architect, code-reviewer, tdd-guide, python/rust/go/kotlin/java/cpp/csharp/swift/typescript/flutter/dart reviewers, build-error-resolvers, performance-optimizer, a11y-architect, and more. See `agents/ROUTING.md` for quick-reference dispatch guide.
+Specialist reviewers, planners, and resolvers: security-reviewer, architect, code-reviewer, tdd-guide, python/rust/go/kotlin/java/cpp/csharp/swift/typescript/flutter/dart reviewers, build-error-resolvers, performance-optimizer, a11y-architect, and more. Every agent follows the ARG amplification philosophy: clear Mission, ARG-aware Activation, numbered Protocol, and measurable Done When criteria. See `agents/ROUTING.md` for quick-reference dispatch guide.
 
-### Rules (`rules/`) — 91 files
+### Rules (`rules/`) — 81 rule files
 
-Security, coding-style, patterns, testing, and performance rules across 15 language/domain categories. Security rules include OWASP coverage maps and BAD/GOOD code examples. All security rules are 150–400 lines.
+Security, coding-style, patterns, testing, hooks, and performance rules across 12 language directories (Python, TypeScript, Go, Rust, Java, C++, Kotlin, C#, Dart, Swift, Perl, PHP) plus common, database, infrastructure, and web domains. Every rule file is original content written for the ARG amplification philosophy.
 
-### Skills (`skills/`) — 199 files
+### Skills (`skills/`) — 22 skills
 
-Workflow entry points across code quality, security, testing, planning, language-specific patterns, infrastructure, LLM/agent, content, and ECC meta-skills. See `skills/README.md` for full category listing.
+High-leverage workflow entry points: ARG runtime debug, policy tuning, learning review, capability audit, deep code analysis, intelligence amplification, autonomous improvement, multi-agent debug, semantic refactor, test intelligence, deployment safety, context maximizer, orchestration design, workflow acceleration, pattern extraction, plus domain-specific skills for git workflows, multi-agent orchestration, and infrastructure patterns.
 
 ### Scripts (`scripts/`) — 48 files
 
@@ -137,8 +137,8 @@ Workflow entry points across code quality, security, testing, planning, language
 
 ### Documentation
 
-- `references/superiority-evidence.md` — measurable claims for where Agent Runtime Guard exceeds upstream
-- `references/final-comparison-audit.md` — two-round closeout audit of internal drift and upstream comparison
+- `references/capability-log.md` — capability growth log: what was added, when, and what it enables
+- `references/owasp-agentic-coverage.md` — OWASP Agentic Top 10 (2026) coverage matrix with file-level verdicts
 - `references/runtime-autonomy-roadmap.md` — next-cycle roadmap for autonomous decisioning and bounded self-operation
 - `scripts/runtime-state.js` — inspect runtime learned policy, pending suggestions, reviewed-default lifecycle timing and compact lifecycle summaries, record approvals, and explain project-aware decisions plus action plans locally
 - `SECURITY_MODEL.md` — trust boundaries, hook contract, known limitations
@@ -147,7 +147,7 @@ Workflow entry points across code quality, security, testing, planning, language
 - `risk-register.md` — risk inventory with current mitigations
 - `audit-notes.md` — construction notes on what was intentionally excluded
 - `CHANGELOG.md` — full version history
-- `references/` — 20 status, parity, policy, and audit reference documents
+- `references/` — 15 policy, coverage, and capability reference documents
 - `ecc.config.json.example` — per-project configuration template, including runtime trust posture, protected branches, and sensitive path patterns
 
 ## Optional Risky Extensions

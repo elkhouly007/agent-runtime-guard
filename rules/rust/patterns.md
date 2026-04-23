@@ -1,90 +1,67 @@
----
-paths:
-  - "**/*.rs"
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
-# Rust Patterns
+# Rust Design Patterns
 
-> This file extends [common/patterns.md](../common/patterns.md) with Rust-specific content.
+Rust-specific patterns for safe, expressive, high-performance code.
 
-## Repository Pattern with Traits
+## The Builder Pattern
 
-Encapsulate data access behind a trait:
+For structs with many optional fields, the builder pattern provides a type-safe construction API that is checked at compile time:
 
 ```rust
-pub trait OrderRepository: Send + Sync {
-    fn find_by_id(&self, id: u64) -> Result<Option<Order>, StorageError>;
-    fn find_all(&self) -> Result<Vec<Order>, StorageError>;
-    fn save(&self, order: &Order) -> Result<Order, StorageError>;
-    fn delete(&self, id: u64) -> Result<(), StorageError>;
-}
+let config = ServerConfig::builder()
+    .bind_addr("0.0.0.0:8080")
+    .max_connections(1000)
+    .timeout(Duration::from_secs(30))
+    .build()?;
 ```
 
-## Service Layer
+## Newtype Pattern
 
-Business logic belongs in service structs. Inject dependencies via constructors:
-
-```rust
-pub struct OrderService {
-    repo: Box<dyn OrderRepository>,
-    payment: Box<dyn PaymentGateway>,
-}
-
-impl OrderService {
-    pub fn new(repo: Box<dyn OrderRepository>, payment: Box<dyn PaymentGateway>) -> Self {
-        Self { repo, payment }
-    }
-}
-```
-
-## Newtype Pattern for Type Safety
-
-Prevent argument mix-ups with small wrapper types:
+Wrap primitives in newtypes to prevent type confusion:
 
 ```rust
 struct UserId(u64);
 struct OrderId(u64);
+// UserId and OrderId are now distinct types — passing one where the other is needed is a compile error
 ```
 
-## Enum State Machines
+## State Machine Types
 
-Model legal states explicitly and match exhaustively:
+Encode state transitions in the type system to prevent invalid state:
 
 ```rust
-enum ConnectionState {
-    Disconnected,
-    Connecting { attempt: u32 },
-    Connected { session_id: String },
-    Failed { reason: String, retries: u32 },
+struct Connection<S: ConnectionState> { inner: TcpStream, state: PhantomData<S> }
+impl Connection<Disconnected> {
+    fn connect(self) -> Result<Connection<Connected>, Error> { ... }
+}
+impl Connection<Connected> {
+    fn send(&mut self, data: &[u8]) -> Result<(), Error> { ... }
 }
 ```
 
-Avoid `_` wildcards for business-critical enums.
+## Iterator Adaptors
 
-## Builder Pattern
-
-Use builders for structs with several optional parameters.
-
-## Sealed Traits for Extensibility Control
-
-Use a private module to seal traits when external implementations must be prevented.
-
-## API Response Envelope
-
-Keep API response shape consistent:
+Build data transformation pipelines with iterators:
 
 ```rust
-#[derive(Debug, serde::Serialize)]
-#[serde(tag = "status")]
-pub enum ApiResponse<T: serde::Serialize> {
-    #[serde(rename = "ok")]
-    Ok { data: T },
-    #[serde(rename = "error")]
-    Error { message: String },
+let result: Vec<_> = data.iter()
+    .filter(|item| item.is_valid())
+    .map(|item| item.transform())
+    .take(100)
+    .collect();
+```
+
+## Error Conversion
+
+Use the `From` trait for ergonomic error conversion:
+
+```rust
+#[derive(thiserror::Error, Debug)]
+enum AppError {
+    #[error("database error: {0}")]
+    Database(#[from] sqlx::Error),
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
 }
 ```
 
-## References
-
-See skill: `rust-patterns` for broader patterns covering ownership, traits, generics, concurrency, and async.
+The `?` operator automatically calls `From::from()` when the error types have a conversion defined.

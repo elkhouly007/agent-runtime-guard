@@ -36,10 +36,9 @@ for file in \
   scripts/test-payload-protection.sh \
   references/payload-classification.md \
   references/payload-redaction.md \
-  references/upstream-sync.md \
   references/vendor-policy.md \
-  references/import-checklist.md \
-  references/import-report-template.md
+  references/capability-log.md \
+  references/owasp-agentic-coverage.md
  do
   if [ ! -f "$file" ]; then
     printf '%s\n' "Missing integration smoke file: $file" >&2

@@ -1,68 +1,44 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Web Design Quality
 
-> This file extends [common/patterns.md](../common/patterns.md) with web-specific design-quality guidance.
+Standards for high-quality web UI/UX.
 
-# Web Design Quality Standards
+## Visual Hierarchy
 
-## Anti-Template Policy
+- Size, weight, and color establish hierarchy — not just position.
+- Primary actions stand out. Secondary and tertiary actions recede.
+- Whitespace is a design element — dense layouts reduce comprehension.
+- Line length: 60–80 characters per line for body text readability.
 
-Do not ship generic template-looking UI. Frontend output should look intentional, opinionated, and specific to the product.
+## Typography
 
-### Banned Patterns
+- Maximum 2–3 typefaces per product. One for headings, one for body.
+- Type scale based on a ratio (1.25 major third, 1.333 perfect fourth).
+- Minimum 16px body text. Minimum 4.5:1 contrast ratio for normal text (WCAG AA).
+- Avoid all-caps for long text. Use CSS `text-transform: uppercase` on display text, not in HTML.
 
-- Default card grids with uniform spacing and no hierarchy
-- Stock hero sections with centered headline, gradient blob, and generic CTA
-- Unmodified library defaults passed off as finished design
-- Flat layouts with no layering, depth, or motion
-- Uniform radius, spacing, and shadows across every component
-- Safe gray-on-white styling with one decorative accent color
-- Dashboard-by-numbers layouts with sidebar + cards + charts and no point of view
-- Default font stacks used without deliberate reason
+## Color
 
-### Required Qualities
+- Color is never the only differentiator (color-blind users). Add icons, labels, or patterns.
+- Define a palette with semantic tokens: `--color-action`, `--color-danger`, `--color-success`.
+- Dark mode support via `prefers-color-scheme` media query using CSS custom properties.
+- Brand colors checked against WCAG contrast ratios before use on backgrounds.
 
-Every meaningful frontend surface should demonstrate at least four of these:
+## Interaction Design
 
-1. Clear hierarchy through scale contrast
-2. Intentional rhythm in spacing, not uniform padding everywhere
-3. Depth or layering through overlap, shadows, surfaces, or motion
-4. Typography with character and a real pairing strategy
-5. Color used semantically, not just decoratively
-6. Hover, focus, and active states that feel designed
-7. Grid-breaking editorial or bento composition where appropriate
-8. Texture, grain, or atmosphere when it fits the visual direction
-9. Motion that clarifies flow instead of distracting from it
-10. Data visualization treated as part of the design system, not an afterthought
+- Every interactive element has a visible focus state (keyboard navigation).
+- Loading states for actions >300ms. Skeleton screens for content areas.
+- Error messages explain what went wrong and how to fix it, not just that an error occurred.
+- Destructive actions require confirmation. Irreversible actions explain consequences.
 
-## Before Writing Frontend Code
+## Responsive Design
 
-1. Pick a specific style direction. Avoid vague defaults like "clean minimal".
-2. Define a palette intentionally.
-3. Choose typography deliberately.
-4. Gather at least a small set of real references.
-5. Use ECC design and frontend skills where relevant.
+- Test at 320px (small mobile), 768px (tablet), 1280px, and 1920px.
+- Touch targets minimum 44×44px (WCAG 2.5.8 / Apple HIG).
+- No horizontal scroll on any viewport width.
+- Overflow text uses `ellipsis` or clamp; never breaks layout.
 
-## Worthwhile Style Directions
+## Performance Perception
 
-- Editorial or magazine
-- Neo-brutalism
-- Glassmorphism with real depth
-- Dark or light luxury with disciplined contrast
-- Bento layouts
-- Scrollytelling
-- 3D integration
-- Swiss / International
-- Retro-futurism
-
-Do not default to dark mode automatically. Choose the visual direction the product actually wants.
-
-## Component Checklist
-
-- [ ] Avoids looking like a default Tailwind or shadcn template
-- [ ] Has intentional hover, focus, and active states
-- [ ] Uses hierarchy rather than uniform emphasis
-- [ ] Would look believable in a real product screenshot
-- [ ] If it supports both themes, both light and dark feel intentional
+- First Contentful Paint < 1.8s. Largest Contentful Paint < 2.5s.
+- No layout shift after initial render (CLS < 0.1).
+- Instant feedback on user actions — never leave a user wondering if a click registered.

@@ -1,79 +1,54 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# ARG Hooks
 
-# Hooks System
+Configuration rules for Agent Runtime Guard hooks. These hooks protect the tool call execution layer.
 
-## Purpose
+## Overview
 
-Hooks are a lightweight control layer around tool execution. In Agent Runtime Guard they should add visibility, friction, and optional enforcement without becoming a hidden source of side effects.
+ARG hooks intercept PreToolUse events before a tool call executes. They scan for dangerous commands, secret exposure, and policy violations. Understanding how they work allows you to configure them correctly.
 
-## Hook Types
+## Hook Activation
 
-- **PreToolUse**: Before tool execution, for validation and warnings
-- **PostToolUse**: After tool execution, for reminders, lightweight checks, and follow-up cues
-- **Stop / SessionEnd**: When a session ends, for final review or metadata capture
-- **SessionStart**: When a session starts, for restoring safe local context
+ARG hooks activate on every tool call where `ECC_HOOKS=1` is set or when the hook files are installed in the Claude Code hooks configuration. They run synchronously before the tool executes.
 
-## Safe Hook Contract
+- `dangerous-command-gate.js`: scans Bash commands for dangerous patterns (rm -rf, curl|sh, force-push, DROP TABLE, etc.)
+- `secret-warning.js`: scans all tool inputs for secrets (API keys, tokens, private keys, connection strings)
+- `git-push-reminder.js`: intercepts git push operations, especially force-push
 
-Hooks should:
+## Enforcement Modes
 
-- read only the JSON payload provided on stdin;
-- inspect local text only unless an external module is explicitly documented;
-- write warnings to stderr;
-- echo the original JSON unchanged unless a documented safe transform is intended;
-- avoid network calls by default;
-- avoid hidden writes or hidden installs;
-- fail predictably and visibly.
+- **Warn mode** (default): dangerous patterns trigger a warning to stderr but the command proceeds. Useful for learning which patterns trigger the gate.
+- **Enforce mode** (`ECC_ENFORCE=1`): dangerous patterns cause the hook to exit code 2, aborting the tool call. Use this in production and CI environments.
 
-## Approval and Enforcement
+Set enforcement mode in your environment:
+```bash
+export ECC_ENFORCE=1  # enforce mode — blocks dangerous commands
+export ECC_ENFORCE=0  # warn mode (default)
+```
 
-Use enforcement carefully:
+## Policy Store
 
-- Enable block mode only for clearly high-risk behaviors
-- Default to warnings for ambiguous situations
-- Never rely on a hook as the only safety boundary
-- Never use silent permission auto-approval
-- Prefer explicit reviewed configuration over bypass flags
+The ARG runtime maintains a policy store at `$ECC_STATE_DIR/policy.json` (default: `~/.openclaw/ecc-safe-plus/policy.json`).
 
-## Good Hook Design
+- **Learned allow**: policies learned from repeated approvals. Once approved N times, automatically allowed.
+- **Auto-allow-once**: temporary grants for single-use approvals.
+- **Kill switch**: `ECC_KILL_SWITCH=1` disables the runtime decision engine entirely. The hook still runs, but only severity-based fallbacks apply.
 
-- Keep logic narrow and deterministic
-- Prefer pattern files or config over hardcoded regex sprawl
-- Log metadata, not payload content
-- Rate-limit noisy hooks when they trigger often
-- Make verification easy with fixture tests and integrity checks
+## Test Isolation
 
-## Multi-Step Work Tracking
+Always set `ECC_STATE_DIR` to a temporary directory in tests. The runtime reads and writes state files; without isolation, tests can interfere with each other and with your live session state.
 
-Use explicit task tracking when the harness supports it:
+```bash
+export ECC_STATE_DIR=$(mktemp -d)
+# run your tests
+# state is isolated
+```
 
-- Track progress on multi-step work
-- Verify understanding before broad edits
-- Keep steps granular enough to steer
-- Surface missing or out-of-order work early
+## Hook Log
 
-A good task list reveals:
+Hooks emit JSONL events to `$ECC_STATE_DIR/hook-events.log` when `ECC_HOOK_LOG=1`. Each line is a valid JSON object with: `timestamp`, `hook`, `action`, `pattern`. Use this log for auditing and for understanding what ARG is doing.
 
-- out-of-order steps
-- missing items
-- extra unnecessary items
-- wrong granularity
-- misinterpreted requirements
+## Adding New Patterns
 
-## Agent Runtime Guard Guidance
+To add a pattern to the dangerous-command-gate, add an entry to the `DANGEROUS_PATTERNS` array in `claude/hooks/dangerous-command-gate.js`. Each entry needs: `name`, `pattern` (regex), `severity` (critical/high/medium), and `reason`.
 
-- Prefer project-local hook wiring over global hidden mutation
-- Verify hook paths after installation
-- Keep hooks readable enough to audit manually
-- Treat hook output as advisory evidence unless block mode is explicitly enabled and documented
-
-## Anti-Patterns
-
-- Hooks that silently mutate user content
-- Hooks that fetch dependencies at runtime
-- Hooks that send telemetry without explicit documentation
-- Hooks that auto-approve dangerous actions
-- Hooks that depend on fragile global machine state
+To add a pattern to the secret scanner, add to the `SECRET_PATTERNS` array in `claude/hooks/secret-warning.js`. Include: `name`, `pattern` (regex), and optionally `hint` for the warning message.

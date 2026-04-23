@@ -1,132 +1,49 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# Go Testing
 
-# Go Testing Rules
+Go-specific testing standards.
 
-## Toolchain
+## Framework
 
-- Use the standard `testing` package — no external test framework required.
-- `testify/assert` and `testify/require` for readable assertions.
-- `testify/mock` for mocks when needed; prefer interface-based fakes over heavy mocking.
-- `httptest` for HTTP handler tests.
-- `pgx` + `testcontainers-go` for database integration tests.
+- `testing` package (standard library) for unit tests.
+- `testify/assert` and `testify/require` for assertion helpers. `require` stops the test on first failure; `assert` continues.
+- `testify/mock` or `gomock` for interface mocking.
+- `net/http/httptest` for HTTP handler testing.
 
-## File and Function Naming
+## Test Structure
 
-```go
-// File: order_service_test.go (same package for white-box, _test suffix for black-box)
-func TestCreateOrder_ValidInput_ReturnsOrder(t *testing.T) { ... }
-func TestCreateOrder_BlankName_ReturnsError(t *testing.T) { ... }
-```
+- Test files: `foo_test.go` in the same package as `foo.go`.
+- Black-box tests (testing exported API only): use `package foo_test` (package name with `_test` suffix).
+- White-box tests (testing internals): use `package foo` (same package).
+- Table-driven tests are idiomatic Go. Use a slice of test cases with `name`, `input`, and `expected` fields.
 
 ## Table-Driven Tests
 
 ```go
-func TestValidateEmail(t *testing.T) {
-    tests := []struct {
-        name    string
-        input   string
-        wantErr bool
-    }{
-        {"valid email", "user@example.com", false},
-        {"empty string", "", true},
-        {"no at sign", "userexample.com", true},
-    }
-
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            err := validateEmail(tt.input)
-            if tt.wantErr {
-                require.Error(t, err)
-            } else {
-                require.NoError(t, err)
-            }
-        })
-    }
+tests := []struct {
+    name     string
+    input    string
+    expected string
+    wantErr  bool
+}{
+    {"valid input", "foo", "FOO", false},
+    {"empty input", "", "", true},
+}
+for _, tt := range tests {
+    t.Run(tt.name, func(t *testing.T) {
+        // test body
+    })
 }
 ```
 
-- Table-driven tests are idiomatic Go — use them for any function with multiple input scenarios.
-- Use `t.Run` for subtests — they run independently and can be filtered.
+## What to Test
 
-## Interface-Based Fakes (Preferred over Mocks)
-
-```go
-// Interface definition
-type UserRepository interface {
-    FindByID(ctx context.Context, id string) (*User, error)
-    Save(ctx context.Context, user *User) error
-}
-
-// Fake for tests
-type fakeUserRepo struct {
-    users map[string]*User
-}
-
-func (r *fakeUserRepo) FindByID(_ context.Context, id string) (*User, error) {
-    u, ok := r.users[id]
-    if !ok {
-        return nil, ErrNotFound
-    }
-    return u, nil
-}
-
-func (r *fakeUserRepo) Save(_ context.Context, user *User) error {
-    r.users[user.ID] = user
-    return nil
-}
-```
-
-- Define interfaces in the package that uses them — not the package that implements them.
-- Hand-written fakes are simpler than generated mocks for most cases.
-
-## HTTP Handler Tests
-
-```go
-func TestOrderHandler_Create(t *testing.T) {
-    repo := &fakeOrderRepo{}
-    handler := NewOrderHandler(repo)
-
-    body := strings.NewReader(`{"product_id":"p1","quantity":2}`)
-    req := httptest.NewRequest(http.MethodPost, "/orders", body)
-    req.Header.Set("Content-Type", "application/json")
-    rec := httptest.NewRecorder()
-
-    handler.ServeHTTP(rec, req)
-
-    require.Equal(t, http.StatusCreated, rec.Code)
-}
-```
-
-## Parallel Tests
-
-```go
-func TestSomething(t *testing.T) {
-    t.Parallel()  // mark as safe to run in parallel
-    // ...
-}
-```
-
-- Mark independent tests `t.Parallel()` — speeds up test runs significantly.
-- Do not share mutable state between parallel subtests.
+- Test exported behavior, not implementation details.
+- Test error paths. Go error handling is explicit; test every error case.
+- Test concurrent code with `-race` flag: `go test -race ./...`
+- Benchmark hot paths: `func BenchmarkXxx(b *testing.B) { for i := 0; i < b.N; i++ { ... } }`
 
 ## Test Helpers
 
-```go
-func mustCreateOrder(t *testing.T, repo OrderRepository, req CreateRequest) *Order {
-    t.Helper()  // marks this as a helper — errors point to the caller
-    order, err := repo.Create(context.Background(), req)
-    require.NoError(t, err)
-    return order
-}
-```
-
-- Use `t.Helper()` in helper functions so test failures show the correct call site.
-
-## What NOT to Test
-
-- Standard library behavior.
-- Third-party library internals.
-- Unexported functions directly — test them through the exported API.
+- Helper functions: call `t.Helper()` as the first line so failures report the caller's line number.
+- Use `t.Cleanup()` for teardown instead of deferred calls (works correctly with t.Parallel()).
+- `t.Parallel()` for tests that do not share state. Parallel tests find race conditions.

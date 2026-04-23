@@ -1,138 +1,39 @@
----
-last_reviewed: 2026-04-22
-version_target: "Best Practices"
----
+# C# Testing
 
-# C# Testing Rules
+C#-specific testing standards.
 
-## Toolchain
+## Framework
 
-- xUnit for test runner — not NUnit or MSTest (xUnit is the modern default).
-- Moq or NSubstitute for mocking interfaces.
-- FluentAssertions for readable assertions.
-- `Microsoft.AspNetCore.Mvc.Testing` for integration tests.
-- Bogus or AutoFixture for test data generation.
+- xUnit for unit and integration tests (preferred in .NET ecosystem).
+- Moq or NSubstitute for mocking.
+- FluentAssertions for readable assertion syntax.
+- Testcontainers-dotnet for integration tests with real databases.
+- ASP.NET Core `WebApplicationFactory<T>` for integration testing HTTP endpoints.
 
-## Test Naming
+## Test Structure
 
-```csharp
-// [Method]_[Scenario]_[ExpectedBehavior]
-[Fact]
-public async Task CreateOrder_ValidRequest_ReturnsCreatedOrder() { ... }
-
-[Fact]
-public async Task CreateOrder_BlankProductId_ThrowsArgumentException() { ... }
-```
-
-## Unit Tests with Moq
-
-```csharp
-public class OrderServiceTests
-{
-    private readonly Mock<IOrderRepository> _repoMock = new();
-    private readonly OrderService _sut;
-
-    public OrderServiceTests()
-    {
-        _sut = new OrderService(_repoMock.Object);
-    }
-
-    [Fact]
-    public async Task CreateOrder_ValidRequest_SavesAndReturnsDto()
-    {
-        var order = new Order { Id = "1", ProductId = "p1" };
-        _repoMock.Setup(r => r.SaveAsync(It.IsAny<Order>(), default))
-                 .ReturnsAsync(order);
-
-        var result = await _sut.CreateAsync(new CreateOrderRequest("p1", 2));
-
-        result.ProductId.Should().Be("p1");
-        _repoMock.Verify(r => r.SaveAsync(It.IsAny<Order>(), default), Times.Once);
-    }
-}
-```
-
-- Use `_sut` (System Under Test) as the naming convention for the class being tested.
-- Use `It.IsAny<T>()` sparingly — be specific when the argument matters.
-
-## Theory / Parameterized Tests
+- Test class naming: `UserServiceTests` for testing `UserService`.
+- Test method naming: `GetUser_WhenUserNotFound_ReturnsNull` or `Should_ReturnError_When_TokenExpired`.
+- Use `[Theory]` with `[InlineData]` or `[MemberData]` for parameterized tests.
 
 ```csharp
 [Theory]
-[InlineData("")]
-[InlineData("   ")]
-[InlineData(null)]
-public async Task CreateOrder_BlankName_ThrowsValidationException(string? name)
-{
-    var act = async () => await _sut.CreateAsync(new CreateOrderRequest(name!, 1));
-    await act.Should().ThrowAsync<ValidationException>();
+[InlineData("", "Email is required")]
+[InlineData("notanemail", "Invalid email format")]
+public void Validate_InvalidEmail_ReturnsError(string email, string expectedMessage) {
+    var result = validator.Validate(new CreateUserRequest { Email = email });
+    result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedMessage);
 }
 ```
 
-## ASP.NET Core Integration Tests
+## Async Testing
 
-```csharp
-public class OrdersEndpointTests : IClassFixture<WebApplicationFactory<Program>>
-{
-    private readonly HttpClient _client;
+- `async Task` return type for async test methods (not `async void`).
+- Do not use `.Wait()` or `.Result` in tests.
+- `CancellationToken` in tests: use `CancellationToken.None` or `TestContext.Current.CancellationToken`.
 
-    public OrdersEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        _client = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureServices(services =>
-                services.AddSingleton<IOrderRepository, FakeOrderRepository>()))
-            .CreateClient();
-    }
+## Integration Tests
 
-    [Fact]
-    public async Task PostOrder_ValidBody_Returns201()
-    {
-        var response = await _client.PostAsJsonAsync("/api/v1/orders",
-            new { productId = "p1", quantity = 2 });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-}
-```
-
-- Use `WebApplicationFactory<Program>` with `WithWebHostBuilder` to replace real services with fakes.
-- `IClassFixture<T>` shares the factory across tests in the class — faster than creating it per test.
-
-## FluentAssertions
-
-```csharp
-// Object assertions
-result.Should().NotBeNull();
-result.ProductId.Should().Be("p1");
-
-// Collection assertions
-orders.Should().HaveCount(3).And.Contain(o => o.Status == OrderStatus.Pending);
-
-// Exception assertions
-act.Should().ThrowAsync<ValidationException>()
-   .WithMessage("*required*");
-```
-
-## Fake Repository Pattern
-
-```csharp
-internal sealed class FakeOrderRepository : IOrderRepository
-{
-    private readonly List<Order> _store = new();
-
-    public Task<Order> SaveAsync(Order order, CancellationToken ct = default)
-    {
-        _store.Add(order);
-        return Task.FromResult(order);
-    }
-
-    public Task<Order?> FindByIdAsync(string id, CancellationToken ct = default) =>
-        Task.FromResult(_store.FirstOrDefault(o => o.Id == id));
-}
-```
-
-## What NOT to Test
-
-- Auto-generated EF Core migrations.
-- Simple POCO property accessors.
-- Framework routing and middleware behavior (trust ASP.NET Core).
+- `WebApplicationFactory<Program>` for testing ASP.NET controllers with real routing and middleware.
+- Testcontainers for database integration: spin up a real database in a container per test run.
+- Reset database state between tests: use transactions rolled back in `Dispose()` or reset via SQL.
