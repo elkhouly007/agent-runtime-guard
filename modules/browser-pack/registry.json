@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "default_policy": "read-first-reviewed",
+  "rules": [
+    "prefer read-oriented browsing first",
+    "writes, uploads, purchases, settings changes, or destructive actions require approval",
+    "reject hidden destinations or write-like actions disguised as reads"
+  ],
+  "capabilities": [
+    {
+      "id": "site-read-reviewed",
+      "class": "read-only",
+      "status": "candidate",
+      "notes": "Read-oriented browser inspection with clear destination."
+    },
+    {
+      "id": "form-submit-gated",
+      "class": "write-gated",
+      "status": "candidate",
+      "notes": "Form submission or similar browser writes that require approval."
+    }
+  ]
+}

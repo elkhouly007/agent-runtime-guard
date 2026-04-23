@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "default_policy": "reviewed-external-allowed",
+  "requirements": [
+    "identify agent or harness",
+    "review outbound payload before send",
+    "block personal/confidential/secret data unless user approved",
+    "block deletion requests without user approval",
+    "block elevated or global high-risk actions without user approval"
+  ],
+  "notes": [
+    "Trusted external agents are acceptable when the harness is known and the payload is reviewed.",
+    "Prompt-only sharing is acceptable when it does not include personal or confidential data."
+  ]
+}

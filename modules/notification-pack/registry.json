@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "default_policy": "local-first-reviewed",
+  "rules": [
+    "prefer local notifications first",
+    "external notifications require reviewed destination and content",
+    "block personal/confidential/secret notification payloads without user approval"
+  ],
+  "notifications": [
+    {
+      "id": "desktop-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Local-only desktop notification path."
+    },
+    {
+      "id": "ops-status-reviewed",
+      "class": "external",
+      "status": "candidate",
+      "notes": "External operational status notifications to a known trusted destination."
+    }
+  ]
+}

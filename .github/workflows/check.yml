@@ -1,0 +1,113 @@
+name: Agent Runtime Guard CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  check:
+    name: Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            bench_p99_ms: "10"
+          - os: windows-latest
+            bench_p99_ms: "500"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Status summary
+        run: bash scripts/status-summary.sh
+
+      - name: Audit local (scripts + hooks)
+        run: bash scripts/audit-local.sh
+
+      - name: Audit examples (prose + GOOD blocks)
+        # Exit 1 only if risky patterns found — known false positives allowed via exclusions
+        run: |
+          bash scripts/audit-examples.sh || {
+            echo "audit-examples found matches — review output above."
+            exit 1
+          }
+
+      - name: Hook integrity check
+        run: bash scripts/verify-hooks-integrity.sh
+
+      - name: Run fixtures (classify + hooks + redact)
+        run: bash scripts/run-fixtures.sh
+
+      - name: Check registries
+        run: bash scripts/check-registries.sh
+
+      - name: Check skills (errors only)
+        run: bash scripts/check-skills.sh --errors-only
+
+      - name: Integration smoke test
+        run: bash scripts/check-integration-smoke.sh
+
+      - name: Check installation
+        run: bash scripts/check-installation.sh
+
+      - name: Check config integration
+        run: bash scripts/check-config-integration.sh
+
+      - name: Check runtime core
+        run: bash scripts/check-runtime-core.sh
+
+      - name: Check runtime CLI
+        run: bash scripts/check-runtime-cli.sh
+
+      - name: Check hook edge cases
+        run: bash scripts/check-hook-edge-cases.sh
+
+      - name: Check apply status
+        run: bash scripts/check-apply-status.sh
+
+      - name: Check executables
+        run: bash scripts/check-executables.sh
+
+      - name: Check setup wizard
+        run: bash scripts/check-setup-wizard.sh
+
+      - name: Check wiring docs
+        run: bash scripts/check-wiring-docs.sh
+
+      - name: Check superiority evidence
+        run: bash scripts/check-superiority-evidence.sh
+
+      - name: Check status docs
+        run: bash scripts/check-status-docs.sh
+
+      - name: Check status artifact
+        run: bash scripts/check-status-artifact.sh
+
+      - name: Check fixture count
+        run: bash scripts/check-fixture-count.sh
+
+      - name: Check harness support
+        run: bash scripts/check-harness-support.sh
+
+      - name: Check OWASP coverage
+        run: bash scripts/check-owasp-coverage.sh
+
+      - name: Check scenarios
+        run: bash scripts/check-scenarios.sh
+
+      - name: Runtime decision bench
+        run: ECC_BENCH_P99_MS=${{ matrix.bench_p99_ms }} bash scripts/bench-runtime-decision.sh

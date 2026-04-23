@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x C:/Users/Khouly/projects/agent-runtime-guard/scripts/check-fixture-count.sh)",
+      "Bash(bash C:/Users/Khouly/projects/agent-runtime-guard/scripts/check-fixture-count.sh)",
+      "Bash(bash C:/Users/Khouly/projects/agent-runtime-guard/scripts/check-status-artifact.sh)",
+      "Bash(where node *)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/Khouly/AppData/Roaming/**)",
+      "Bash(cmd.exe /c \"node --version 2>&1\")",
+      "Bash(cmd.exe /c \"where node 2>&1\")",
+      "Bash(awk --version)",
+      "Bash(awk ' *)"
+    ]
+  }
+}

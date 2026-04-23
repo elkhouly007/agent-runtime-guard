@@ -1,0 +1,72 @@
+{
+  "default_agent": "builder",
+  "instructions": [
+    "../claude/AGENTS.md",
+    "prompts/planner.md",
+    "prompts/code-review.md",
+    "prompts/security-review.md",
+    "prompts/build-fix.md"
+  ],
+  "permission": {
+    "read": "ask",
+    "write": "ask",
+    "edit": "ask",
+    "bash": "ask"
+  },
+  "agent": {
+    "builder": {
+      "description": "Primary local coding agent. Can read, write, and edit after permission. Bash is disabled by default.",
+      "mode": "primary",
+      "tools": {
+        "read": true,
+        "write": true,
+        "edit": true,
+        "bash": false
+      }
+    },
+    "planner": {
+      "description": "Read-only planning agent for feature breakdowns, refactors, and migration plans.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/planner.md}",
+      "tools": {
+        "read": true,
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "reviewer": {
+      "description": "Read-only code reviewer focused on bugs, regressions, tests, and maintainability.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/code-review.md}",
+      "tools": {
+        "read": true,
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "security-reviewer": {
+      "description": "Read-only security reviewer for auth, secrets, input handling, command execution, and data exposure.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/security-review.md}",
+      "tools": {
+        "read": true,
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "build-fixer": {
+      "description": "Local build and type error resolver. Edits only after permission; bash remains disabled until explicitly enabled.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/build-fix.md}",
+      "tools": {
+        "read": true,
+        "write": true,
+        "edit": true,
+        "bash": false
+      }
+    }
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "_comment": "Dangerous shell command patterns for dangerous-command-gate.js. Add project-specific patterns here. Each entry has: name (display label), pattern (JS regex string), severity (critical|high|medium), reason (why it is dangerous). The hook checks the Bash command against these patterns in order and stops at the first match.",
+  "_enforce_note": "Set ECC_ENFORCE=1 to activate block mode. In warn mode (default) the hook prints a warning to stderr and lets the command proceed. In block mode the hook exits with code 2 and aborts the tool call.",
+
+  "patterns": [
+
+    {
+      "name": "rm recursive force",
+      "pattern": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r|--recursive)\\b",
+      "severity": "critical",
+      "reason": "Recursive forced deletion is irreversible. Deleting files requires Ahmed's explicit approval per Agent Runtime Guard policy."
+    },
+    {
+      "name": "rm no-preserve-root",
+      "pattern": "\\brm\\b.*--no-preserve-root",
+      "severity": "critical",
+      "reason": "Removes the safeguard preventing deletion of root filesystem. Never allowed."
+    },
+    {
+      "name": "git push force",
+      "pattern": "\\bgit\\s+push\\b.*(-f\\b|--force\\b|--force-with-lease\\b)",
+      "severity": "critical",
+      "reason": "Force push can overwrite shared history and destroy teammates' work. Requires explicit approval."
+    },
+    {
+      "name": "DROP DATABASE / DROP TABLE",
+      "pattern": "\\b(DROP\\s+(DATABASE|TABLE|SCHEMA)|TRUNCATE\\s+TABLE)\\b",
+      "severity": "critical",
+      "reason": "Destroys database objects irreversibly. Requires explicit approval per shell policy.",
+      "flags": "i"
+    },
+    {
+      "name": "curl pipe to shell",
+      "pattern": "\\bcurl\\b.*\\|\\s*(ba)?sh\\b|\\bwget\\b.*\\|\\s*(ba)?sh\\b",
+      "severity": "critical",
+      "reason": "Executes untrusted remote code directly — violates Agent Runtime Guard no-unreviewed-remote-execution policy."
+    },
+    {
+      "name": "mkfs (disk format)",
+      "pattern": "\\bmkfs\\b",
+      "severity": "critical",
+      "reason": "Formats a disk partition — irreversible data loss. Never auto-approved."
+    },
+    {
+      "name": "dd destructive disk write",
+      "pattern": "\\bdd\\b.*\\bof=(/dev/|/dev/sd|/dev/nvme)",
+      "severity": "critical",
+      "reason": "Writes raw data to a disk device — can destroy filesystems."
+    },
+    {
+      "name": "sudo with destructive command",
+      "pattern": "\\bsudo\\s+(rm|dd|mkfs|fdisk|parted|wipefs|shred)\\b",
+      "severity": "critical",
+      "reason": "Elevated destructive command. Requires explicit approval."
+    },
+    {
+      "name": "npx -y (auto-download execution)",
+      "pattern": "\\bnpx\\s+(-y\\b|--yes\\b)",
+      "severity": "high",
+      "reason": "Automatically downloads and executes remote npm packages — violates Agent Runtime Guard policy."
+    },
+    {
+      "name": "chmod world-writable",
+      "pattern": "\\bchmod\\b.*(777|0777|a\\+w)",
+      "severity": "high",
+      "reason": "Makes files world-writable — opens privilege escalation paths."
+    },
+    {
+      "name": "git reset hard",
+      "pattern": "\\bgit\\s+reset\\s+--hard\\b",
+      "severity": "high",
+      "reason": "Discards all uncommitted changes and can discard commits — irreversible without reflog."
+    },
+    {
+      "name": "git clean force",
+      "pattern": "\\bgit\\s+clean\\s+(-f\\b|-fd\\b|-ffx\\b|.*--force)",
+      "severity": "high",
+      "reason": "Deletes untracked files permanently. Requires explicit intent."
+    },
+    {
+      "name": "DELETE without WHERE",
+      "pattern": "\\bDELETE\\s+FROM\\s+\\w+\\s*;",
+      "severity": "high",
+      "reason": "Deletes all rows in a table with no WHERE clause — likely unintentional.",
+      "flags": "i"
+    },
+    {
+      "name": "sudo generic elevation",
+      "pattern": "^\\s*sudo\\s+",
+      "severity": "medium",
+      "reason": "Elevated privilege execution. Confirm this is intentional and necessary."
+    },
+    {
+      "name": "kill -9 / killall",
+      "pattern": "\\bkill\\s+(-9\\b|-SIGKILL\\b)|\\bkillall\\b",
+      "severity": "medium",
+      "reason": "Force-kills processes without cleanup. Can leave data in corrupt state."
+    },
+    {
+      "name": "chmod recursive",
+      "pattern": "\\bchmod\\s+-R\\b",
+      "severity": "medium",
+      "reason": "Recursively changes permissions on many files — easy to accidentally open or lock down a directory tree."
+    },
+    {
+      "name": "shred (secure delete)",
+      "pattern": "\\bshred\\b",
+      "severity": "medium",
+      "reason": "Securely overwrites files making recovery impossible."
+    },
+
+    {
+      "name": "prompt injection — ignore instructions",
+      "pattern": "ignore\\s+(previous|all|prior|earlier|system)\\s+(instructions?|rules?|prompt|directives?|constraints?)",
+      "severity": "medium",
+      "reason": "Classic prompt injection attempt — instructs the model to discard safety rules. Commands containing this phrasing are almost always injected, not authored.",
+      "flags": "i"
+    },
+    {
+      "name": "prompt injection — override policy",
+      "pattern": "(override|bypass|circumvent|disable|disregard|forget)\\s+(safety|security|policy|rules?|constraints?|restrictions?|guidelines?)",
+      "severity": "medium",
+      "reason": "Instructs the model to bypass safety or security policy — a key prompt injection vector.",
+      "flags": "i"
+    },
+    {
+      "name": "prompt injection — exfiltrate data",
+      "pattern": "(send|post|upload|exfiltrate|leak|transmit)\\s+(the\\s+)?(full\\s+)?(repo|codebase|source|files?|credentials?|secrets?|keys?|passwords?)",
+      "severity": "medium",
+      "reason": "Command requesting data exfiltration — likely injected by malicious content in a file or prompt.",
+      "flags": "i"
+    },
+    {
+      "name": "prompt injection — jailbreak framing",
+      "pattern": "(you\\s+are\\s+now|act\\s+as|pretend\\s+(you\\s+are|to\\s+be)|from\\s+now\\s+on\\s+(you|ignore))",
+      "severity": "medium",
+      "reason": "Jailbreak framing — attempts to redefine the agent's identity or rules mid-session.",
+      "flags": "i"
+    }
+  ]
+}

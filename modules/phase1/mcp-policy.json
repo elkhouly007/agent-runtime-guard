@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "local_mcp": {
+    "default": "allowed-after-review",
+    "requirements": [
+      "installed already",
+      "reviewed or pinned",
+      "documented in registry",
+      "no deletion without user approval"
+    ]
+  },
+  "external_mcp": {
+    "default": "allowed-after-payload-review",
+    "requirements": [
+      "service documented",
+      "payload reviewable",
+      "no personal/confidential/secret data without user approval",
+      "clear data flow"
+    ],
+    "rejected": [
+      "hidden endpoints",
+      "npx -y or equivalent auto-download execution",
+      "unclear outbound payload"
+    ]
+  }
+}

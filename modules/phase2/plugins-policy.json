@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "classes": {
+    "local_only": {
+      "default": "allowed-after-review",
+      "requirements": [
+        "local only",
+        "no hidden downloads",
+        "no delete without user approval"
+      ]
+    },
+    "external_read": {
+      "default": "allowed-after-payload-review",
+      "requirements": [
+        "clear service target",
+        "reviewed non-sensitive payload",
+        "no personal/confidential/secret data without user approval"
+      ]
+    },
+    "external_write": {
+      "default": "approval-required",
+      "reason": "external mutation or posting"
+    },
+    "system_write": {
+      "default": "approval-required",
+      "reason": "global or system-level mutation"
+    }
+  },
+  "rejected": [
+    "auto-downloaded unreviewed code",
+    "hidden network destinations",
+    "approval bypass",
+    "destructive behavior disguised as unrelated work"
+  ]
+}

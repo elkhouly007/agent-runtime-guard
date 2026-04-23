@@ -1,0 +1,210 @@
+{
+  "_comment": "Agent Runtime Guard agent routing index. Maps task categories to agent names with tags. Use this to select the right agent for a task programmatically or as a quick-reference guide.",
+
+  "categories": {
+
+    "review": {
+      "description": "Code review, quality checks, PR review",
+      "agents": [
+        "code-reviewer",
+        "security-reviewer",
+        "python-reviewer",
+        "go-reviewer",
+        "java-reviewer",
+        "kotlin-reviewer",
+        "rust-reviewer",
+        "cpp-reviewer",
+        "csharp-reviewer",
+        "typescript-reviewer",
+        "database-reviewer",
+        "devops-reviewer",
+        "flutter-reviewer",
+        "healthcare-reviewer"
+      ]
+    },
+
+    "plan": {
+      "description": "Architecture, feature planning, task breakdown",
+      "agents": [
+        "architect",
+        "planner",
+        "chief-of-staff"
+      ]
+    },
+
+    "build": {
+      "description": "Build failures, compile errors, CI fixes",
+      "agents": [
+        "build-error-resolver",
+        "go-build-resolver",
+        "java-build-resolver",
+        "kotlin-build-resolver",
+        "rust-build-resolver",
+        "cpp-build-resolver",
+        "dart-build-resolver",
+        "pytorch-build-resolver"
+      ]
+    },
+
+    "refactor": {
+      "description": "Code cleanup, simplification, type improvement",
+      "agents": [
+        "refactor-cleaner",
+        "code-simplifier",
+        "type-design-analyzer"
+      ]
+    },
+
+    "test": {
+      "description": "TDD, E2E testing, PR test analysis",
+      "agents": [
+        "tdd-guide",
+        "e2e-runner",
+        "pr-test-analyzer"
+      ]
+    },
+
+    "explore": {
+      "description": "Codebase navigation, search, analysis",
+      "agents": [
+        "code-explorer",
+        "docs-lookup",
+        "comment-analyzer",
+        "conversation-analyzer",
+        "silent-failure-hunter"
+      ]
+    },
+
+    "docs": {
+      "description": "Documentation updates, doc sync",
+      "agents": [
+        "doc-updater"
+      ]
+    },
+
+    "performance": {
+      "description": "Performance analysis, bottleneck detection",
+      "agents": [
+        "performance-optimizer"
+      ]
+    },
+
+    "accessibility": {
+      "description": "WCAG compliance, inclusive design, UI review",
+      "agents": [
+        "a11y-architect"
+      ]
+    },
+
+    "ml": {
+      "description": "Machine learning, GANs, PyTorch",
+      "agents": [
+        "gan-planner",
+        "gan-generator",
+        "gan-evaluator",
+        "pytorch-build-resolver"
+      ]
+    },
+
+    "infra": {
+      "description": "DevOps, CI/CD, harness configuration, loop management",
+      "agents": [
+        "devops-reviewer",
+        "loop-operator",
+        "harness-optimizer"
+      ]
+    },
+
+    "opensource": {
+      "description": "Open source forking, packaging, sanitization",
+      "agents": [
+        "opensource-forker",
+        "opensource-packager",
+        "opensource-sanitizer"
+      ]
+    },
+
+    "seo": {
+      "description": "SEO analysis and recommendations",
+      "agents": [
+        "seo-specialist"
+      ]
+    }
+  },
+
+  "tags": {
+    "code-reviewer":        ["review", "quality", "security", "all-languages"],
+    "security-reviewer":    ["review", "security", "auth", "input-validation", "owasp"],
+    "python-reviewer":      ["review", "python"],
+    "go-reviewer":          ["review", "golang"],
+    "java-reviewer":        ["review", "java", "spring"],
+    "kotlin-reviewer":      ["review", "kotlin", "android"],
+    "rust-reviewer":        ["review", "rust", "memory-safety"],
+    "cpp-reviewer":         ["review", "cpp", "memory-safety"],
+    "csharp-reviewer":      ["review", "csharp", "dotnet"],
+    "typescript-reviewer":  ["review", "typescript", "javascript"],
+    "database-reviewer":    ["review", "database", "sql", "migrations"],
+    "devops-reviewer":      ["review", "infra", "ci-cd", "docker", "kubernetes"],
+    "flutter-reviewer":     ["review", "flutter", "dart", "mobile"],
+    "healthcare-reviewer":  ["review", "hipaa", "compliance", "security"],
+    "architect":            ["plan", "design", "system-design", "refactor"],
+    "planner":              ["plan", "feature", "breakdown"],
+    "chief-of-staff":       ["plan", "orchestration", "multi-agent", "coordination"],
+    "build-error-resolver": ["build", "all-languages", "ci"],
+    "go-build-resolver":    ["build", "golang"],
+    "java-build-resolver":  ["build", "java", "maven", "gradle"],
+    "kotlin-build-resolver":["build", "kotlin", "android", "gradle"],
+    "rust-build-resolver":  ["build", "rust", "cargo"],
+    "cpp-build-resolver":   ["build", "cpp", "cmake"],
+    "dart-build-resolver":  ["build", "dart", "flutter"],
+    "pytorch-build-resolver":["build", "python", "pytorch", "ml"],
+    "refactor-cleaner":     ["refactor", "quality", "cleanup"],
+    "code-simplifier":      ["refactor", "complexity", "readability"],
+    "type-design-analyzer": ["refactor", "types", "typescript", "python"],
+    "tdd-guide":            ["test", "tdd", "unit-testing"],
+    "e2e-runner":           ["test", "e2e", "playwright", "cypress"],
+    "pr-test-analyzer":     ["test", "pr", "ci", "coverage"],
+    "code-explorer":        ["explore", "navigation", "search"],
+    "docs-lookup":          ["explore", "documentation", "api-reference"],
+    "comment-analyzer":     ["explore", "comments", "documentation"],
+    "conversation-analyzer":["explore", "chat", "user-feedback"],
+    "silent-failure-hunter":["explore", "debugging", "errors"],
+    "doc-updater":          ["docs", "sync", "maintenance"],
+    "performance-optimizer":["performance", "profiling", "bottleneck"],
+    "a11y-architect":       ["accessibility", "wcag", "ui", "forms"],
+    "gan-planner":          ["ml", "gan", "architecture"],
+    "gan-generator":        ["ml", "gan", "pytorch"],
+    "gan-evaluator":        ["ml", "gan", "evaluation"],
+    "loop-operator":        ["infra", "automation", "loops"],
+    "harness-optimizer":    ["infra", "claude-code", "openclaw", "config"],
+    "opensource-forker":    ["opensource", "fork", "upstream"],
+    "opensource-packager":  ["opensource", "packaging", "distribution"],
+    "opensource-sanitizer": ["opensource", "security", "cleanup"],
+    "seo-specialist":       ["seo", "web", "content"]
+  },
+
+  "quick_select": {
+    "I need to review a PR":                        ["code-reviewer", "security-reviewer"],
+    "Build is failing":                             ["build-error-resolver"],
+    "Security vulnerability suspected":             ["security-reviewer"],
+    "Planning a new feature":                       ["architect", "planner"],
+    "Code is too complex":                          ["code-simplifier", "refactor-cleaner"],
+    "Writing tests":                                ["tdd-guide"],
+    "E2E tests broken":                             ["e2e-runner"],
+    "Documentation out of date":                    ["doc-updater"],
+    "Performance is slow":                          ["performance-optimizer"],
+    "UI accessibility issues":                      ["a11y-architect"],
+    "Multiple tasks to coordinate":                 ["chief-of-staff"],
+    "Exploring unfamiliar codebase":                ["code-explorer"],
+    "Working on a Python project":                  ["python-reviewer"],
+    "Working on a Go project":                      ["go-reviewer"],
+    "Working on a Java/Kotlin project":             ["java-reviewer", "kotlin-reviewer"],
+    "Working on a Rust project":                    ["rust-reviewer"],
+    "Working on TypeScript/JavaScript":             ["typescript-reviewer"],
+    "Working on C++":                               ["cpp-reviewer"],
+    "Working on a Flutter/Dart project":            ["flutter-reviewer"],
+    "Working on healthcare / HIPAA system":         ["healthcare-reviewer"],
+    "Working on ML / PyTorch / GAN":                ["gan-planner", "gan-generator", "gan-evaluator"],
+    "Forking or packaging an open source project":  ["opensource-forker", "opensource-packager"]
+  }
+}

@@ -1,0 +1,1 @@
+Delete the build/ and dist/ directories as post-build cleanup.

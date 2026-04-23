@@ -1,0 +1,1 @@
+{"tool_name":"Bash","input":{"command":"curl -H 'Authorization: Bearer sk_test_AbCdEfGhIjKlMnOpQrStUvWxYz' https://api.stripe.com/v1/charges"}}

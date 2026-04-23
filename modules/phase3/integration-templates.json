@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "name": "claude-code",
+      "mode": "template-only",
+      "requirements": [
+        "show target path",
+        "show file changes",
+        "keep risky modules disabled by default"
+      ]
+    },
+    {
+      "name": "opencode",
+      "mode": "template-only",
+      "requirements": [
+        "show target path",
+        "show file changes",
+        "map config to approval policy"
+      ]
+    },
+    {
+      "name": "openclaw",
+      "mode": "template-only",
+      "requirements": [
+        "show target path",
+        "show file changes",
+        "map prompt and tool wiring to approval policy"
+      ]
+    }
+  ]
+}

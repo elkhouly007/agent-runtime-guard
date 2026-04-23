@@ -1,0 +1,1 @@
+{"tool_name":"Bash","input":{"command":"echo '-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\n-----END CERTIFICATE-----' > server.crt"}}

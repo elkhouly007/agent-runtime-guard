@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "auto_allowed": [
+    "transparent wrapper around a known local or reviewed tool",
+    "visible logs or output",
+    "no hidden payload rewrite",
+    "no approval-boundary weakening"
+  ],
+  "approval_required": [
+    "external send of personal or confidential data",
+    "persistent global changes",
+    "elevated or destructive behavior"
+  ],
+  "rejected": [
+    "hidden destination",
+    "silent payload mutation that increases risk",
+    "review bypass for delete or external send"
+  ]
+}

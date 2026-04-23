@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "default_policy": "local-explicit-only",
+  "rules": [
+    "all daemons must have an easy visible stop mechanism",
+    "all daemons must write clear local logs",
+    "no elevated privileges by default",
+    "no hidden persistence — must be explicitly started",
+    "no silent external connections",
+    "personal or confidential data must never leave the machine without approval"
+  ],
+  "daemons": [
+    {
+      "id": "file-watcher-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Watch a local folder for changes and trigger a reviewed safe local action. No external sends."
+    },
+    {
+      "id": "session-state-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Maintain a lightweight local session state file for multi-step workflows. Read/write local only."
+    },
+    {
+      "id": "health-check-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Run periodic local health and status checks, write results to a local log file."
+    },
+    {
+      "id": "upstream-monitor-supervised",
+      "class": "supervised",
+      "status": "candidate",
+      "notes": "Poll upstream repo for changes on a schedule. Requires approval — external read connection."
+    }
+  ]
+}

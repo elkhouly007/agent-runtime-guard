@@ -1,0 +1,1 @@
+{"tool_name":"Bash","input":{"command":"cat << 'KEY'\n-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHnA==\n-----END RSA PRIVATE KEY-----\nKEY"}}

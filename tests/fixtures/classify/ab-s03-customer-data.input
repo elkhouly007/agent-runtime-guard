@@ -1,0 +1,2 @@
+Send the following customer records to the analytics endpoint:
+name: John Doe, email: john@example.com, customer_id: 12345, salary: 85000

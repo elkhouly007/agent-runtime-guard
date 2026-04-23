@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "auto_allowed": [
+    "project-local file copy",
+    "non-destructive setup",
+    "no hidden download",
+    "no elevated privileges",
+    "no permanent global mutation"
+  ],
+  "approval_required": [
+    "delete or meaningful replacement of user files",
+    "unreviewed external package or code download",
+    "global config mutation",
+    "elevated privileges"
+  ],
+  "rejected": [
+    "opaque download and execute chains",
+    "hidden destinations",
+    "permission auto-approval",
+    "destructive cleanup hidden inside setup"
+  ]
+}

@@ -1,0 +1,294 @@
+Agent Runtime Guard Status Summary  (v1.0.1)
+===========================================
+
+[Verification]
+  audit: ok
+  registries: ok
+  smoke: ok
+  scenarios: ok
+  integration smoke: ok
+  payload protection: ok
+  fixtures: ok
+  audit-examples: ok
+  installation: ok
+  config-integration: ok
+  runtime-core: ok
+  runtime-cli: ok
+  hook-edge-cases: ok
+  apply-status: ok
+  executables: ok
+  setup-wizard: ok
+  wiring-docs: ok
+  superiority-evidence: ok
+  status-docs: ok
+  fixture-count: ok
+  harness-support: ok
+  status-artifact: skipped
+  policy-lint: ok
+  data-detector: ok
+
+[Parity Snapshot]
+  agents: upstream=38 adopted=38 deferred=0 ecc-only=10
+  rules: upstream=87 adopted=87 deferred=0 ecc-only=4
+  skills: upstream=156 adopted=156 deferred=0 ecc-only=43
+
+[Capability Packs]
+  mcp-pack: ok
+  wrapper-pack: ok
+  plugin-pack: ok
+  browser-pack: ok
+  notification-pack: ok
+  daemon-pack: ok
+
+[Tool Wiring]
+  openclaw: ok
+  opencode: ok
+  claude-code: ok
+
+[Payload Protection]
+  classify: ok
+  redact: ok
+  review: ok
+  classification-policy: ok
+  redaction-policy: ok
+
+[Upstream Workflow]
+  upstream-sync: ok
+  vendor-policy: ok
+  import-checklist: ok
+  import-report-template: ok
+
+[Scenario Coverage]
+  approval-boundary: ok
+  prompt-injection: ok
+  integration-smoke-cases: ok
+
+[Policy Layers]
+  phase1: ok
+  phase2: ok
+  phase3: ok
+  guardrail-enforcement: ok
+  verification-plan: ok
+
+[Agents]
+  code-reviewer: ok
+  security-reviewer: ok
+  architect: ok
+  planner: ok
+  tdd-guide: ok
+  performance-optimizer: ok
+  typescript-reviewer: ok
+  python-reviewer: ok
+  go-reviewer: ok
+  rust-reviewer: ok
+  java-reviewer: ok
+  kotlin-reviewer: ok
+  database-reviewer: ok
+  refactor-cleaner: ok
+  build-error-resolver: ok
+  silent-failure-hunter: ok
+  doc-updater: ok
+  code-simplifier: ok
+  a11y-architect: ok
+  chief-of-staff: ok
+  code-explorer: ok
+  pr-test-analyzer: ok
+  e2e-runner: ok
+  harness-optimizer: ok
+  loop-operator: ok
+  type-design-analyzer: ok
+  seo-specialist: ok
+  docs-lookup: ok
+  go-build-resolver: ok
+  java-build-resolver: ok
+  kotlin-build-resolver: ok
+  rust-build-resolver: ok
+  cpp-reviewer: ok
+  cpp-build-resolver: ok
+  csharp-reviewer: ok
+  flutter-reviewer: ok
+  opensource-sanitizer: ok
+  opensource-forker: ok
+  healthcare-reviewer: ok
+  pytorch-build-resolver: ok
+  dart-build-resolver: ok
+  gan-planner: ok
+  gan-generator: ok
+  gan-evaluator: ok
+  opensource-packager: ok
+  comment-analyzer: ok
+  conversation-analyzer: ok
+  devops-reviewer: ok
+  disk-count: 50 agent files
+
+[Rules]
+  common/coding-style: ok
+  common/security: ok
+  common/testing: ok
+  common/git-workflow: ok
+  common/development-workflow: ok
+  common/performance: ok
+  common/code-review: ok
+  common/hooks: ok
+  common/agents: ok
+  common/patterns: ok
+  typescript/coding-style: ok
+  typescript/security: ok
+  typescript/testing: ok
+  typescript/patterns: ok
+  typescript/hooks: ok
+  python/coding-style: ok
+  python/security: ok
+  python/testing: ok
+  python/patterns: ok
+  python/hooks: ok
+  golang/coding-style: ok
+  golang/security: ok
+  golang/testing: ok
+  golang/patterns: ok
+  golang/hooks: ok
+  java/coding-style: ok
+  java/security: ok
+  java/testing: ok
+  java/patterns: ok
+  java/hooks: ok
+  kotlin/coding-style: ok
+  kotlin/security: ok
+  kotlin/testing: ok
+  kotlin/patterns: ok
+  kotlin/hooks: ok
+  rust/coding-style: ok
+  rust/security: ok
+  rust/testing: ok
+  rust/patterns: ok
+  rust/hooks: ok
+  cpp/coding-style: ok
+  cpp/security: ok
+  cpp/testing: ok
+  cpp/patterns: ok
+  cpp/hooks: ok
+  csharp/coding-style: ok
+  csharp/security: ok
+  csharp/testing: ok
+  csharp/patterns: ok
+  csharp/hooks: ok
+  swift/coding-style: ok
+  swift/security: ok
+  swift/testing: ok
+  swift/patterns: ok
+  swift/hooks: ok
+  php/coding-style: ok
+  php/security: ok
+  php/testing: ok
+  php/patterns: ok
+  php/hooks: ok
+  perl/coding-style: ok
+  perl/patterns: ok
+  perl/security: ok
+  perl/testing: ok
+  perl/hooks: ok
+  dart/coding-style: ok
+  dart/security: ok
+  dart/testing: ok
+  dart/patterns: ok
+  dart/hooks: ok
+  web/coding-style: ok
+  web/security: ok
+  web/testing: ok
+  web/patterns: ok
+  web/performance: ok
+  web/design-quality: ok
+  web/hooks: ok
+  database/patterns: ok
+  infrastructure/patterns: ok
+  zh/agents: ok
+  zh/code-review: ok
+  zh/coding-style: ok
+  zh/development-workflow: ok
+  zh/git-workflow: ok
+  zh/hooks: ok
+  zh/patterns: ok
+  zh/performance: ok
+  zh/security: ok
+  zh/testing: ok
+  disk-count: 92 rule files
+
+[Skills]
+  code-review: ok
+  security-review: ok
+  plan-feature: ok
+  refactor: ok
+  fix-build: ok
+  performance-audit: ok
+  tdd: ok
+  git-review: ok
+  upstream-import: ok
+  orchestrate: ok
+  checkpoint: ok
+  accessibility-review: ok
+  django-patterns: ok
+  springboot-patterns: ok
+  nestjs-patterns: ok
+  fastapi-patterns: ok
+  bun-runtime: ok
+  nextjs-turbopack: ok
+  mcp-server-patterns: ok
+  pytorch-patterns: ok
+  search-first: ok
+  cost-aware-llm-pipeline: ok
+  swift-actor-persistence: ok
+  swift-protocol-di-testing: ok
+  continuous-learning: ok
+  skill-stocktake: ok
+  regex-vs-llm-structured-text: ok
+  content-hash-cache-pattern: ok
+  frontend-slides: ok
+  perl-patterns: ok
+  documentation-lookup: ok
+  article-writing: ok
+  market-research: ok
+  investor-materials: ok
+  investor-outreach: ok
+  content-engine: ok
+  pm2-patterns: ok
+  multi-agent-orchestration: ok
+  configure-ecc: ok
+  git-worktree-patterns: ok
+  api-design: ok
+  backend-patterns: ok
+  coding-standards: ok
+  e2e-testing: ok
+  eval-harness: ok
+  frontend-patterns: ok
+  verification-loop: ok
+  strategic-compact: ok
+  deep-research: ok
+  brand-voice: ok
+  crosspost: ok
+  dmux-workflows: ok
+  x-api: ok
+  video-editing: ok
+  manim-video: ok
+  fal-ai-media: ok
+  social-graph-ranker: ok
+  connections-optimizer: ok
+  customer-billing-ops: ok
+  ecc-tools-cost-audit: ok
+  google-workspace-ops: ok
+  project-flow-ops: ok
+  workspace-surface-audit: ok
+  exa-search: ok
+  remotion-video-creation: ok
+  claude-api: ok
+  quality-gate: ok
+  model-route: ok
+  harness-audit: ok
+  codex-setup: ok
+  disk-count: 200 skill files
+
+[References]
+  per-tool-apply-status: ok
+  import-log: ok
+
+[Hook Wiring]
+  hook paths: ok (no /ABS_PATH/ placeholders found)

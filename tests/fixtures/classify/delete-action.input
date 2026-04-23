@@ -1,0 +1,1 @@
+Clean up the build artifacts by deleting the dist/ folder after the deploy step.

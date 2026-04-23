@@ -1,0 +1,98 @@
+{
+  "_comment": "Agent Runtime Guard hook configuration. Copy relevant entries into ~/.claude/settings.json under the 'hooks' key. Replace /ABS_PATH/ with the absolute path to this repo's claude/hooks/ directory. Run scripts/wire-hooks.sh to generate a ready-to-paste snippet with real paths.",
+
+  "_install_check": "node /ABS_PATH/session-start.js < /dev/null   # should print nothing or a memory summary",
+
+  "_enforce_mode": "Set ECC_ENFORCE=1 in your environment to activate block mode across all supporting hooks. secret-warning.js blocks when a secret pattern is detected. dangerous-command-gate.js blocks critical/high-severity shell commands. git-push-reminder.js blocks force pushes. Default is warn-only (non-blocking). Recommended: always run with ECC_ENFORCE=1.",
+
+  "hooks": {
+
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/memory-load.js"
+          },
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/session-start.js"
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/session-end.js"
+          }
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/secret-warning.js"
+          }
+        ]
+      },
+      {
+        "matcher": "tool_name == \"Bash\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/dangerous-command-gate.js"
+          },
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/git-push-reminder.js"
+          },
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/build-reminder.js"
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/strategic-compact.js"
+          }
+        ]
+      },
+      {
+        "matcher": "tool_name == \"Bash\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/pr-notifier.js"
+          }
+        ]
+      },
+      {
+        "matcher": "tool_name in [\"Edit\", \"Write\"]",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABS_PATH/quality-gate.js"
+          }
+        ]
+      }
+    ]
+
+  }
+}

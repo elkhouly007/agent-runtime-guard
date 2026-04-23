@@ -1,0 +1,38 @@
+{
+  "_comment": "ECC Safe-Plus per-project config. Copy to ecc.config.json in your project root and customize. Run scripts/install-local.sh to apply.",
+
+  "profile": "rules",
+
+  "languages": ["typescript", "python", "database"],
+
+  "agents": [
+    "code-reviewer",
+    "security-reviewer",
+    "typescript-reviewer",
+    "python-reviewer",
+    "database-reviewer",
+    "tdd-guide",
+    "architect",
+    "planner"
+  ],
+
+  "skills": [
+    "code-review",
+    "security-review",
+    "tdd",
+    "plan-feature",
+    "git-review"
+  ],
+
+  "extra_rules": [],
+
+  "hooks": {
+    "enforce_secrets": false
+  },
+
+  "runtime": {
+    "trust_posture": "balanced",
+    "protected_branches": ["main", "master"],
+    "sensitive_path_patterns": ["prod", "production", "secrets", "credentials", ".env", "terraform", "infra"]
+  }
+}

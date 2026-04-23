@@ -1,0 +1,116 @@
+#!/usr/bin/env node
+"use strict";
+
+function normalize(input = {}) {
+  return {
+    command: String(input.command || "").trim(),
+    targetPath: String(input.targetPath || "").trim(),
+    payloadClass: String(input.payloadClass || "A").trim().toUpperCase(),
+    branch: String(input.branch || "").trim(),
+    protectedBranch: Boolean(input.protectedBranch),
+    repeatedApprovals: Number(input.repeatedApprovals || 0),
+    sessionRisk: Number(input.sessionRisk || 0),
+    trustPosture: String(input.trustPosture || "balanced").trim(),
+    sensitivePathPatterns: Array.isArray(input.sensitivePathPatterns) ? input.sensitivePathPatterns.map(String) : [],
+    protectedBranches: Array.isArray(input.protectedBranches) ? input.protectedBranches.map(String) : [],
+    projectScope: String(input.projectScope || "global").trim(),
+  };
+}
+
+function score(input = {}) {
+  const ctx = normalize(input);
+  let value = 0;
+  const reasons = [];
+
+  if (ctx.command) value += 1;
+
+  if (/\brm\s+(-[A-Za-z]*r[A-Za-z]*f|-{1,2}recursive)\b/.test(ctx.command)) {
+    value += 6;
+    reasons.push("destructive-delete-pattern");
+  }
+  if (/\bgit\s+push\b.*(--force|-f\b|--force-with-lease\b)/.test(ctx.command)) {
+    value += 6;
+    reasons.push("force-push-pattern");
+  }
+  if (/\bcurl\b.*\|\s*(ba)?sh\b|\bwget\b.*\|\s*(ba)?sh\b/.test(ctx.command)) {
+    value += 7;
+    reasons.push("remote-exec-pattern");
+  }
+  if (/\bnpx\s+(-y\b|--yes\b)/.test(ctx.command)) {
+    value += 4;
+    reasons.push("auto-download-pattern");
+  }
+  if (/\bsudo\b/.test(ctx.command)) {
+    value += 3;
+    reasons.push("privilege-elevation");
+  }
+  if (/\b(DROP\s+(DATABASE|TABLE|SCHEMA)|TRUNCATE\s+TABLE)\b/i.test(ctx.command)) {
+    value += 7;
+    reasons.push("destructive-database-pattern");
+  }
+
+  if (ctx.targetPath === "/" || ctx.targetPath === "/*") {
+    value += 4;
+    reasons.push("filesystem-root-target");
+  }
+  const sensitivePattern = ctx.sensitivePathPatterns.length > 0
+    ? new RegExp(`(${ctx.sensitivePathPatterns.map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "i")
+    : /\b(prod|production|secrets?|credentials?|\.env|terraform|infra)\b/i;
+  if (sensitivePattern.test(ctx.targetPath)) {
+    value += 3;
+    reasons.push("sensitive-target-path");
+  }
+
+  if (ctx.payloadClass === "B") {
+    value += 2;
+    reasons.push("payload-class-b");
+  }
+  if (ctx.payloadClass === "C") {
+    value += 4;
+    reasons.push("payload-class-c");
+  }
+
+  const branchProtected = ctx.protectedBranch || (ctx.branch && ctx.protectedBranches.includes(ctx.branch));
+  if (branchProtected) {
+    value += 3;
+    reasons.push("protected-branch");
+  }
+
+  if (ctx.sessionRisk > 0) {
+    value += Math.min(3, ctx.sessionRisk);
+    reasons.push("session-risk");
+  }
+
+  const pathSensitivity = String(input.pathSensitivity || "low").toLowerCase();
+  if (pathSensitivity === "high") {
+    value += 2;
+    reasons.push("path-sensitivity-high");
+  } else if (pathSensitivity === "medium") {
+    value += 1;
+    reasons.push("path-sensitivity-medium");
+  }
+
+  if (ctx.repeatedApprovals >= 3 && value > 0) {
+    value -= 1;
+    reasons.push("repeated-approval-history");
+  }
+
+  if (ctx.trustPosture === "strict") {
+    value += 1;
+    reasons.push("strict-trust-posture");
+  } else if (ctx.trustPosture === "relaxed" && value > 0) {
+    value -= 1;
+    reasons.push("relaxed-trust-posture");
+  }
+
+  value = Math.max(0, Math.min(10, value));
+
+  let level = "low";
+  if (value >= 8) level = "critical";
+  else if (value >= 6) level = "high";
+  else if (value >= 3) level = "medium";
+
+  return { score: value, level, reasons, context: ctx };
+}
+
+module.exports = { score };

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "local_notifications": {
+    "default": "allowed",
+    "requirements": [
+      "stay on local machine",
+      "avoid unnecessary sensitive content"
+    ]
+  },
+  "external_notifications": {
+    "default": "mixed",
+    "allowed_when": [
+      "trusted destination",
+      "non-sensitive content",
+      "operationally low risk"
+    ],
+    "approval_required_when": [
+      "personal/confidential/secret data present",
+      "new third-party destination",
+      "person or group outside trusted workflow"
+    ]
+  }
+}

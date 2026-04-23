@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "default_policy": "classified-reviewed-only",
+  "rules": [
+    "prefer local-only plugins first",
+    "external-read plugins require reviewed non-sensitive payloads",
+    "external-write plugins require approval for meaningful writes",
+    "reject hidden downloads, hidden destinations, or permission bypass"
+  ],
+  "plugins": [
+    {
+      "id": "changed-files-local",
+      "class": "local-only",
+      "status": "candidate",
+      "notes": "Track changed files locally without external routing."
+    },
+    {
+      "id": "local-review-helper",
+      "class": "local-only",
+      "status": "candidate",
+      "notes": "Support local review workflows with visible output."
+    },
+    {
+      "id": "quality-gate-local",
+      "class": "local-only",
+      "status": "candidate",
+      "notes": "Run visible local quality gates without hidden installs or external routing."
+    },
+    {
+      "id": "git-summary-local",
+      "class": "local-only",
+      "status": "candidate",
+      "notes": "Provide local git status, history, and diff summary with visible output."
+    },
+    {
+      "id": "docs-fetch-reviewed",
+      "class": "external-read",
+      "status": "candidate",
+      "notes": "Fetch reviewed non-sensitive documentation content from known destinations."
+    },
+    {
+      "id": "issue-sync-reviewed",
+      "class": "external-write",
+      "status": "candidate",
+      "notes": "Sync issue comments or state changes only with approval and clear destination."
+    }
+  ]
+}

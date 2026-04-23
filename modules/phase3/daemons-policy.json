@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "auto_allowed": [
+    "local daemon with clear logs",
+    "easy stop mechanism",
+    "no elevated privileges",
+    "no personal or confidential external send"
+  ],
+  "approval_required": [
+    "system-wide persistence",
+    "elevated privileges",
+    "unclear or sensitive external connection",
+    "permanent global config mutation"
+  ],
+  "rejected": [
+    "hidden persistence",
+    "unclear stop behavior",
+    "approval bypass"
+  ]
+}

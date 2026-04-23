@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "default_policy": "transparent-reviewed-only",
+  "rules": [
+    "prefer transparent local wrappers first",
+    "external wrappers require reviewed destination and payload",
+    "block personal/confidential/secret outbound data without user approval",
+    "reject hidden payload mutation or review bypass"
+  ],
+  "wrappers": [
+    {
+      "id": "task-router-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Route local tasks to planner, reviewer, security, or build-fix roles without hidden behavior."
+    },
+    {
+      "id": "git-review-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Wrap local git inspection and reminder flow with visible output."
+    },
+    {
+      "id": "checkpoint-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Create visible local checkpoints or progress snapshots without hidden side effects."
+    },
+    {
+      "id": "model-route-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Recommend local model routing heuristics without automatic external sends."
+    },
+    {
+      "id": "orchestrate-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Coordinate reviewed local roles or tools with visible task boundaries and no hidden routing."
+    },
+    {
+      "id": "trusted-agent-reviewed",
+      "class": "external",
+      "status": "candidate",
+      "notes": "Wrap trusted external agent delegation only after reviewed non-sensitive payload."
+    }
+  ]
+}

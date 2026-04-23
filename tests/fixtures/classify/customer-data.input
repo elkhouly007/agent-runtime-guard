@@ -1,0 +1,5 @@
+Send the following customer data to the analytics service:
+name: John Doe
+email: john@example.com
+passport: AB123456
+salary: 85000

@@ -1,0 +1,1 @@
+Summarize the public README and suggest a local-only implementation plan. Do not include personal data.

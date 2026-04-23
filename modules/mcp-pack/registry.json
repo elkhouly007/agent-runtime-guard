@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "default_policy": "reviewed-only",
+  "rules": [
+    "prefer local MCP first",
+    "external MCP requires documented service and clear data flow",
+    "block personal/confidential/secret outbound data without user approval",
+    "reject npx -y or equivalent auto-download execution"
+  ],
+  "modules": [
+    {
+      "id": "filesystem-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Use for reviewed local filesystem assistance only."
+    },
+    {
+      "id": "git-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Use for local git inspection or reviewed local git actions."
+    },
+    {
+      "id": "session-observer-local",
+      "class": "local",
+      "status": "candidate",
+      "notes": "Use for reviewed local session or activity observation only."
+    },
+    {
+      "id": "github-reviewed",
+      "class": "external",
+      "status": "candidate",
+      "notes": "Use only with reviewed non-sensitive payloads and clear scope."
+    },
+    {
+      "id": "browser-reviewed",
+      "class": "external",
+      "status": "candidate",
+      "notes": "Use only under browser policy and clear target understanding."
+    }
+  ]
+}

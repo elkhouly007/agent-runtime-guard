@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "auto_allowed": [
+    "read-only browsing with clear destination",
+    "navigation with non-sensitive payload",
+    "inspection without posting, deleting, purchasing, or settings mutation"
+  ],
+  "approval_required": [
+    "form submission with personal or confidential data",
+    "login in a sensitive or unclear context",
+    "purchase, posting, sending, deletion, upload, or account-setting changes",
+    "unclear external consequences"
+  ],
+  "rejected": [
+    "hidden destination",
+    "credential exfiltration",
+    "writes disguised as reads",
+    "unsafe automation against unclear sites"
+  ]
+}

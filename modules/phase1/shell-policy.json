@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "auto_allowed": [
+    "local inspection commands",
+    "local validation commands",
+    "task-scoped non-destructive file creation or modification",
+    "local copy or move without deletion"
+  ],
+  "approval_required": [
+    "delete commands",
+    "destructive cleanup",
+    "sensitive overwrite",
+    "sudo or elevated access",
+    "external send of personal or confidential data",
+    "permanent global config mutation"
+  ],
+  "notes": [
+    "Shell access is part of safe power when command class is reviewed first.",
+    "High-risk classes escalate to the user."
+  ]
+}
