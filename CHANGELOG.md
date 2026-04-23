@@ -8,6 +8,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.0.2] — 2026-04-23
+
 ### Added
 - Enforce/block-mode fixtures: 4 new DCG enforce pairs (curl-pipe-sh, force-push, dd-device, drop-table) and 3 new secret-warning enforce pairs (private-key-block, aws-access-key-id, openai-key). Total fixtures: 85 → 92/92.
 - Windows CI runner added to check workflow matrix (`windows-latest`, 500ms bench ceiling). All check steps now run on both Ubuntu and Windows.

@@ -1,4 +1,4 @@
-Agent Runtime Guard Status Summary  (v1.0.1)
+Agent Runtime Guard Status Summary  (v1.0.2)
 ===========================================
 
 [Verification]
@@ -8,13 +8,13 @@ Agent Runtime Guard Status Summary  (v1.0.1)
   scenarios: ok
   integration smoke: ok
   payload protection: ok
-  fixtures: ok
+  fixtures: FAILED
   audit-examples: ok
-  installation: ok
-  config-integration: ok
-  runtime-core: ok
-  runtime-cli: ok
-  hook-edge-cases: ok
+  installation: FAILED
+  config-integration: FAILED
+  runtime-core: FAILED
+  runtime-cli: FAILED
+  hook-edge-cases: FAILED
   apply-status: ok
   executables: ok
   setup-wizard: ok
