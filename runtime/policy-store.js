@@ -52,7 +52,9 @@ function savePolicy(policy) {
   _policyCache = null; // invalidate before write
   ensureBaseDir();
   const { policyFile } = paths();
-  fs.writeFileSync(policyFile, JSON.stringify(policy, null, 2) + "\n", { mode: 0o600 });
+  const tmp = policyFile + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(policy, null, 2) + "\n", { mode: 0o600 });
+  fs.renameSync(tmp, policyFile);
 }
 
 function decisionKey(input = {}) {
@@ -68,6 +70,7 @@ function decisionKey(input = {}) {
   else if (/\bgit\s+push\b.*(--force|-f\b|--force-with-lease\b)/.test(cmd)) commandClass = "force-push";
   else if (/\bcurl\b.*\|\s*(ba)?sh\b|\bwget\b.*\|\s*(ba)?sh\b/.test(cmd)) commandClass = "remote-exec";
   else if (/\bnpx\s+(-y\b|--yes\b)/.test(cmd)) commandClass = "auto-download";
+  else if (/\b(npm|yarn)\s+(install|add|i)\b.*\s(-g|--global)\b|\b(npm|yarn)\s+(-g|--global)\s+(install|add|i)\b/.test(cmd)) commandClass = "global-package-install";
   else if (/^\s*sudo\s+/.test(cmd)) commandClass = "sudo";
 
   return [tool, commandClass, targetClass, payloadClass].join("|");

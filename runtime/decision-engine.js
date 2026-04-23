@@ -67,7 +67,7 @@ function decide(input = {}) {
   else if (risk.level === "medium") action = learnedAllow ? "allow" : "route";
   else action = "allow";
 
-  if (learnedAllow && risk.level !== "critical" && risk.level !== "high") {
+  if (learnedAllow && risk.level !== "critical" && (risk.level !== "high" || risk.reasons.includes("destructive-delete-pattern"))) {
     source = "learned-allow";
   }
 

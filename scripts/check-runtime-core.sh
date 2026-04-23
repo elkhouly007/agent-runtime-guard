@@ -350,6 +350,35 @@ if (origKS !== undefined) process.env.ECC_KILL_SWITCH = origKS;
 else delete process.env.ECC_KILL_SWITCH;
 console.log('kill-switch: ok');
 
+// R1: learned-allow source attribution for high-risk destructive-delete.
+// Must test on a non-protected branch so the score stays at 7 (high) not 10 (critical).
+// Critical always blocks regardless of learned-allow — that is correct behaviour.
+// This test verifies that at "high" risk + destructive-delete, a learned-allow is
+// correctly attributed as decisionSource=learned-allow, not risk-engine.
+saveState({ recent: [], updatedAt: new Date().toISOString() }); // clear trajectory
+const destructiveLearnedInput = { command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] };
+setLearnedAllow(destructiveLearnedInput, true);
+const destructiveLearnedDecision = decide({ ...destructiveLearnedInput });
+if (destructiveLearnedDecision.action !== 'allow') throw new Error(`R1: expected allow for learned destructive-delete on non-protected branch, got ${destructiveLearnedDecision.action}`);
+if (destructiveLearnedDecision.decisionSource !== 'learned-allow') throw new Error(`R1: expected learned-allow source for destructive-delete, got ${destructiveLearnedDecision.decisionSource}`);
+console.log('learned-allow source attribution for destructive-delete: ok');
+
+// R3: global-package-install commandClass in decisionKey produces distinct key from generic
+const { decisionKey: dkey } = require(path.join(root, 'runtime/policy-store.js'));
+const globalInstallKey = dkey({ command: 'npm install -g ts-node', tool: 'Bash', targetPath: '/usr/local/lib' });
+const genericKey = dkey({ command: 'echo hello', tool: 'Bash', targetPath: '/tmp' });
+if (globalInstallKey.split('|')[1] !== 'global-package-install') throw new Error(`R3: expected global-package-install commandClass, got ${globalInstallKey}`);
+if (genericKey.split('|')[1] !== 'generic') throw new Error(`R3: expected generic commandClass for echo, got ${genericKey}`);
+if (globalInstallKey === genericKey) throw new Error('R3: global-package-install key must differ from generic key');
+console.log('global-package-install commandClass isolation: ok');
+
+// R4: block action produces explicit workflowRoute.lane=blocked (not null)
+const blockDecision = decide({ command: 'rm -rf /', targetPath: '/', tool: 'Bash', sessionRisk: 0 });
+if (blockDecision.action !== 'block') throw new Error(`R4: expected block for rm -rf /, got ${blockDecision.action}`);
+if (blockDecision.workflowRoute?.lane !== 'blocked') throw new Error(`R4: expected blocked lane, got ${blockDecision.workflowRoute?.lane}`);
+if (!blockDecision.workflowRoute?.suggestedCommand?.includes('ecc-cli.sh runtime explain')) throw new Error('R4: expected runtime explain command in blocked route');
+console.log('block-action workflowRoute: ok');
+
 console.log('runtime-core-node-check: ok');
 NODE
 pass 'runtime scoring, learned policy, suggestions, and session behavior'

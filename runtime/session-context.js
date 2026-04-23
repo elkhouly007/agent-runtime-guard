@@ -49,7 +49,9 @@ function saveState(state) {
   _stateCache = null; // invalidate before write
   ensureBaseDir();
   const { sessionFile } = paths();
-  fs.writeFileSync(sessionFile, JSON.stringify(state, null, 2) + "\n", { mode: 0o600 });
+  const tmp = sessionFile + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n", { mode: 0o600 });
+  fs.renameSync(tmp, sessionFile);
 }
 
 function getSessionRisk() {
