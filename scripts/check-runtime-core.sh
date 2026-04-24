@@ -59,6 +59,7 @@ const mediumInput = { command: ['sudo', 'systemctl', 'restart', 'app'].join(' ')
 const routed = decide(mediumInput);
 if (routed.action !== 'route') throw new Error(`expected route, got ${routed.action}`);
 
+step('policy-approve-and-learn');
 recordApproval(mediumInput);
 recordApproval(mediumInput);
 recordApproval(mediumInput);
@@ -72,6 +73,7 @@ if (learned.decisionSource !== 'learned-allow') throw new Error(`expected learne
 const summary = summarizePolicy();
 if (summary.learnedAllowCount < 1) throw new Error('expected learned allow count >= 1');
 
+step('session-risk-buildup');
 const destructive2 = decide({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
 const destructive3 = decide({ command: ['rm', '-rf', '/tmp/build'].join(' '), targetPath: '/tmp/build', tool: 'Bash' });
 if (!['require-tests', 'escalate', 'block', 'allow'].includes(destructive2.action)) throw new Error(`unexpected action ${destructive2.action}`);
@@ -111,6 +113,7 @@ const stackAwareTestsDecision = decide({ command: ['rm', '-rf', '/tmp/cache'].jo
 if (stackAwareTestsDecision.action !== 'require-tests') throw new Error(`expected stack-aware require-tests, got ${stackAwareTestsDecision.action}`);
 if (stackAwareTestsDecision.actionPlan.commands.join(' | ') !== 'npm test | npm run lint') throw new Error(`expected stack-aware test commands, got ${stackAwareTestsDecision.actionPlan.commands.join(' | ')}`);
 
+step('adaptive-tests-decision');
 recordApproval({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
 recordApproval({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
 recordApproval({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
@@ -119,6 +122,7 @@ if (!adaptiveTestsDecision.actionPlan.summary.includes('consider')) throw new Er
 if (adaptiveTestsDecision.workflowRoute?.lane !== 'verification') throw new Error(`expected verification lane, got ${adaptiveTestsDecision.workflowRoute?.lane}`);
 if (adaptiveTestsDecision.workflowRoute?.suggestedTarget !== 'ecc-cli.check') throw new Error(`expected verification target ecc-cli.check, got ${adaptiveTestsDecision.workflowRoute?.suggestedTarget}`);
 
+step('workflow-routing');
 const lowRoute = decide({ command: 'npm test', targetPath: 'web/app.ts', tool: 'Bash', sessionRisk: 0 });
 if (lowRoute.workflowRoute?.lane !== 'checks') throw new Error(`expected checks lane, got ${lowRoute.workflowRoute?.lane}`);
 if (lowRoute.workflowRoute?.suggestedTarget !== 'ecc-cli.check') throw new Error(`expected checks target ecc-cli.check, got ${lowRoute.workflowRoute?.suggestedTarget}`);
@@ -164,6 +168,7 @@ const setupRoute = decide({ command: 'setup profile full', targetPath: 'ecc.conf
 if (setupRoute.workflowRoute?.lane !== 'setup') throw new Error(`expected setup lane, got ${setupRoute.workflowRoute?.lane}`);
 if (setupRoute.workflowRoute?.suggestedTarget !== 'ecc-cli.setup') throw new Error(`expected setup target ecc-cli.setup, got ${setupRoute.workflowRoute?.suggestedTarget}`);
 
+step('setup-shape-route');
 const shapeRepo = path.resolve(process.env.HOME, 'shape-repo');
 fs.mkdirSync(shapeRepo, { recursive: true });
 execFileSync('git', ['init'], { cwd: shapeRepo, stdio: 'ignore' });
@@ -219,6 +224,7 @@ const modifyDecision = decide({ command: ['cat', 'prod/config'].join(' '), targe
 if (modifyDecision.action !== 'modify') throw new Error(`expected modify, got ${modifyDecision.action}`);
 if (!Array.isArray(modifyDecision.actionPlan.modificationHints) || modifyDecision.actionPlan.modificationHints.length < 1) throw new Error('expected modification hints');
 
+step('promotion-guidance');
 // --- promotion guidance checks ---
 const { evaluate } = require(path.join(root, 'runtime/promotion-guidance.js'));
 
