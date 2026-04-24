@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Java + ARG Hooks
 
 Java-specific ARG hook considerations.

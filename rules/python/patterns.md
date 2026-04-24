@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Python Design Patterns
 
 Python-specific design patterns and idioms for amplifying code quality.

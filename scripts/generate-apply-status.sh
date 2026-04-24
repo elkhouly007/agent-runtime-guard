@@ -6,7 +6,7 @@ parity_file="$root/references/parity-matrix.json"
 
 [ -f "$parity_file" ] || { printf 'parity-matrix.json missing\n' >&2; exit 1; }
 
-today="$(date -u +%Y-%m-%d)"
+today="$(git -C "$root" log -1 --format=%cd --date=format:%Y-%m-%d 2>/dev/null || date -u +%Y-%m-%d)"
 
 # Extract current totals from parity-matrix.json summary
 read -r agents rules skills <<EOF

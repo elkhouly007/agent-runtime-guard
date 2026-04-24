@@ -10,6 +10,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.3] — 2026-04-24
+
+### Fixed
+- `scripts/check-runtime-core.sh`: use `fs.realpathSync.native` (Windows `GetFinalPathNameByHandleW`) to resolve 8.3 short paths (e.g. `RUNNER~1` → `runneradmin`) before path comparisons in the `discover-git-repo` test. Fixes Windows CI failure where `os.tmpdir()` returns an 8.3 abbreviated path while `git rev-parse --show-toplevel` returns the canonical long form.
+- `scripts/check-runtime-core.sh`: suppress decision-journal file writes during tests via `ECC_DECISION_JOURNAL=0`; eliminates potential AV-locking failures on the Windows CI runner.
+
+---
+
 ## [1.0.2] — 2026-04-23
 
 ### Added

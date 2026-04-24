@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Testing
 
 Universal testing principles. Tests are not a chore — they are the specification of how the system should behave, and the mechanism that makes change safe.

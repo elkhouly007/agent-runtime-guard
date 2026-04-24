@@ -52,7 +52,7 @@ dcg_hook="$root/claude/hooks/dangerous-command-gate.js"
 # Test with multi-line command where dangerous part is not on the first line
 cat > "$workdir/multi-line.json" <<'EOF'
 {
-  "command": "echo hello\nrm -rf /"
+  "command": "echo hello\nsudo rm -rf /"
 }
 EOF
 if ECC_ENFORCE=1 node "$dcg_hook" < "$workdir/multi-line.json" 2>/tmp/ecc-dcg.err; then

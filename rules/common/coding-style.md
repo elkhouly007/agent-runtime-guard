@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Coding Style
 
 Universal coding standards. These apply across all languages and projects unless a language-specific rule overrides them.

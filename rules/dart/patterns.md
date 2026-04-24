@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Dart Design Patterns
 
 Dart-specific patterns for clean, maintainable code.

@@ -49,10 +49,29 @@ function loadPolicy() {
 }
 
 function savePolicy(policy) {
-  _policyCache = null; // invalidate before write
-  ensureBaseDir();
-  const { policyFile } = paths();
-  fs.writeFileSync(policyFile, JSON.stringify(policy, null, 2) + "\n", { mode: 0o600 });
+  _policyCache = null;
+  try {
+    ensureBaseDir();
+    const { policyFile } = paths();
+    const data = JSON.stringify(policy, null, 2) + "\n";
+    const tmp = policyFile + ".tmp";
+    fs.writeFileSync(tmp, data, { mode: 0o600 });
+    try {
+      fs.renameSync(tmp, policyFile);
+    } catch {
+      // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
+      // Fall back to direct write — slightly less atomic but functionally correct.
+      try {
+        fs.writeFileSync(policyFile, data, { mode: 0o600 });
+      } catch { /* best-effort fallback */ }
+      try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+    }
+  } finally {
+    // Always repopulate cache so callers in the same process see the new state,
+    // even if the disk write failed. Each hook invocation is a separate process,
+    // so cross-process cache sharing is never an issue.
+    _policyCache = policy;
+  }
 }
 
 function decisionKey(input = {}) {
@@ -68,6 +87,7 @@ function decisionKey(input = {}) {
   else if (/\bgit\s+push\b.*(--force|-f\b|--force-with-lease\b)/.test(cmd)) commandClass = "force-push";
   else if (/\bcurl\b.*\|\s*(ba)?sh\b|\bwget\b.*\|\s*(ba)?sh\b/.test(cmd)) commandClass = "remote-exec";
   else if (/\bnpx\s+(-y\b|--yes\b)/.test(cmd)) commandClass = "auto-download";
+  else if (/\b(npm|yarn)\s+(install|add|i)\b.*\s(-g|--global)\b|\b(npm|yarn)\s+(-g|--global)\s+(install|add|i)\b/.test(cmd)) commandClass = "global-package-install";
   else if (/^\s*sudo\s+/.test(cmd)) commandClass = "sudo";
 
   return [tool, commandClass, targetClass, payloadClass].join("|");

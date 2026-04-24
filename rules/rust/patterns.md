@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-04-23
+version_target: 1.0.x
+---
+
 # Rust Design Patterns
 
 Rust-specific patterns for safe, expressive, high-performance code.

@@ -77,6 +77,15 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
     return out;
   }
 
+  if (action === "block") {
+    out.lane = "blocked";
+    out.reason = "Action is blocked by runtime policy. No workflow route is available — resolve the policy concern first.";
+    out.suggestedSurface = "runtime-explain";
+    out.suggestedTarget = "ecc-cli.runtime.explain";
+    out.suggestedCommand = "ecc-cli.sh runtime explain --tool <tool> --command '<cmd>' --target <path>";
+    return out;
+  }
+
   if (action === "route" || action === "allow") {
     if (/test|lint|pytest|cargo test|npm test|npm run lint/.test(command)) {
       out.lane = "checks";
