@@ -1,4 +1,4 @@
-Agent Runtime Guard Status Summary  (v1.0.2)
+Agent Runtime Guard Status Summary  (v1.0.3)
 ===========================================
 
 [Verification]
