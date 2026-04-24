@@ -371,8 +371,15 @@ const ksDecision = decide({ command: 'npm test', tool: 'Bash', targetPath: '.', 
 if (ksDecision.action !== 'block') throw new Error(`expected block from kill switch, got ${ksDecision.action}`);
 if (ksDecision.decisionSource !== 'kill-switch') throw new Error(`expected kill-switch source, got ${ksDecision.decisionSource}`);
 if (!ksDecision.explanation.includes('kill-switch engaged')) throw new Error('expected kill-switch engaged in explanation');
-if (origKS !== undefined) process.env.ECC_KILL_SWITCH = origKS;
-else delete process.env.ECC_KILL_SWITCH;
+// Restore env: delete may be unreliable on Windows Node 20; set to '' then delete.
+if (origKS !== undefined && origKS !== '') {
+  process.env.ECC_KILL_SWITCH = origKS;
+} else {
+  process.env.ECC_KILL_SWITCH = '';
+  delete process.env.ECC_KILL_SWITCH;
+}
+// Guard: ensure kill switch is truly off before continuing (Windows env var quirk)
+if (process.env.ECC_KILL_SWITCH === '1') throw new Error('kill-switch not cleared after test — env var delete failed');
 console.log('kill-switch: ok');
 
 step('R1-learned-allow-destructive-delete');
@@ -390,7 +397,7 @@ if (destructiveLearnedDecision.action !== 'allow') {
   const { isLearnedAllowed: _ila, loadPolicy: _lp } = require(path.join(root, 'runtime/policy-store.js'));
   const _dbgScore = rs.score({ command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] });
   const _dbgPolicy = _lp();
-  process.stderr.write(`[R1-diag] score=${_dbgScore.score} level=${_dbgScore.level} reasons=${_dbgScore.reasons.join(',')} learnedAllow=${_ila(destructiveLearnedInput)} policyKeys=${Object.keys(_dbgPolicy.learnedAllows||{}).join(',')}\n`);
+  process.stderr.write(`[R1-diag] action=${destructiveLearnedDecision.action} source=${destructiveLearnedDecision.decisionSource} score=${_dbgScore.score} level=${_dbgScore.level} reasons=${_dbgScore.reasons.join(',')} learnedAllow=${_ila(destructiveLearnedInput)} ECC_KILL_SWITCH=${JSON.stringify(process.env.ECC_KILL_SWITCH)} policyKeys=${Object.keys(_dbgPolicy.learnedAllows||{}).join(',')}\n`);
   throw new Error(`R1: expected allow for learned destructive-delete on non-protected branch, got ${destructiveLearnedDecision.action}`);
 }
 if (destructiveLearnedDecision.decisionSource !== 'learned-allow') throw new Error(`R1: expected learned-allow source for destructive-delete, got ${destructiveLearnedDecision.decisionSource}`);
