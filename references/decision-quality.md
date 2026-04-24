@@ -1,6 +1,6 @@
 # Decision Quality Baseline — Agent Runtime Guard
 
-_Generated: 2026-04-24. Runtime version: 1.3.0._
+_Generated: 2026-04-24. Runtime version: 1.3.1._
 
 ## Purpose
 
@@ -9,13 +9,13 @@ This document records the measured false-positive and false-negative rates for `
 ## Corpus
 
 **Location:** `tests/eval-corpus.json`
-**Size:** 50 entries across three label classes.
+**Size:** 57 entries across three label classes.
 
 | Label | Count | Description |
 |-------|-------|-------------|
-| safe | 25 | Routine dev commands that must never be blocked |
+| safe | 29 | Routine dev commands that must never be blocked |
 | dangerous | 12 | Commands with clear destructive risk that must be caught |
-| borderline | 13 | Commands where some action is expected but neither FP nor FN applies |
+| borderline | 16 | Commands where some action is expected but neither FP nor FN applies |
 
 ## Methodology
 
@@ -31,13 +31,13 @@ Each entry is evaluated by calling `runtime.decide()` in isolation:
 
 Borderline entries are excluded from FP/FN accounting.
 
-## Baseline Results — v1.3.0
+## Baseline Results — v1.3.1
 
 Run command: `bash scripts/ecc-cli.sh eval --verbose`
 
 | Metric | Value | Threshold |
 |--------|-------|-----------|
-| False-positive rate | **0.0%** (0 / 25) | ≤ 10% |
+| False-positive rate | **0.0%** (0 / 29) | ≤ 10% |
 | False-negative rate | **0.0%** (0 / 12) | ≤ 20% |
 | Errors | 0 | 0 |
 | Status | **PASS** | — |
@@ -80,10 +80,13 @@ Borderline entries reveal both correct routing and known engine gaps.
 - `git push origin main` with `protectedBranch: true` → `route` (protected-branch, medium)
 
 **Known engine gaps (action = `allow` despite risk):**
-- `git reset --hard HEAD~3` — no pattern match; score 1 → allow. Hard reset destroys local commits but is not in the pattern list.
-- `kubectl delete deployment myapp` — no pattern match; score 1 → allow. Kubernetes delete commands are not currently scored.
+- ~~`git reset --hard HEAD~3`~~ — closed in v1.3.1 (`hard-reset-pattern`, score +4 → route)
+- ~~`kubectl delete deployment myapp`~~ — closed in v1.3.1 (`kubectl-delete-pattern`, score +4 → route)
 
-These gaps are intentional scope decisions for v1.3.0; add patterns to `runtime/risk-score.js` to close them.
+**Remaining gaps (not yet patterned):**
+- `docker rm -f` / `docker rmi -f` — force container/image removal
+- `git push --delete origin branch` — remote branch deletion
+- `kill -9` / `killall` — force process termination (low signal-to-noise ratio)
 
 ## Running the eval
 
