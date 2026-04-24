@@ -1,4 +1,4 @@
-Agent Runtime Guard Status Summary  (v1.1.0)
+Agent Runtime Guard Status Summary  (v1.2.0)
 ===========================================
 
 [Verification]
@@ -10,7 +10,7 @@ Agent Runtime Guard Status Summary  (v1.1.0)
   payload protection: ok
   fixtures: ok
   audit-examples: ok
-  installation: ok
+  installation: FAILED
   config-integration: ok
   runtime-core: ok
   runtime-cli: ok

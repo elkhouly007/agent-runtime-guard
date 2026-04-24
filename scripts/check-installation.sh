@@ -91,4 +91,45 @@ pass 'wire-hooks snippet generation'
 )
 pass 'wire-hooks --verify'
 
+# 10. install.sh --dry-run
+dry_output="$workdir/dry-output.txt"
+bash "$root/scripts/install.sh" "$workdir/dry-target" --profile rules --yes --dry-run > "$dry_output"
+grep -q 'secret-warning.js' "$dry_output" || fail 'install.sh --dry-run lists hooks'
+grep -q 'Total:' "$dry_output" || fail 'install.sh --dry-run prints total'
+pass 'install.sh --dry-run'
+
+# 11. install.sh fresh install
+fresh_target="$workdir/fresh-install"
+bash "$root/scripts/install.sh" "$fresh_target" --profile minimal --tool claude --yes > /dev/null
+check_file "$fresh_target/claude/hooks/secret-warning.js" 'install.sh copies hooks'
+check_file "$fresh_target/scripts/install-local.sh" 'install.sh copies scripts'
+check_file "$fresh_target/VERSION" 'install.sh writes VERSION'
+pass 'install.sh fresh install'
+
+# 12. upgrade.sh — same-version is a no-op
+same_ver_output="$workdir/same-ver.txt"
+bash "$root/scripts/upgrade.sh" "$fresh_target" > "$same_ver_output"
+grep -q 'nothing to do' "$same_ver_output" || fail 'upgrade.sh reports nothing-to-do when version matches'
+pass 'upgrade.sh same-version no-op'
+
+# 13. upgrade.sh — version bump updates files and preserves ecc.config.json
+upgrade_target="$workdir/upgrade-target"
+bash "$root/scripts/install-local.sh" "$upgrade_target" --profile minimal >/dev/null
+# Write a fake old version and a config that must be preserved
+printf '0.9.0\n' > "$upgrade_target/VERSION"
+cat > "$upgrade_target/ecc.config.json" <<'CFGEOF'
+{"profile":"minimal","_test":"preserved"}
+CFGEOF
+upgrade_output="$workdir/upgrade-output.txt"
+bash "$root/scripts/upgrade.sh" "$upgrade_target" > "$upgrade_output"
+grep -q 'updated' "$upgrade_output" || fail 'upgrade.sh reports files updated'
+# VERSION should now be current
+current_ver="$(cat "$root/VERSION")"
+installed_ver="$(cat "$upgrade_target/VERSION")"
+[ "$installed_ver" = "$current_ver" ] || fail "upgrade.sh did not update VERSION ($installed_ver != $current_ver)"
+# ecc.config.json must be preserved (our _test marker must still be there)
+grep -q '_test' "$upgrade_target/ecc.config.json" || fail 'upgrade.sh overwrote ecc.config.json'
+check_file "$upgrade_target/claude/hooks/secret-warning.js" 'upgrade.sh kept hooks'
+pass 'upgrade.sh version bump'
+
 printf '\nInstallation checks passed.\n'

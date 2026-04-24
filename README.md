@@ -25,23 +25,29 @@ This repository is not a drop-in copy of Everything Claude Code. It is a conserv
 ## Quick Start
 
 ```bash
-# 1. Interactive setup wizard — answers 5 questions then gives you the command to run:
+# 1. One-command install (validates prereqs, copies files, prints wire-hooks snippet):
+./scripts/ecc-cli.sh install ./my-project --profile rules --auto
+
+# 2. Upgrade an existing installation in-place (preserves ecc.config.json):
+./scripts/ecc-cli.sh upgrade ./my-project
+
+# 3. Interactive setup wizard — answers 5 questions then gives you the command to run:
 ./scripts/ecc-cli.sh setup
 
-# 2. Or install directly into a project with auto language detection:
-./scripts/ecc-cli.sh install ./my-project --auto
-
-# 3. Wire hooks into your Claude Code settings.json:
+# 4. Wire hooks into your Claude Code settings.json:
 ./scripts/ecc-cli.sh wire ./my-project
 
-# 4. Run a local audit of this repository:
+# 5. Run a local audit of this repository:
 ./scripts/ecc-cli.sh audit
 
-# 5. Run runtime and structural checks, including install and apply-status verification:
+# 6. Run runtime and structural checks, including install and apply-status verification:
 ./scripts/ecc-cli.sh check
 
-# 6. Run all 92 fixture-based tests:
+# 7. Run all 92 fixture-based tests:
 ./scripts/ecc-cli.sh fixtures
+
+# 8. Measure decision quality (FP/FN rates against the labeled corpus):
+./scripts/ecc-cli.sh eval
 ```
 
 ## What Is Included
@@ -83,18 +89,21 @@ Security, coding-style, patterns, testing, hooks, and performance rules across 1
 
 High-leverage workflow entry points: ARG runtime debug, policy tuning, learning review, capability audit, deep code analysis, intelligence amplification, autonomous improvement, multi-agent debug, semantic refactor, test intelligence, deployment safety, context maximizer, orchestration design, workflow acceleration, pattern extraction, plus domain-specific skills for git workflows, multi-agent orchestration, and infrastructure patterns.
 
-### Scripts (`scripts/`) — 48 files
+### Scripts (`scripts/`) — 51 files
 
 | Script | Purpose |
 |--------|---------|
 | `ecc-cli.sh` | Unified CLI entry point — all subcommands in one place |
+| `install.sh` | One-command install: validates prereqs, copies files, prints wire-hooks snippet |
+| `upgrade.sh` | In-place upgrade preserving `ecc.config.json` and state files |
 | `setup-wizard.sh` | Interactive 5-question onboarding → install command + ecc.config.json |
-| `install-local.sh` | Copy kit into a project (profiles: minimal/rules/agents/skills/full) |
+| `install-local.sh` | Low-level file copy (profiles: minimal/rules/agents/skills/full) |
 | `wire-hooks.sh` | Generate settings.json hook wiring snippet |
 | `audit-local.sh` | Grep-based risk scanner for scripts and hooks |
 | `audit-examples.sh` | Scan prose and GOOD code blocks for dangerous patterns |
 | `verify-hooks-integrity.sh` | SHA-256 baseline check for all hook files |
 | `run-fixtures.sh` | 54-fixture automated test runner |
+| `eval-decision-quality.sh` | Measure `runtime.decide()` FP/FN rates against a labeled corpus; exits 1 if thresholds exceeded |
 | `check-skills.sh` | Validate skill file structure |
 | `check-installation.sh` | Verify install profiles, config generation, and hook wiring |
 | `check-config-integration.sh` | Verify `generate-config`, `install-local`, and `wire-hooks --check` integration paths |

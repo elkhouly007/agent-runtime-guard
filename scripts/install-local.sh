@@ -117,6 +117,7 @@ JSEOF
   eval "$parsed" 2>/dev/null || true
   [ -n "$config_profile" ] && printf 'ecc.config.json: profile=%s\n' "$config_profile"
   [ -n "$config_langs"   ] && printf 'ecc.config.json: languages=%s\n' "$config_langs"
+  return 0
 }
 
 # Look for config in the target directory (where the project is)
