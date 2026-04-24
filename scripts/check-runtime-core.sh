@@ -35,18 +35,26 @@ const { discover } = require(path.join(root, 'runtime/context-discovery.js'));
 const { recordApproval, setLearnedAllow, listSuggestions, acceptSuggestion, summarizePolicy, decisionKey, getSuggestion, grantAutoAllowOnce, hasAutoAllowOnce } = require(path.join(root, 'runtime/policy-store.js'));
 const { getSessionRisk, saveState } = require(path.join(root, 'runtime/session-context.js'));
 
+// Diagnostic helper: writes current test step to stderr before each block.
+// When a test fails, the last [step] line in CI output identifies the failing test.
+function step(name) { process.stderr.write(`[step] ${name}\n`); }
+
+step('risk-score-low');
 const low = score({ command: 'npm test', targetPath: 'src/app.ts' });
 if (low.level !== 'low') throw new Error(`expected low, got ${low.level}`);
 
+step('risk-score-high');
 const forcedPush = ['git', 'push', '--force', 'origin', 'main'].join(' ');
 const high = score({ command: forcedPush, targetPath: 'prod/config.yml', protectedBranch: true });
 if (!(high.score >= 8)) throw new Error(`expected high score >=8, got ${high.score}`);
 
+step('decide-block-critical');
 const destructive = ['rm', '-rf', '/'].join(' ');
 const blocked = decide({ command: destructive, targetPath: '/', tool: 'Bash', branch: 'main', notes: 'runtime-core-check' });
 if (blocked.action !== 'block') throw new Error(`expected block, got ${blocked.action}`);
 if (blocked.riskLevel !== 'critical') throw new Error(`expected critical, got ${blocked.riskLevel}`);
 
+step('decide-medium-route');
 const mediumInput = { command: ['sudo', 'systemctl', 'restart', 'app'].join(' '), targetPath: 'ops/service', tool: 'Bash', sessionRisk: 0 };
 const routed = decide(mediumInput);
 if (routed.action !== 'route') throw new Error(`expected route, got ${routed.action}`);
@@ -70,13 +78,17 @@ if (!['require-tests', 'escalate', 'block', 'allow'].includes(destructive2.actio
 if (!['require-tests', 'escalate', 'block', 'allow'].includes(destructive3.action)) throw new Error(`unexpected action ${destructive3.action}`);
 if (getSessionRisk() < 1) throw new Error('expected session risk to increase after repeated risky actions');
 
+step('discover-git-repo');
 const repo = path.resolve(process.env.HOME, 'sample-repo');
 fs.mkdirSync(repo, { recursive: true });
 execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 execFileSync('git', ['checkout', '-b', 'release'], { cwd: repo, stdio: 'ignore' });
 fs.writeFileSync(path.join(repo, 'ecc.config.json'), JSON.stringify({ runtime: { protected_branches: ['release'], trust_posture: 'balanced' } }, null, 2));
 const discovered = discover({ targetPath: path.join(repo, 'src') });
-if (path.normalize(discovered.projectRoot) !== path.normalize(repo)) throw new Error(`expected projectRoot ${repo}, got ${discovered.projectRoot}`);
+// Normalize path separators: git on Windows may return forward-slash paths; compare case-insensitively
+const normDiscovered = path.normalize(discovered.projectRoot).replace(/\\/g, '/').toLowerCase();
+const normRepo = path.normalize(repo).replace(/\\/g, '/').toLowerCase();
+if (normDiscovered !== normRepo) throw new Error(`expected projectRoot ${repo}, got ${discovered.projectRoot}`);
 if (discovered.branch !== 'release') throw new Error(`expected discovered branch release, got ${discovered.branch}`);
 const protectedDecision = decide({ command: ['sudo', 'systemctl', 'restart', 'api'].join(' '), targetPath: path.join(repo, 'src'), tool: 'Bash', projectRoot: repo, sessionRisk: 0 });
 if (protectedDecision.action !== 'require-review') throw new Error(`expected require-review, got ${protectedDecision.action}`);
@@ -84,10 +96,12 @@ if (protectedDecision.enforcementAction !== 'block') throw new Error(`expected e
 if (protectedDecision.actionPlan.reviewType !== 'protected-branch-review') throw new Error(`expected protected-branch-review, got ${protectedDecision.actionPlan.reviewType}`);
 if (!protectedDecision.explanation.includes('trust=balanced')) throw new Error('expected balanced trust explanation');
 
+step('decide-require-tests');
 const testsDecision = decide({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0 });
 if (testsDecision.action !== 'require-tests') throw new Error(`expected require-tests, got ${testsDecision.action}`);
 if (!Array.isArray(testsDecision.actionPlan.commands) || testsDecision.actionPlan.commands.length < 1) throw new Error('expected test commands in action plan');
 
+step('decide-stack-aware-tests');
 const testsShapeRepo = path.resolve(process.env.HOME, 'tests-shape-repo');
 fs.mkdirSync(testsShapeRepo, { recursive: true });
 execFileSync('git', ['init'], { cwd: testsShapeRepo, stdio: 'ignore' });
@@ -240,7 +254,7 @@ if (blockedPromo.promotionGuidance.stage !== 'ineligible') throw new Error(`expe
 if (adaptiveTestsDecision.actionPlan.promotionHint == null) throw new Error('expected promotionHint in adaptive action plan');
 
 // --- W2: escalate lane, payloadClass routing, sessionRisk routing ---
-
+step('W2-escalate');
 // force-push without protectedBranch → high risk, non-protected-branch, non-destructive → escalate
 const escalateDecision = decide({ command: 'git push --force origin main', targetPath: 'src/app.ts', tool: 'Bash', sessionRisk: 0 });
 if (escalateDecision.action !== 'escalate') throw new Error(`expected escalate, got ${escalateDecision.action}`);
@@ -264,6 +278,7 @@ if (classifyCommandPayload('echo api_key=abc123') !== 'C') throw new Error('expe
 if (classifyCommandPayload('cat internal-only/report.md') !== 'B') throw new Error('expected B for internal-only command');
 if (classifyCommandPayload('npm test') !== 'A') throw new Error('expected A for safe command');
 
+step('B1-auto-allow-once');
 // B.1 auto-allow-once: grant for eligible (pending) policy, consume on decide, expire after single use
 const autoInput = { command: 'npx -y tsx scripts/migrate.ts', tool: 'Bash', targetPath: 'scripts/', payloadClass: 'A', branch: 'feature/docs', sessionRisk: 0 };
 for (let i = 0; i < 3; i++) recordApproval(autoInput);
@@ -280,6 +295,7 @@ if (!autoDecision.explanation.includes('auto-allow-once=consumed')) throw new Er
 if (hasAutoAllowOnce(autoKey)) throw new Error('auto-allow-once token should be consumed after single use');
 console.log('auto-allow-once-lifecycle: ok');
 
+step('B2-trajectory-nudge');
 // B.2 trajectory nudge: 3 recent escalations should nudge allow → route
 const now = Date.now();
 saveState({
@@ -297,6 +313,7 @@ if (!trajDecision.explanation.includes('trajectory-nudge')) throw new Error('exp
 if (!trajDecision.trajectoryNudge) throw new Error('expected trajectoryNudge field in result');
 console.log('trajectory-nudge: ok');
 
+step('B3-trajectory-nudge-negative-learned-allow');
 // Trajectory-nudge NEGATIVE tests: learned-allow and auto-allow-once are exempt
 // Case A: learned-allow must NOT be nudged despite 3+ escalations
 const negTs = Date.now();
@@ -315,6 +332,7 @@ if (learnedDecision.decisionSource !== 'learned-allow') throw new Error(`expecte
 if (learnedDecision.trajectoryNudge) throw new Error('trajectory nudge must NOT fire when source is learned-allow');
 console.log('trajectory-nudge exempt for learned-allow: ok');
 
+step('B3-trajectory-nudge-negative-auto-allow-once');
 // Case B: auto-allow-once must NOT be nudged either
 // Re-use the eligible suggestion left by the B.1 lifecycle test above (npx -y)
 // That test consumed the token but left the suggestion as pending; re-grant it.
@@ -339,6 +357,7 @@ if (aaoDecision.decisionSource !== 'auto-allow-once') throw new Error(`expected 
 if (aaoDecision.trajectoryNudge) throw new Error('trajectory nudge must NOT fire when source is auto-allow-once');
 console.log('trajectory-nudge exempt for auto-allow-once: ok');
 
+step('C3-kill-switch');
 // C.3 kill switch: ECC_KILL_SWITCH=1 should block all decisions regardless of risk
 const origKS = process.env.ECC_KILL_SWITCH;
 process.env.ECC_KILL_SWITCH = '1';
@@ -350,6 +369,7 @@ if (origKS !== undefined) process.env.ECC_KILL_SWITCH = origKS;
 else delete process.env.ECC_KILL_SWITCH;
 console.log('kill-switch: ok');
 
+step('R1-learned-allow-destructive-delete');
 // R1: learned-allow source attribution for high-risk destructive-delete.
 // Must test on a non-protected branch so the score stays at 7 (high) not 10 (critical).
 // Critical always blocks regardless of learned-allow — that is correct behaviour.
@@ -359,10 +379,18 @@ saveState({ recent: [], updatedAt: new Date().toISOString() }); // clear traject
 const destructiveLearnedInput = { command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] };
 setLearnedAllow(destructiveLearnedInput, true);
 const destructiveLearnedDecision = decide({ ...destructiveLearnedInput });
-if (destructiveLearnedDecision.action !== 'allow') throw new Error(`R1: expected allow for learned destructive-delete on non-protected branch, got ${destructiveLearnedDecision.action}`);
+if (destructiveLearnedDecision.action !== 'allow') {
+  const rs = require(path.join(root, 'runtime/risk-score.js'));
+  const { isLearnedAllowed: _ila, loadPolicy: _lp } = require(path.join(root, 'runtime/policy-store.js'));
+  const _dbgScore = rs.score({ command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] });
+  const _dbgPolicy = _lp();
+  process.stderr.write(`[R1-diag] score=${_dbgScore.score} level=${_dbgScore.level} reasons=${_dbgScore.reasons.join(',')} learnedAllow=${_ila(destructiveLearnedInput)} policyKeys=${Object.keys(_dbgPolicy.learnedAllows||{}).join(',')}\n`);
+  throw new Error(`R1: expected allow for learned destructive-delete on non-protected branch, got ${destructiveLearnedDecision.action}`);
+}
 if (destructiveLearnedDecision.decisionSource !== 'learned-allow') throw new Error(`R1: expected learned-allow source for destructive-delete, got ${destructiveLearnedDecision.decisionSource}`);
 console.log('learned-allow source attribution for destructive-delete: ok');
 
+step('R3-global-package-install-key');
 // R3: global-package-install commandClass in decisionKey produces distinct key from generic
 const { decisionKey: dkey } = require(path.join(root, 'runtime/policy-store.js'));
 const globalInstallKey = dkey({ command: 'npm install -g ts-node', tool: 'Bash', targetPath: '/usr/local/lib' });
@@ -372,6 +400,7 @@ if (genericKey.split('|')[1] !== 'generic') throw new Error(`R3: expected generi
 if (globalInstallKey === genericKey) throw new Error('R3: global-package-install key must differ from generic key');
 console.log('global-package-install commandClass isolation: ok');
 
+step('R4-block-workflow-route');
 // R4: block action produces explicit workflowRoute.lane=blocked (not null)
 const blockDecision = decide({ command: 'rm -rf /', targetPath: '/', tool: 'Bash', sessionRisk: 0 });
 if (blockDecision.action !== 'block') throw new Error(`R4: expected block for rm -rf /, got ${blockDecision.action}`);
