@@ -46,7 +46,7 @@ function loadState() {
 }
 
 function saveState(state) {
-  _stateCache = null; // invalidate before write
+  _stateCache = null; // invalidate before write so a failed write leaves cache empty
   ensureBaseDir();
   const { sessionFile } = paths();
   const data = JSON.stringify(state, null, 2) + "\n";
@@ -59,6 +59,8 @@ function saveState(state) {
     fs.writeFileSync(sessionFile, data, { mode: 0o600 });
     try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
   }
+  // Repopulate cache so callers in the same process don't need a file round-trip.
+  _stateCache = state;
 }
 
 function getSessionRisk() {

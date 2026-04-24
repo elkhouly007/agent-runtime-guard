@@ -401,14 +401,34 @@ step('R1-learned-allow-destructive-delete');
 saveState({ recent: [], updatedAt: new Date().toISOString() }); // clear trajectory
 const destructiveLearnedInput = { command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] };
 setLearnedAllow(destructiveLearnedInput, true);
+// Pre-decision verification: confirm the policy write persisted before invoking decide().
+// Reads the file directly (bypassing module cache) to catch any Windows file-read failure.
+{
+  const _r1Key = decisionKey(destructiveLearnedInput);
+  const _r1File = path.join(process.env.ECC_STATE_DIR, 'learned-policy.json');
+  let _r1Data = null;
+  try { _r1Data = JSON.parse(fs.readFileSync(_r1File, 'utf8')); } catch (e) {
+    throw new Error(`[R1-file-read-failed] key=${_r1Key} file=${_r1File} err=${e.message} ECC_STATE_DIR=${process.env.ECC_STATE_DIR}`);
+  }
+  if (!_r1Data.learnedAllows?.[_r1Key]) {
+    throw new Error(`[R1-write-missing] key=${_r1Key} learnedAllows=${JSON.stringify(_r1Data.learnedAllows)} ECC_STATE_DIR=${process.env.ECC_STATE_DIR}`);
+  }
+  console.log(`[R1-pre-ok] key=${_r1Key} ECC_STATE_DIR=${process.env.ECC_STATE_DIR}`);
+}
 const destructiveLearnedDecision = decide({ ...destructiveLearnedInput });
 if (destructiveLearnedDecision.action !== 'allow') {
-  const rs = require(path.join(root, 'runtime/risk-score.js'));
-  const { isLearnedAllowed: _ila, loadPolicy: _lp } = require(path.join(root, 'runtime/policy-store.js'));
-  const _dbgScore = rs.score({ command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] });
+  const { isLearnedAllowed: _ila, loadPolicy: _lp, decisionKey: _dk } = require(path.join(root, 'runtime/policy-store.js'));
+  const { discover: _disc } = require(path.join(root, 'runtime/context-discovery.js'));
+  const { loadProjectPolicy: _lpp } = require(path.join(root, 'runtime/project-policy.js'));
   const _dbgPolicy = _lp();
-  process.stderr.write(`[R1-diag] action=${destructiveLearnedDecision.action} source=${destructiveLearnedDecision.decisionSource} score=${_dbgScore.score} level=${_dbgScore.level} reasons=${_dbgScore.reasons.join(',')} learnedAllow=${_ila(destructiveLearnedInput)} ECC_KILL_SWITCH=${JSON.stringify(process.env.ECC_KILL_SWITCH)} policyKeys=${Object.keys(_dbgPolicy.learnedAllows||{}).join(',')}\n`);
-  throw new Error(`R1: expected allow for learned destructive-delete on non-protected branch, got ${destructiveLearnedDecision.action}`);
+  const _r1Disc = _disc({ ...destructiveLearnedInput });
+  const _r1Exp = Object.fromEntries(Object.entries({ ...destructiveLearnedInput }).filter(([,v]) => v !== '' && v != null));
+  const _r1PP = _lpp({ ..._r1Disc, ..._r1Exp });
+  const _r1Enriched = { ..._r1PP, ..._r1Disc, ..._r1Exp };
+  const _enrichedKey = _dk(_r1Enriched);
+  const _inputKey = _dk(destructiveLearnedInput);
+  process.stderr.write(`[R1-diag] action=${destructiveLearnedDecision.action} source=${destructiveLearnedDecision.decisionSource} learnedAllow=${_ila(destructiveLearnedInput)} ECC_KILL_SWITCH=${JSON.stringify(process.env.ECC_KILL_SWITCH)} policyKeys=${Object.keys(_dbgPolicy.learnedAllows||{}).join(',')} inputKey=${_inputKey} enrichedKey=${_enrichedKey} enrichedPayloadClass=${_r1Enriched.payloadClass}\n`);
+  throw new Error(`R1: expected allow for learned destructive-delete on non-protected branch, got ${destructiveLearnedDecision.action} (inputKey=${_inputKey} enrichedKey=${_enrichedKey})`);
 }
 if (destructiveLearnedDecision.decisionSource !== 'learned-allow') throw new Error(`R1: expected learned-allow source for destructive-delete, got ${destructiveLearnedDecision.decisionSource}`);
 console.log('learned-allow source attribution for destructive-delete: ok');

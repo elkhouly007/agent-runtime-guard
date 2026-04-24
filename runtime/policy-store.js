@@ -49,7 +49,7 @@ function loadPolicy() {
 }
 
 function savePolicy(policy) {
-  _policyCache = null; // invalidate before write
+  _policyCache = null; // invalidate before write so a failed write leaves cache empty
   ensureBaseDir();
   const { policyFile } = paths();
   const data = JSON.stringify(policy, null, 2) + "\n";
@@ -63,6 +63,10 @@ function savePolicy(policy) {
     fs.writeFileSync(policyFile, data, { mode: 0o600 });
     try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
   }
+  // Repopulate cache with the just-written policy so callers in the same process
+  // don't need a file round-trip. Safe because Node.js is single-threaded and
+  // each hook invocation is a separate process (no cross-process cache sharing).
+  _policyCache = policy;
 }
 
 function decisionKey(input = {}) {
