@@ -42,7 +42,7 @@ process.env.HOME = _testStateDir;
 const { score } = require(path.join(root, 'runtime/risk-score.js'));
 const { decide } = require(path.join(root, 'runtime/decision-engine.js'));
 const { discover } = require(path.join(root, 'runtime/context-discovery.js'));
-const { recordApproval, setLearnedAllow, listSuggestions, acceptSuggestion, summarizePolicy, decisionKey, getSuggestion, grantAutoAllowOnce, hasAutoAllowOnce } = require(path.join(root, 'runtime/policy-store.js'));
+const { recordApproval, setLearnedAllow, isLearnedAllowed, listSuggestions, acceptSuggestion, summarizePolicy, decisionKey, getSuggestion, grantAutoAllowOnce, hasAutoAllowOnce } = require(path.join(root, 'runtime/policy-store.js'));
 const { getSessionRisk, saveState } = require(path.join(root, 'runtime/session-context.js'));
 
 // Diagnostic helper: writes current test step to stderr before each block.
@@ -401,6 +401,11 @@ step('R1-learned-allow-destructive-delete');
 saveState({ recent: [], updatedAt: new Date().toISOString() }); // clear trajectory
 const destructiveLearnedInput = { command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] };
 setLearnedAllow(destructiveLearnedInput, true);
+// Direct module-level assertion: if this fails, the policy-store cache was not updated.
+if (!isLearnedAllowed(destructiveLearnedInput)) {
+  throw new Error(`[R1-direct-assert-failed] key=${decisionKey(destructiveLearnedInput)} ECC_STATE_DIR=${process.env.ECC_STATE_DIR}`);
+}
+console.log(`[R1-module-ok] key=${decisionKey(destructiveLearnedInput)}`);
 // Pre-decision verification: confirm the policy write persisted before invoking decide().
 // Reads the file directly (bypassing module cache) to catch any Windows file-read failure.
 {
