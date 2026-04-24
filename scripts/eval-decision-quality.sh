@@ -53,7 +53,7 @@ fi
 # Run all eval logic in a single Node.js process to avoid per-entry startup overhead.
 # Suppress journal writes and use a temp state dir for isolation.
 eval_tmp="$(mktemp -d)"
-trap 'rm -rf "$eval_tmp"' EXIT
+trap 'rm -r -f "$eval_tmp"' EXIT
 
 ECC_DECISION_JOURNAL=0 ECC_STATE_DIR="$eval_tmp" node - "$corpus" "$max_fp_pct" "$max_fn_pct" "$verbose" <<'NODEJS'
 "use strict";
