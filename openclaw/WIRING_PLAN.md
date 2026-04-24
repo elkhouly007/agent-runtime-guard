@@ -4,10 +4,11 @@
 
 Wire Agent Runtime Guard into OpenClaw in a way that is apply-ready, reviewable, and aligned with the standing approval policy.
 
-## Scope Of This First Wiring Step
+## Scope Of This Wiring
 
-This step prepares:
+This wiring covers:
 
+- runtime hook adapter (`openclaw/hooks/adapter.js`);
 - target file map;
 - prompt pack layout;
 - policy mapping for OpenClaw usage;
@@ -16,6 +17,32 @@ This step prepares:
 - project-local examples that avoid core patching.
 
 It does not overwrite existing OpenClaw workspace files or global OpenClaw config.
+
+## Runtime Hook Adapter
+
+`openclaw/hooks/adapter.js` is a PreToolUse hook for OpenClaw that routes shell commands through `runtime.decide()`.
+
+**Primary input shape (OpenClaw native):**
+
+```json
+{ "tool": "shell", "cmd": "...", "cwd": "..." }
+```
+
+**Fallback shapes (cross-harness compatibility):**
+
+- `input.input.cmd` — nested OpenClaw
+- `input.command` — Claude Code direct
+- `input.args.command` — Claude Code args
+- `input.tool_input.command` — Claude Code tool_input
+
+**Wire into OpenClaw settings** as a `PreToolUse` hook on shell/bash tool calls. Point the hook command at the absolute path of `openclaw/hooks/adapter.js`.
+
+**Modes:**
+
+- Warn mode (default): warns to stderr, exits 0 (tool call proceeds). Set no env var.
+- Block mode: `export ECC_ENFORCE=1` — exits 2 on high/critical risk (tool call aborted).
+
+**Fixtures:** `tests/fixtures/openclaw/` — 12 fixtures covering dangerous commands (rm -rf, force-push, curl\|sh, DROP TABLE, npx -y, git reset --hard), enforce mode, safe pass-through, and borderline sudo.
 
 ## Target Paths
 

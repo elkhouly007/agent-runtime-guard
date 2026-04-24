@@ -1,0 +1,1 @@
+{"tool":"shell","cmd":"git log --oneline -10"}

@@ -10,6 +10,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.0] — 2026-04-24
+
+### Added
+- `openclaw/hooks/adapter.js`: real runtime hook adapter for OpenClaw-style harnesses. Reads OpenClaw's native `{ "tool": "shell", "cmd": "..." }` input shape (with Claude Code shape fallback), runs all 20 dangerous patterns from `claude/hooks/dangerous-patterns.json`, calls `runtime.decide()`, warns to stderr in warn mode and exits 2 in enforce mode (`ECC_ENFORCE=1`).
+- `tests/fixtures/openclaw/`: 12 fixtures for the adapter (92 → 104/104 passing) covering dangerous commands (rm-rf, force-push, curl|sh, DROP TABLE, npx -y, git reset --hard), enforce/block mode, safe pass-through (ls, git-log, npm install, git push), and borderline sudo.
+- `scripts/check-openclaw-adapter.sh`: standalone adapter smoke test — existence, syntax, safe/dangerous/enforce/cmd-field extraction.
+- `openclaw/WIRING_PLAN.md`: updated with adapter wiring instructions, input shape documentation, and fixture reference.
+
+---
+
 ## [1.3.1] — 2026-04-24
 
 ### Added

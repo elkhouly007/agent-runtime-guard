@@ -109,5 +109,8 @@ jobs:
       - name: Check scenarios
         run: bash scripts/check-scenarios.sh
 
+      - name: Check OpenClaw adapter
+        run: bash scripts/check-openclaw-adapter.sh
+
       - name: Runtime decision bench
         run: ECC_BENCH_P99_MS=${{ matrix.bench_p99_ms }} bash scripts/bench-runtime-decision.sh

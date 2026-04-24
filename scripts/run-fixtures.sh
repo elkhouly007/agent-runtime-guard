@@ -169,6 +169,13 @@ for input_file in tests/fixtures/redact/*.input; do
   [ "$fixture_ok" -eq 1 ] && ok "$name"
 done
 
+# ── openclaw adapter fixtures ─────────────────────────────────────────────────
+
+run_hook_fixtures \
+  "openclaw/hooks/adapter.js" \
+  "tests/fixtures/openclaw" \
+  "openclaw adapter fixtures"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 
 printf '\n'
