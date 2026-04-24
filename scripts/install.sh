@@ -148,7 +148,15 @@ if [ ! -d "$target" ]; then
   fi
 fi
 
-target="$(cd -- "$target" && pwd)"
+if [ -d "$target" ]; then
+  target="$(cd -- "$target" && pwd)"
+else
+  # dry-run: directory not yet created — resolve to absolute path without cd
+  case "$target" in
+    /*) ;;
+    *) target="$(pwd)/$target" ;;
+  esac
+fi
 
 info "Target  : $target"
 info "Profile : $profile"
