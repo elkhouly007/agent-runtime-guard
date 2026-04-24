@@ -45,6 +45,7 @@ fs.mkdirSync(_testStateDirRaw, { recursive: true, mode: 0o700 });
 const _testStateDir = (function() { try { return fs.realpathSync(_testStateDirRaw); } catch { return _testStateDirRaw; } })();
 process.env.ECC_STATE_DIR = _testStateDir;
 process.env.HOME = _testStateDir;
+process.env.ECC_DECISION_JOURNAL = '0'; // suppress journal file writes during tests
 const { score } = require(path.join(root, 'runtime/risk-score.js'));
 const { decide } = require(path.join(root, 'runtime/decision-engine.js'));
 const { discover } = require(path.join(root, 'runtime/context-discovery.js'));
