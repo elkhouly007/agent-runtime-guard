@@ -28,7 +28,17 @@ HOME="$tmp_home" ECC_STATE_DIR="$tmp_home" node - <<'NODE' "$root" || exit 1
 const path = require('path');
 const root = process.argv[2];
 const fs = require('fs');
+const os = require('os');
 const { execFileSync } = require('child_process');
+
+// On Windows, bash provides POSIX paths (e.g. /tmp/xxx) that Node.js path.resolve()
+// converts to Windows paths (e.g. C:\tmp\xxx) — a different location than the bash
+// temp dir. Override ECC_STATE_DIR and HOME with Node.js os.tmpdir() paths so all
+// file I/O uses a valid, writable, platform-native location.
+const _testStateDir = path.join(os.tmpdir(), 'ecc-runtime-test-' + process.pid);
+fs.mkdirSync(_testStateDir, { recursive: true, mode: 0o700 });
+process.env.ECC_STATE_DIR = _testStateDir;
+process.env.HOME = _testStateDir;
 const { score } = require(path.join(root, 'runtime/risk-score.js'));
 const { decide } = require(path.join(root, 'runtime/decision-engine.js'));
 const { discover } = require(path.join(root, 'runtime/context-discovery.js'));
