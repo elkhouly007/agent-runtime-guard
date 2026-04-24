@@ -49,9 +49,16 @@ function saveState(state) {
   _stateCache = null; // invalidate before write
   ensureBaseDir();
   const { sessionFile } = paths();
+  const data = JSON.stringify(state, null, 2) + "\n";
   const tmp = sessionFile + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n", { mode: 0o600 });
-  fs.renameSync(tmp, sessionFile);
+  fs.writeFileSync(tmp, data, { mode: 0o600 });
+  try {
+    fs.renameSync(tmp, sessionFile);
+  } catch {
+    // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
+    fs.writeFileSync(sessionFile, data, { mode: 0o600 });
+    try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+  }
 }
 
 function getSessionRisk() {

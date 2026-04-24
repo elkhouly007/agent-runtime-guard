@@ -52,9 +52,17 @@ function savePolicy(policy) {
   _policyCache = null; // invalidate before write
   ensureBaseDir();
   const { policyFile } = paths();
+  const data = JSON.stringify(policy, null, 2) + "\n";
   const tmp = policyFile + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(policy, null, 2) + "\n", { mode: 0o600 });
-  fs.renameSync(tmp, policyFile);
+  fs.writeFileSync(tmp, data, { mode: 0o600 });
+  try {
+    fs.renameSync(tmp, policyFile);
+  } catch {
+    // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
+    // Fall back to direct write — slightly less atomic but functionally correct.
+    fs.writeFileSync(policyFile, data, { mode: 0o600 });
+    try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+  }
 }
 
 function decisionKey(input = {}) {
