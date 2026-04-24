@@ -35,8 +35,14 @@ const { execFileSync } = require('child_process');
 // converts to Windows paths (e.g. C:\tmp\xxx) — a different location than the bash
 // temp dir. Override ECC_STATE_DIR and HOME with Node.js os.tmpdir() paths so all
 // file I/O uses a valid, writable, platform-native location.
-const _testStateDir = path.join(os.tmpdir(), 'ecc-runtime-test-' + process.pid);
-fs.mkdirSync(_testStateDir, { recursive: true, mode: 0o700 });
+//
+// Additionally, os.tmpdir() on Windows can return an 8.3 short path
+// (e.g. C:\Users\RUNNER~1\AppData\Local\Temp on GitHub Actions) while git
+// returns the canonical long path. Resolve to canonical form so that path
+// comparisons in discover-git-repo tests don't fail due to short/long mismatch.
+const _testStateDirRaw = path.join(os.tmpdir(), 'ecc-runtime-test-' + process.pid);
+fs.mkdirSync(_testStateDirRaw, { recursive: true, mode: 0o700 });
+const _testStateDir = (function() { try { return fs.realpathSync(_testStateDirRaw); } catch { return _testStateDirRaw; } })();
 process.env.ECC_STATE_DIR = _testStateDir;
 process.env.HOME = _testStateDir;
 const { score } = require(path.join(root, 'runtime/risk-score.js'));
