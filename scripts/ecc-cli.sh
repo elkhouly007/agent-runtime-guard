@@ -8,7 +8,8 @@
 #   ecc <subcommand> [args...]          (if symlinked to PATH)
 #
 # Subcommands:
-#   install     Copy Agent Runtime Guard files into a target project directory.
+#   install     Install Agent Runtime Guard into a target project directory (one command).
+#   upgrade     Upgrade an existing installation in-place, preserving ecc.config.json.
 #   setup       Run the interactive onboarding wizard.
 #   audit       Audit scripts and hook files for unsafe patterns.
 #   check       Run registry, integration, skill, installation, config/settings, runtime core, runtime CLI, hook edge cases, apply-status, executable, setup, wiring-doc, superiority-evidence, status-doc, fixture-count, and harness-support checks.
@@ -71,7 +72,12 @@ case "$cmd" in
 
   # ── install ──────────────────────────────────────────────────────────────
   install)
-    exec bash "${scripts}/install-local.sh" "$@"
+    exec bash "${scripts}/install.sh" "$@"
+    ;;
+
+  # ── upgrade ──────────────────────────────────────────────────────────────
+  upgrade)
+    exec bash "${scripts}/upgrade.sh" "$@"
     ;;
 
   # ── setup ────────────────────────────────────────────────────────────────
@@ -323,7 +329,8 @@ for (const line of lines) {
       sub="$1"
       # Delegate to sub-script --help where possible
       case "$sub" in
-        install)  bash "${scripts}/install-local.sh" --help ;;
+        install)  bash "${scripts}/install.sh" --help ;;
+        upgrade)  bash "${scripts}/upgrade.sh" --help 2>/dev/null || printf 'Usage: upgrade.sh [INSTALLED_DIR]\n' ;;
         setup)    bash "${scripts}/setup-wizard.sh" --help ;;
         redact)   bash "${scripts}/redact-payload.sh" --help ;;
         review)   bash "${scripts}/review-payload.sh" --help 2>/dev/null || printf 'No detailed help for: review\n' ;;

@@ -10,6 +10,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] — 2026-04-24
+
+### Added
+- `scripts/install.sh` — single-command install entry point. Validates Node.js and git, copies kit files, generates `ecc.config.json` if missing, prints the wire-hooks snippet. Replaces the three-step wizard → install-local → wire-hooks flow. Flags: `--profile`, `--tool`, `--auto`, `--yes`, `--dry-run`.
+- `scripts/upgrade.sh` — in-place upgrade for existing installations. Reads installed `VERSION`, re-runs install with the same profile (from `ecc.config.json`), preserves `ecc.config.json` unconditionally, updates `VERSION`, and reports the version delta. State files in `ECC_STATE_DIR` are never touched.
+- `ecc-cli.sh install` now dispatches to `install.sh` (was `install-local.sh`); `ecc-cli.sh upgrade` added as new subcommand.
+- `check-installation.sh` extended with sections 10–13: `install.sh --dry-run`, fresh install, same-version no-op, and version-bump upgrade with config preservation.
+- README Quick Start updated to lead with `install` + `upgrade` commands; scripts table updated with new entries (count: 48 → 50).
+
+---
+
 ## [1.1.0] — 2026-04-24
 
 ### Added
