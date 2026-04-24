@@ -43,7 +43,7 @@ This repository is not a drop-in copy of Everything Claude Code. It is a conserv
 # 6. Run runtime and structural checks, including install and apply-status verification:
 ./scripts/ecc-cli.sh check
 
-# 7. Run all 104 fixture-based tests:
+# 7. Run all 116 fixture-based tests:
 ./scripts/ecc-cli.sh fixtures
 
 # 8. Measure decision quality (FP/FN rates against the labeled corpus):
@@ -102,7 +102,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `audit-local.sh` | Grep-based risk scanner for scripts and hooks |
 | `audit-examples.sh` | Scan prose and GOOD code blocks for dangerous patterns |
 | `verify-hooks-integrity.sh` | SHA-256 baseline check for all hook files |
-| `run-fixtures.sh` | 104-fixture automated test runner |
+| `run-fixtures.sh` | 116-fixture automated test runner |
 | `eval-decision-quality.sh` | Measure `runtime.decide()` FP/FN rates against a labeled corpus; exits 1 if thresholds exceeded |
 | `check-skills.sh` | Validate skill file structure |
 | `check-installation.sh` | Verify install profiles, config generation, and hook wiring |
@@ -123,6 +123,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `check-status-docs.sh` | Verify `parity-report.md` sync and guard key counts inside `full-power-status.md` |
 | `check-status-artifact.sh` | Verify status artifact generation and metadata integrity |
 | `check-harness-support.sh` | Verify harness support matrix, stub directories, wizard rejection paths, and apply-status planned entries |
+| `check-opencode-adapter.sh` | Verify OpenCode adapter.js syntax, safe pass-through, warn mode, enforce/block mode, and args.command field extraction |
 | `check-openclaw-adapter.sh` | Verify OpenClaw adapter.js syntax, safe pass-through, warn mode, enforce/block mode, and OpenClaw cmd field extraction |
 | `check-owasp-coverage.sh` | Verify OWASP Agentic Top 10 (2026) coverage matrix — every ASI row names a specific file or `NOT COVERED` |
 | `bench-runtime-decision.sh` | Latency benchmark — 1000 `runtime.decide()` calls, prints p50/p95/p99; platform-aware ceiling (500ms Windows, 10ms Linux CI) |

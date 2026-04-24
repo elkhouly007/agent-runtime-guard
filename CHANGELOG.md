@@ -10,6 +10,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] — 2026-04-24
+
+### Added
+- `opencode/hooks/adapter.js`: real runtime hook adapter for OpenCode harnesses (Claude Code fork). Reads OpenCode's native `{ "tool_name": "Bash", "args": { "command": "..." } }` input shape, runs all 20 dangerous patterns, calls `runtime.decide()`, warns to stderr or exits 2 in enforce mode.
+- `tests/fixtures/opencode/`: 12 fixtures for the adapter (104 → 116/116 passing) covering dangerous commands, enforce/block mode, safe pass-through, and borderline sudo.
+- `scripts/check-opencode-adapter.sh`: standalone adapter smoke test — existence, syntax, safe/dangerous/enforce/args-field extraction.
+- `opencode/WIRING_PLAN.md`: updated with adapter wiring instructions and input shape documentation.
+
+---
+
 ## [1.4.0] — 2026-04-24
 
 ### Added

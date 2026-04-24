@@ -109,6 +109,9 @@ jobs:
       - name: Check scenarios
         run: bash scripts/check-scenarios.sh
 
+      - name: Check OpenCode adapter
+        run: bash scripts/check-opencode-adapter.sh
+
       - name: Check OpenClaw adapter
         run: bash scripts/check-openclaw-adapter.sh
 
