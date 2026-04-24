@@ -10,6 +10,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.1] — 2026-04-24
+
+### Added
+- `runtime/risk-score.js`: four new risk patterns closing documented engine gaps:
+  - `hard-reset-pattern` (`git reset --hard`) — +4 points, medium → `route`
+  - `kubectl-delete-pattern` (`kubectl delete|remove`) — +4 points, medium → `route`
+  - `git-clean-pattern` (`git clean -f`) — +3 points, medium → `route`
+  - `broad-permission-pattern` (`chmod 777/666/o+w/a+w`) — +3 points, medium → `route`
+- `tests/eval-corpus.json`: 7 new entries (57 total: 29 safe / 12 dangerous / 16 borderline):
+  - borderline-08/09 updated from `allow` (known gap) to `warn` (now caught)
+  - borderline-14 (`git clean -fd`), borderline-15 (`chmod 777`), borderline-16 (`kubectl delete namespace`)
+  - safe-26 (`git reset HEAD~1` — soft reset, no `--hard`), safe-27 (`kubectl get pods`), safe-28 (`chmod +x`), safe-29 (`git clean --dry-run`)
+- `references/decision-quality.md`: baseline updated to v1.3.1 (57 entries, 0.0% FP / 0.0% FN).
+
+---
+
 ## [1.3.0] — 2026-04-24
 
 ### Added

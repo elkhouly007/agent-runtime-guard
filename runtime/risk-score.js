@@ -54,6 +54,26 @@ function score(input = {}) {
     value += 3;
     reasons.push("global-package-install");
   }
+  // Hard reset — destroys local commit history irreversibly
+  if (/\bgit\s+reset\s+--hard\b/.test(ctx.command)) {
+    value += 4;
+    reasons.push("hard-reset-pattern");
+  }
+  // Kubernetes resource deletion — may affect running workloads
+  if (/\bkubectl\s+(delete|remove)\b/.test(ctx.command)) {
+    value += 4;
+    reasons.push("kubectl-delete-pattern");
+  }
+  // git clean -f — permanently removes untracked files
+  if (/\bgit\s+clean\b.*-[A-Za-z]*f/.test(ctx.command)) {
+    value += 3;
+    reasons.push("git-clean-pattern");
+  }
+  // chmod with world-write or 777 — broad permission mutation
+  if (/\bchmod\b.*(777|666|o\+w|a\+w|ugo\+w)/.test(ctx.command)) {
+    value += 3;
+    reasons.push("broad-permission-pattern");
+  }
 
   if (ctx.targetPath === "/" || ctx.targetPath === "/*") {
     value += 4;

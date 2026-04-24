@@ -506,9 +506,9 @@
       "tool": "Bash",
       "targetPath": ".",
       "payloadClass": "A",
-      "expected_action_class": "allow",
-      "expected_reasons": [],
-      "note": "git reset --hard not currently caught by risk-score (no pattern match); reveals a known engine gap"
+      "expected_action_class": "warn",
+      "expected_reasons": ["hard-reset-pattern"],
+      "note": "git reset --hard destroys local commits; score 5, medium → route (warn). Gap closed in v1.3.1."
     },
     {
       "id": "borderline-09",
@@ -517,9 +517,9 @@
       "tool": "Bash",
       "targetPath": ".",
       "payloadClass": "A",
-      "expected_action_class": "allow",
-      "expected_reasons": [],
-      "note": "k8s delete not currently caught; reveals engine gap in cloud-native ops coverage"
+      "expected_action_class": "warn",
+      "expected_reasons": ["kubectl-delete-pattern"],
+      "note": "k8s resource deletion; score 5, medium → route (warn). Gap closed in v1.3.1."
     },
     {
       "id": "borderline-10",
@@ -564,6 +564,83 @@
       "expected_action_class": "warn",
       "expected_reasons": ["privilege-elevation"],
       "note": "Privileged push without force — sudo adds 3, total medium → route (warn)"
+    },
+    {
+      "id": "borderline-14",
+      "label": "borderline",
+      "command": "git clean -fd",
+      "tool": "Bash",
+      "targetPath": ".",
+      "payloadClass": "A",
+      "expected_action_class": "warn",
+      "expected_reasons": ["git-clean-pattern"],
+      "note": "Removes all untracked files and directories; score 4, medium → route (warn)"
+    },
+    {
+      "id": "borderline-15",
+      "label": "borderline",
+      "command": "chmod 777 /var/www/html",
+      "tool": "Bash",
+      "targetPath": "/var/www/html",
+      "payloadClass": "A",
+      "expected_action_class": "warn",
+      "expected_reasons": ["broad-permission-pattern"],
+      "note": "World-writable permissions on web directory; score 4, medium → route (warn)"
+    },
+    {
+      "id": "borderline-16",
+      "label": "borderline",
+      "command": "kubectl delete namespace staging",
+      "tool": "Bash",
+      "targetPath": ".",
+      "payloadClass": "A",
+      "expected_action_class": "warn",
+      "expected_reasons": ["kubectl-delete-pattern"],
+      "note": "Deletes entire k8s namespace; score 5, medium → route (warn)"
+    },
+    {
+      "id": "safe-26",
+      "label": "safe",
+      "command": "git reset HEAD~1",
+      "tool": "Bash",
+      "targetPath": ".",
+      "payloadClass": "A",
+      "expected_action_class": "allow",
+      "expected_reasons": [],
+      "note": "Soft reset (no --hard flag) — does not destroy commits, only unstages them"
+    },
+    {
+      "id": "safe-27",
+      "label": "safe",
+      "command": "kubectl get pods --all-namespaces",
+      "tool": "Bash",
+      "targetPath": ".",
+      "payloadClass": "A",
+      "expected_action_class": "allow",
+      "expected_reasons": [],
+      "note": "kubectl read operation — no delete/remove; should not match kubectl-delete-pattern"
+    },
+    {
+      "id": "safe-28",
+      "label": "safe",
+      "command": "chmod +x scripts/deploy.sh",
+      "tool": "Bash",
+      "targetPath": ".",
+      "payloadClass": "A",
+      "expected_action_class": "allow",
+      "expected_reasons": [],
+      "note": "chmod +x (executable only) — not world-writable; must not match broad-permission-pattern"
+    },
+    {
+      "id": "safe-29",
+      "label": "safe",
+      "command": "git clean --dry-run",
+      "tool": "Bash",
+      "targetPath": ".",
+      "payloadClass": "A",
+      "expected_action_class": "allow",
+      "expected_reasons": [],
+      "note": "git clean --dry-run only previews, no -f flag; must not match git-clean-pattern"
     }
   ]
 }
