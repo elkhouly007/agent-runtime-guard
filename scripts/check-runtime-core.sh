@@ -42,7 +42,10 @@ const { execFileSync } = require('child_process');
 // comparisons in discover-git-repo tests don't fail due to short/long mismatch.
 const _testStateDirRaw = path.join(os.tmpdir(), 'ecc-runtime-test-' + process.pid);
 fs.mkdirSync(_testStateDirRaw, { recursive: true, mode: 0o700 });
-const _testStateDir = (function() { try { return fs.realpathSync(_testStateDirRaw); } catch { return _testStateDirRaw; } })();
+// realpathSync.native calls GetFinalPathNameByHandleW on Windows which resolves 8.3 short
+// names (e.g. RUNNER~1 → runneradmin); plain realpathSync only resolves symlinks/./../
+const _realpathFn = typeof fs.realpathSync.native === 'function' ? fs.realpathSync.native : fs.realpathSync;
+const _testStateDir = (function() { try { return _realpathFn(_testStateDirRaw); } catch { return _testStateDirRaw; } })();
 process.env.ECC_STATE_DIR = _testStateDir;
 process.env.HOME = _testStateDir;
 process.env.ECC_DECISION_JOURNAL = '0'; // suppress journal file writes during tests
@@ -104,9 +107,13 @@ execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 execFileSync('git', ['checkout', '-b', 'release'], { cwd: repo, stdio: 'ignore' });
 fs.writeFileSync(path.join(repo, 'ecc.config.json'), JSON.stringify({ runtime: { protected_branches: ['release'], trust_posture: 'balanced' } }, null, 2));
 const discovered = discover({ targetPath: path.join(repo, 'src') });
-// Normalize path separators: git on Windows may return forward-slash paths; compare case-insensitively
-const normDiscovered = path.normalize(discovered.projectRoot).replace(/\\/g, '/').toLowerCase();
-const normRepo = path.normalize(repo).replace(/\\/g, '/').toLowerCase();
+// Normalize path separators and resolve 8.3 short names (realpathSync.native) before comparing.
+// Git always returns the canonical long path; os.tmpdir() on GitHub Actions Windows runner
+// can return a short path (RUNNER~1) even after mkdir, so canonicalize both sides.
+let _repoCanon = repo; try { _repoCanon = _realpathFn(repo); } catch {}
+let _discCanon = discovered.projectRoot; try { _discCanon = _realpathFn(discovered.projectRoot); } catch {}
+const normDiscovered = path.normalize(_discCanon).replace(/\\/g, '/').toLowerCase();
+const normRepo = path.normalize(_repoCanon).replace(/\\/g, '/').toLowerCase();
 if (normDiscovered !== normRepo) throw new Error(`expected projectRoot ${repo}, got ${discovered.projectRoot}`);
 if (discovered.branch !== 'release') throw new Error(`expected discovered branch release, got ${discovered.branch}`);
 const protectedDecision = decide({ command: ['sudo', 'systemctl', 'restart', 'api'].join(' '), targetPath: path.join(repo, 'src'), tool: 'Bash', projectRoot: repo, sessionRisk: 0 });
