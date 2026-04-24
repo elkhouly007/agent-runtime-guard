@@ -46,21 +46,27 @@ function loadState() {
 }
 
 function saveState(state) {
-  _stateCache = null; // invalidate before write so a failed write leaves cache empty
-  ensureBaseDir();
-  const { sessionFile } = paths();
-  const data = JSON.stringify(state, null, 2) + "\n";
-  const tmp = sessionFile + ".tmp";
-  fs.writeFileSync(tmp, data, { mode: 0o600 });
+  _stateCache = null;
   try {
-    fs.renameSync(tmp, sessionFile);
-  } catch {
-    // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
-    fs.writeFileSync(sessionFile, data, { mode: 0o600 });
-    try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+    ensureBaseDir();
+    const { sessionFile } = paths();
+    const data = JSON.stringify(state, null, 2) + "\n";
+    const tmp = sessionFile + ".tmp";
+    fs.writeFileSync(tmp, data, { mode: 0o600 });
+    try {
+      fs.renameSync(tmp, sessionFile);
+    } catch {
+      // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
+      try {
+        fs.writeFileSync(sessionFile, data, { mode: 0o600 });
+      } catch { /* best-effort fallback */ }
+      try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+    }
+  } finally {
+    // Always repopulate cache so callers in the same process see the new state,
+    // even if the disk write failed.
+    _stateCache = state;
   }
-  // Repopulate cache so callers in the same process don't need a file round-trip.
-  _stateCache = state;
 }
 
 function getSessionRisk() {

@@ -49,24 +49,29 @@ function loadPolicy() {
 }
 
 function savePolicy(policy) {
-  _policyCache = null; // invalidate before write so a failed write leaves cache empty
-  ensureBaseDir();
-  const { policyFile } = paths();
-  const data = JSON.stringify(policy, null, 2) + "\n";
-  const tmp = policyFile + ".tmp";
-  fs.writeFileSync(tmp, data, { mode: 0o600 });
+  _policyCache = null;
   try {
-    fs.renameSync(tmp, policyFile);
-  } catch {
-    // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
-    // Fall back to direct write — slightly less atomic but functionally correct.
-    fs.writeFileSync(policyFile, data, { mode: 0o600 });
-    try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+    ensureBaseDir();
+    const { policyFile } = paths();
+    const data = JSON.stringify(policy, null, 2) + "\n";
+    const tmp = policyFile + ".tmp";
+    fs.writeFileSync(tmp, data, { mode: 0o600 });
+    try {
+      fs.renameSync(tmp, policyFile);
+    } catch {
+      // Atomic rename failed (e.g. EPERM on Windows when file is locked by AV).
+      // Fall back to direct write — slightly less atomic but functionally correct.
+      try {
+        fs.writeFileSync(policyFile, data, { mode: 0o600 });
+      } catch { /* best-effort fallback */ }
+      try { fs.unlinkSync(tmp); } catch { /* tmp cleanup is best-effort */ }
+    }
+  } finally {
+    // Always repopulate cache so callers in the same process see the new state,
+    // even if the disk write failed. Each hook invocation is a separate process,
+    // so cross-process cache sharing is never an issue.
+    _policyCache = policy;
   }
-  // Repopulate cache with the just-written policy so callers in the same process
-  // don't need a file round-trip. Safe because Node.js is single-threaded and
-  // each hook invocation is a separate process (no cross-process cache sharing).
-  _policyCache = policy;
 }
 
 function decisionKey(input = {}) {
