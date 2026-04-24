@@ -1,5 +1,15 @@
 # Agent Runtime Guard — Parity to Superiority Plan
 
+> **DEPRECATED — 2026-04-24**
+> This document tracked an early parity-vs-upstream phase that is now complete.
+> Baselines below (48 agents / 50 rules / 129 skills) reflect a historical state;
+> current counts are 49 agents / 81 rules / 22 skills after the deliberate
+> direction change (adopted content removed, originals written).
+> **The canonical project plan is now [`references/unified-master-plan.md`](references/unified-master-plan.md).**
+> This file is preserved for historical reference only.
+
+---
+
 _Last updated: 2026-04-23_
 
 This plan replaces vague “improve the repo” work with a concrete path from the **current safe-plus state** to **upstream parity or better**.

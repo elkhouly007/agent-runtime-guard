@@ -10,7 +10,7 @@
 
 "use strict";
 
-const { readStdin, commandFrom, ENFORCE, hookLog, rateLimitCheck } = require("./hook-utils");
+const { readStdin, commandFrom, ENFORCE, hookLog, rateLimitCheck, runtimeDecision, runtimeContext, readSessionRisk, classifyCommandPayload } = require("./hook-utils");
 
 const FORCE_PUSH  = /\bgit\s+push\b.*(-f\b|--force\b|--force-with-lease\b)/;
 const ANY_PUSH    = /\bgit\s+push\b/;
@@ -31,26 +31,54 @@ readStdin()
         const targetMain = MAIN_BRANCH.test(command);
 
         if (isForce) {
-          console.error("[ECC Safe-Plus] [CRITICAL] Force push detected.");
+          console.error("[Agent Runtime Guard] [CRITICAL] Force push detected.");
           if (targetMain) {
-            console.error("[ECC Safe-Plus] Target appears to be a protected branch (main/master/prod).");
+            console.error("[Agent Runtime Guard] Target appears to be a protected branch (main/master/prod).");
           }
-          console.error("[ECC Safe-Plus] Force push can overwrite shared history and destroy teammates' work.");
+          console.error("[Agent Runtime Guard] Force push can overwrite shared history and destroy teammates' work.");
+
+          // Route force-push through the runtime decision engine for unified policy,
+          // trajectory tracking, and explainability. Inherits session risk and project
+          // context so escalation kicks in under repeated risky patterns.
+          const sessionRisk = readSessionRisk();
+          const payloadClass = classifyCommandPayload(command);
+          try {
+            const targetPath = String(input.cwd || input.args?.cwd || input.tool_input?.cwd || "");
+            const discovered = runtimeContext({ targetPath });
+            const decision = runtimeDecision({
+              tool: "Bash",
+              command,
+              targetPath,
+              branch: discovered.branch,
+              projectRoot: discovered.projectRoot,
+              payloadClass,
+              sessionRisk,
+              notes: "git-push-reminder:force-push",
+            });
+            console.error(`[Agent Runtime Guard] Runtime decision: ${decision.action} (risk=${decision.riskLevel}, source=${decision.decisionSource})`);
+            console.error(`[Agent Runtime Guard] Explanation: ${decision.explanation}`);
+            if (sessionRisk > 0) {
+              console.error(`[Agent Runtime Guard] Session risk: ${sessionRisk}`);
+            }
+          } catch (runtimeErr) {
+            const errMsg = runtimeErr instanceof Error ? runtimeErr.message : String(runtimeErr);
+            console.error(`[Agent Runtime Guard] WARNING: runtime decision engine unavailable (${errMsg}).`);
+          }
 
           if (ENFORCE) {
-            console.error("[ECC Safe-Plus] BLOCKED — ECC_ENFORCE=1 is active. Force push aborted.");
-            console.error("[ECC Safe-Plus] To proceed: get explicit approval, then run the command manually.");
+            console.error("[Agent Runtime Guard] BLOCKED — ECC_ENFORCE=1 is active. Force push aborted.");
+            console.error("[Agent Runtime Guard] To proceed: get explicit approval, then run the command manually.");
             try { hookLog("git-push-reminder", "BLOCK", "force-push"); } catch { /* log I/O is non-fatal */ }
             process.exit(2);
           }
 
           try { hookLog("git-push-reminder", "WARN", "force-push"); } catch { /* log I/O is non-fatal */ }
-          console.error("[ECC Safe-Plus] Proceeding in warn mode. Set ECC_ENFORCE=1 to block force pushes.");
+          console.error("[Agent Runtime Guard] Proceeding in warn mode. Set ECC_ENFORCE=1 to block force pushes.");
         } else {
           try { hookLog("git-push-reminder", "WARN", "git-push"); } catch { /* log I/O is non-fatal */ }
-          console.error("[ECC Safe-Plus] Before pushing: review branch, remote, staged files, and diff.");
+          console.error("[Agent Runtime Guard] Before pushing: review branch, remote, staged files, and diff.");
           if (targetMain) {
-            console.error("[ECC Safe-Plus] Pushing directly to a main/master/prod branch — confirm this is intentional.");
+            console.error("[Agent Runtime Guard] Pushing directly to a main/master/prod branch — confirm this is intentional.");
           }
         }
       }

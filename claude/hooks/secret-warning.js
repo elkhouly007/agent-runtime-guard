@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { readStdin, collectText, hookLog, rateLimitCheck } = require("./hook-utils");
+const { readStdin, collectText, hookLog, rateLimitCheck, runtimeDecision, readSessionRisk, ENFORCE } = require("./hook-utils");
 
 // Load patterns from secret-patterns.json (same directory as this script).
 // Falls back to the original 5 patterns if the file is missing or unreadable.
@@ -31,8 +31,6 @@ function loadPatterns() {
 
 const secretPatterns = loadPatterns();
 
-const { ENFORCE } = require("./hook-utils");
-
 readStdin()
   .then((raw) => {
     if (!rateLimitCheck("secret-warning")) {
@@ -45,11 +43,37 @@ readStdin()
       const hit = secretPatterns.find(({ pattern }) => pattern.test(text));
 
       if (hit) {
-        console.error(`[ECC Safe-Plus] Possible ${hit.name} detected in prompt input.`);
-        console.error("[ECC Safe-Plus] Remove secrets before submitting. Prefer local env files that are not shared.");
+        // Pattern match is the primary signal — always warn regardless of learned policy.
+        console.error(`[Agent Runtime Guard] Possible ${hit.name} detected in prompt input.`);
+        console.error("[Agent Runtime Guard] Remove secrets before submitting. Prefer local env files that are not shared.");
+
+        // Route through runtime decision engine for unified policy, trajectory
+        // tracking, and explainability. Secret patterns always use payloadClass 'C'
+        // (highest sensitivity). The pattern match is authoritative — runtime decision
+        // provides context and escalation only, never silently downgrades a secret hit.
+        const sessionRisk = readSessionRisk();
+        try {
+          const decision = runtimeDecision({
+            tool: "PreToolUse",
+            command: `secret-scan:${hit.name}`,
+            payloadClass: "C",
+            sessionRisk,
+            notes: `secret-warning:${hit.name}`,
+          });
+          if (decision.riskLevel && decision.riskLevel !== "low") {
+            console.error(`[Agent Runtime Guard] Runtime decision: ${decision.action} (risk=${decision.riskLevel}, source=${decision.decisionSource})`);
+            console.error(`[Agent Runtime Guard] Explanation: ${decision.explanation}`);
+          }
+          if (sessionRisk > 0) {
+            console.error(`[Agent Runtime Guard] Session risk: ${sessionRisk}`);
+          }
+        } catch (runtimeErr) {
+          const errMsg = runtimeErr instanceof Error ? runtimeErr.message : String(runtimeErr);
+          console.error(`[Agent Runtime Guard] WARNING: runtime decision engine unavailable (${errMsg}).`);
+        }
 
         if (ENFORCE) {
-          console.error("[ECC Safe-Plus] BLOCKED — ECC_ENFORCE=1 is active. Tool call aborted.");
+          console.error("[Agent Runtime Guard] BLOCKED — ECC_ENFORCE=1 is active. Tool call aborted.");
           try { hookLog("secret-warning", "BLOCK", hit.name); } catch { /* log I/O is non-fatal */ }
           process.exit(2);
         }

@@ -10,6 +10,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.0] — 2026-04-24
+
+### Added
+- Unified decision path: `secret-warning.js` and `git-push-reminder.js` now route through `runtime.decide()` for unified policy, trajectory tracking, and explainability. Secret and force-push decisions are now subject to session risk escalation, decision journaling, and consistent `[Agent Runtime Guard]` output prefix.
+- `references/unified-master-plan.md` — canonical project plan replacing `IMPROVEMENT_PLAN.md`'s stale parity-tracking content. Covers current-state audit, end-state definition, multi-harness support strategy, gap analysis, full phased roadmap, and project score.
+
+### Fixed
+- `secret-warning.js` and `git-push-reminder.js` output prefix changed from `[ECC Safe-Plus]` to `[Agent Runtime Guard]` to match `dangerous-command-gate.js`. All 23 fixture `expected_stderr` files updated accordingly.
+- `IMPROVEMENT_PLAN.md` deprecated with a notice pointing to `unified-master-plan.md`; stale baselines (129 skills, 48 agents, 50 rules) are now clearly labeled as historical.
+- `scripts/hooks-baseline.sha256` regenerated after hook changes.
+
+---
+
 ## [1.0.3] — 2026-04-24
 
 ### Fixed
