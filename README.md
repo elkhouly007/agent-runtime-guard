@@ -45,6 +45,9 @@ This repository is not a drop-in copy of Everything Claude Code. It is a conserv
 
 # 7. Run all 92 fixture-based tests:
 ./scripts/ecc-cli.sh fixtures
+
+# 8. Measure decision quality (FP/FN rates against the labeled corpus):
+./scripts/ecc-cli.sh eval
 ```
 
 ## What Is Included
@@ -86,7 +89,7 @@ Security, coding-style, patterns, testing, hooks, and performance rules across 1
 
 High-leverage workflow entry points: ARG runtime debug, policy tuning, learning review, capability audit, deep code analysis, intelligence amplification, autonomous improvement, multi-agent debug, semantic refactor, test intelligence, deployment safety, context maximizer, orchestration design, workflow acceleration, pattern extraction, plus domain-specific skills for git workflows, multi-agent orchestration, and infrastructure patterns.
 
-### Scripts (`scripts/`) — 50 files
+### Scripts (`scripts/`) — 51 files
 
 | Script | Purpose |
 |--------|---------|
@@ -100,6 +103,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `audit-examples.sh` | Scan prose and GOOD code blocks for dangerous patterns |
 | `verify-hooks-integrity.sh` | SHA-256 baseline check for all hook files |
 | `run-fixtures.sh` | 54-fixture automated test runner |
+| `eval-decision-quality.sh` | Measure `runtime.decide()` FP/FN rates against a labeled corpus; exits 1 if thresholds exceeded |
 | `check-skills.sh` | Validate skill file structure |
 | `check-installation.sh` | Verify install profiles, config generation, and hook wiring |
 | `check-config-integration.sh` | Verify `generate-config`, `install-local`, and `wire-hooks --check` integration paths |

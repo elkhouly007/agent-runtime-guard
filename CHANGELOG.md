@@ -10,6 +10,21 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.0] — 2026-04-24
+
+### Added
+- `tests/eval-corpus.json` — 50-entry labeled eval corpus: 25 safe, 12 dangerous, 13 borderline. Each entry drives one `runtime.decide()` call and specifies an expected action class and expected reason codes.
+- `scripts/eval-decision-quality.sh` — decision quality measurement script. Runs the labeled corpus through `runtime.decide()` in isolation (per-entry `sessionRisk=0`, `ECC_TRAJECTORY_THRESHOLD=9999`), maps outcomes to `allow/warn/block` classes, and reports false-positive rate (safe entries blocked) and false-negative rate (dangerous entries missed). Exits 1 if FP% > `ECC_EVAL_MAX_FP_PCT` (default 10%) or FN% > `ECC_EVAL_MAX_FN_PCT` (default 20%).
+- `ecc-cli.sh eval` subcommand — dispatches to `eval-decision-quality.sh`. Supports `--verbose`, `--max-fp-pct`, `--max-fn-pct`, `--corpus`.
+- `references/decision-quality.md` — baseline quality report for v1.3.0: 0.0% FP / 0.0% FN against the corpus, with per-entry table and notes on known engine gaps.
+- README updated: Quick Start step 8 (`eval`); scripts table updated (count: 50 → 51).
+
+### Baseline (v1.3.0)
+- False-positive rate: **0.0%** (0 / 25 safe entries blocked)
+- False-negative rate: **0.0%** (0 / 12 dangerous entries missed)
+
+---
+
 ## [1.2.0] — 2026-04-24
 
 ### Added

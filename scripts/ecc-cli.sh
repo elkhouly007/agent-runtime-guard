@@ -14,6 +14,7 @@
 #   audit       Audit scripts and hook files for unsafe patterns.
 #   check       Run registry, integration, skill, installation, config/settings, runtime core, runtime CLI, hook edge cases, apply-status, executable, setup, wiring-doc, superiority-evidence, status-doc, fixture-count, and harness-support checks.
 #   fixtures    Run all fixture-based tests.
+#   eval        Measure decision quality: run labeled corpus through runtime.decide(), report FP/FN rates.
 #   integrity   Verify hook file SHA-256 integrity baseline.
 #   status      Show counts of agents, rules, skills, hooks, scripts.
 #   review      Review a payload file for security classification.
@@ -30,6 +31,9 @@
 #   ecc-cli.sh setup --non-interactive --target ./my-project --profile full
 #   ecc-cli.sh audit
 #   ecc-cli.sh check
+#   ecc-cli.sh eval
+#   ecc-cli.sh eval --verbose
+#   ecc-cli.sh eval --max-fp-pct 5 --max-fn-pct 10
 #   ecc-cli.sh redact payload.json --diff
 #   ecc-cli.sh log --tail 20
 #   ecc-cli.sh log --clear
@@ -188,6 +192,11 @@ case "$cmd" in
   # ── fixtures ──────────────────────────────────────────────────────────────
   fixtures)
     exec bash "${scripts}/run-fixtures.sh" "$@"
+    ;;
+
+  # ── eval ──────────────────────────────────────────────────────────────────
+  eval)
+    exec bash "${scripts}/eval-decision-quality.sh" "$@"
     ;;
 
   # ── integrity ─────────────────────────────────────────────────────────────
