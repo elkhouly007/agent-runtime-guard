@@ -12,17 +12,23 @@ trap cleanup EXIT
 # Override with ECC_BENCH_P99_MS=<n> to set explicitly.
 if [ -n "${ECC_BENCH_P99_MS:-}" ]; then
   P99_CEILING_MS="$ECC_BENCH_P99_MS"
-elif uname -s 2>/dev/null | grep -qi mingw; then
+elif [ "${OS:-}" = "Windows_NT" ] || uname -s 2>/dev/null | grep -qiE 'mingw|msys|cygwin'; then
+  P99_CEILING_MS=500
+elif uname -r 2>/dev/null | grep -qi 'microsoft' && pwd | grep -q '^/mnt/'; then
+  # WSL on a Windows-mounted filesystem (/mnt/c/…) — IO is Windows-class.
   P99_CEILING_MS=500
 else
   P99_CEILING_MS=5
 fi
 
+slow_fs=0; [ "$P99_CEILING_MS" = "500" ] && slow_fs=1
+
 printf '[bench-runtime-decision]\n'
 
-node - <<'NODE' "$root" "$workdir" "$P99_CEILING_MS" || exit 1
+node - <<'NODE' "$root" "$workdir" "$P99_CEILING_MS" "$slow_fs" || exit 1
 "use strict";
 const path = require('path');
+const fs   = require('fs');
 const root = process.argv[2];
 const workdir = process.argv[3];
 const p99Ceiling = Number(process.argv[4]);
@@ -60,10 +66,50 @@ const p95  = latencies[Math.floor(N * 0.95)];
 const p99  = latencies[Math.floor(N * 0.99)];
 
 const nodeVer = process.version;
-const platform = process.platform;
+const slowFs = process.argv[5] === "1";
+const platformKey = slowFs ? `${process.platform}-slowfs` : process.platform;
 
-console.log(`  platform: ${platform}  node: ${nodeVer}`);
-console.log(`  N=${N}  p50=${p50.toFixed(3)}ms  p95=${p95.toFixed(3)}ms  p99=${p99.toFixed(3)}ms`);
+// Split cold-cache (first 10) vs warm-cache reporting
+const coldLatencies = latencies.slice(0, 10).sort((a, b) => a - b);
+const coldP99 = coldLatencies[coldLatencies.length - 1] ?? p99;
+
+console.log(`  platform: ${platformKey}  node: ${nodeVer}`);
+console.log(`  N=${N}  p50=${p50.toFixed(3)}ms  p95=${p95.toFixed(3)}ms  p99=${p99.toFixed(3)}ms (warm)`);
+console.log(`  cold-cache p99=${coldP99.toFixed(3)}ms (first 10 calls)`);
+
+// Persist baseline for regression detection (1.5× rule)
+const baselineDir  = path.join(root, "artifacts", "bench");
+const baselineFile = path.join(baselineDir, "baseline.json");
+let baseline = null;
+try {
+  if (fs.existsSync(baselineFile)) {
+    baseline = JSON.parse(fs.readFileSync(baselineFile, "utf8"));
+  }
+} catch { /* baseline is optional */ }
+
+if (baseline && baseline[platformKey] && baseline[platformKey].p99) {
+  const baseP99 = Number(baseline[platformKey].p99);
+  const cap = Math.min(p99Ceiling, baseP99 * 1.5);
+  if (p99 > cap) {
+    console.error(`  ERROR   p99 ${p99.toFixed(3)}ms exceeds 1.5× baseline (${baseP99.toFixed(3)}ms → cap ${cap.toFixed(3)}ms)`);
+    process.exit(1);
+  }
+  console.log(`  ok      p99 within 1.5× baseline (baseline=${baseP99.toFixed(3)}ms cap=${cap.toFixed(3)}ms)`);
+}
+
+try {
+  if (!fs.existsSync(baselineDir)) fs.mkdirSync(baselineDir, { recursive: true });
+  const existing = fs.existsSync(baselineFile)
+    ? JSON.parse(fs.readFileSync(baselineFile, "utf8"))
+    : {};
+  const prior = existing[platformKey];
+  if (prior && Number(prior.p50) > 0 && p50 > Number(prior.p50) * 3) {
+    console.log(`  WARN    p50 is 3× slower than prior baseline — skipping overwrite (likely wrong FS context)`);
+  } else {
+    existing[platformKey] = { p50: p50.toFixed(3), p95: p95.toFixed(3), p99: p99.toFixed(3), updatedAt: new Date().toISOString(), node: nodeVer };
+    fs.writeFileSync(baselineFile, JSON.stringify(existing, null, 2) + "\n");
+  }
+} catch { /* baseline write is best-effort */ }
 
 if (p99 > p99Ceiling) {
   console.error(`  ERROR   p99 ${p99.toFixed(3)}ms exceeds ceiling ${p99Ceiling}ms — severe regression detected`);

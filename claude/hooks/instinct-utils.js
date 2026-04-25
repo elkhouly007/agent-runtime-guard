@@ -14,13 +14,13 @@
 
 const fs   = require("fs");
 const path = require("path");
-const os   = require("os");
+const { instinctDir } = require("../../runtime/state-paths");
 
 // ---------------------------------------------------------------------------
 // Storage paths
 // ---------------------------------------------------------------------------
 
-const INSTINCT_DIR  = path.join(os.homedir(), ".openclaw", "instincts");
+const INSTINCT_DIR  = instinctDir();
 const PENDING_FILE  = path.join(INSTINCT_DIR, "pending.json");
 const CONFIDENT_FILE = path.join(INSTINCT_DIR, "confident.json");
 

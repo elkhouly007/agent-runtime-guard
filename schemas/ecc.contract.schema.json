@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecc.contract.schema.json",
+  "title": "Agent Runtime Guard upfront security contract",
+  "description": "Schema for ecc.contract.json. Validated by runtime/config-validator.js. Hard floors (Section 4.5 of the v2.0 plan) are engine-baked and cannot be relaxed by this document. Version 2 adds optional validity windows, per-branch context trust overrides, and per-tool command allowlists.",
+  "type": "object",
+  "required": ["version", "contractId", "revision", "acceptedAt", "harnessScope", "trustPosture", "scopes", "contractHash"],
+  "properties": {
+    "version":      { "type": "integer", "enum": [1, 2] },
+    "contractId":   { "type": "string",  "pattern": "^arg-[0-9]{8}-[0-9a-f]{12}$" },
+    "revision":     { "type": "integer", "minimum": 1 },
+    "acceptedAt":   { "type": "string" },
+    "acceptedBy":   { "type": "string" },
+    "expiresAt":    {},
+    "harnessScope": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["claude", "opencode", "openclaw"] },
+      "minItems": 1
+    },
+    "trustPosture": {
+      "type": "string",
+      "enum": ["relaxed", "balanced", "strict"]
+    },
+    "validity": {
+      "description": "v2: Optional time-window restrictions. Contract is treated as inactive outside these windows. Engine floors still apply when inactive — this field constrains when contract-allow demotions are honoured, not when the engine runs.",
+      "type": "object",
+      "properties": {
+        "activeHoursUtc": {
+          "type": "object",
+          "description": "UTC hour range (24-h) during which the contract is active. Omit to allow all hours.",
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            "end":   { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+          },
+          "additionalProperties": false
+        },
+        "activeDays": {
+          "type": "array",
+          "description": "Days of the week (UTC) on which the contract is active. Omit to allow all days.",
+          "items": { "type": "string", "enum": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] }
+        }
+      },
+      "additionalProperties": false
+    },
+    "contextTrust": {
+      "description": "v2: Per-branch trust posture overrides. Entries are evaluated in order; first match wins. Falls back to top-level trustPosture if no entry matches.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["branchPattern", "trustPosture"],
+        "properties": {
+          "branchPattern": { "type": "string", "description": "Glob pattern matched against the current branch name." },
+          "trustPosture":  { "type": "string", "enum": ["relaxed", "balanced", "strict"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "scopes": {
+      "type": "object",
+      "properties": {
+        "filesystem": {
+          "type": "object",
+          "properties": {
+            "readAllow":        { "type": "array", "items": { "type": "string" } },
+            "writeAllow":       { "type": "array", "items": { "type": "string" } },
+            "writeDeny":        { "type": "array", "items": { "type": "string" } },
+            "destructiveAllow": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["commandClass", "pathGlob"],
+                "properties": {
+                  "commandClass": { "type": "string" },
+                  "pathGlob":     { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "network": {
+          "type": "object",
+          "properties": {
+            "outboundAllow":   { "type": "array", "items": { "type": "string" } },
+            "outboundDeny": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Hostname/glob deny list. Empty array allows all outbound — use ['*'] to deny all. Engine outbound floors (critical-risk block, remote-exec gating) are independent of this field and cannot be loosened by any contract value."
+            },
+            "remoteExecAllow": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "secrets": {
+          "type": "object",
+          "properties": {
+            "scanMode": {
+              "type": "string",
+              "enum": ["block", "warn"],
+              "description": "Floor: cannot be set to 'off' or any value not in this enum. 'block' hard-blocks class-C secret patterns; 'warn' scans and warns but does not block. The engine's class-C payload floor always blocks regardless of this field — this setting controls the hook-level user-facing behaviour only."
+            },
+            "redactInJournal":       { "type": "boolean" },
+            "allowSecretLikeInFiles":{ "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "elevation": {
+          "type": "object",
+          "properties": {
+            "sudoAllow":         { "type": "boolean" },
+            "sudoAllowCommands": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "branches": {
+          "type": "object",
+          "properties": {
+            "protected": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Branch name patterns that receive require-review enforcement. Empty array disables contract-level protected-branch configuration. Note: the engine's protected-branch floor (F8) is driven by risk-score.js pattern matching, not by this list — this field is advisory and used for harness-level hints only."
+            },
+            "pushAllow":      { "type": "array", "items": { "type": "string" } },
+            "forcePushAllow": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "shell": {
+          "type": "object",
+          "properties": {
+            "toolAllow":          { "type": "array", "items": { "type": "string" } },
+            "toolDeny":           { "type": "array", "items": { "type": "string" } },
+            "globalInstallAllow": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "payloadClasses": {
+          "type": "object",
+          "properties": {
+            "A": { "type": "string", "enum": ["allow", "warn", "block"] },
+            "B": { "type": "string", "enum": ["allow", "warn", "block"] },
+            "C": { "type": "string", "enum": ["warn", "block"] }
+          },
+          "additionalProperties": false
+        },
+        "tools": {
+          "description": "v2: Per-tool command and path allowlists. Provides finer-grained control than the top-level shell scope.",
+          "type": "object",
+          "properties": {
+            "perToolAllow": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["tool"],
+                "properties": {
+                  "tool":         { "type": "string", "description": "Tool name (e.g. 'Bash', 'Edit', 'Write')." },
+                  "commandGlobs": { "type": "array", "items": { "type": "string" }, "description": "Glob patterns matched against the command string. Omit to allow all commands for this tool." },
+                  "pathGlobs":    { "type": "array", "items": { "type": "string" }, "description": "Glob patterns matched against the target path. Omit to allow all paths for this tool." }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "contractHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  },
+  "additionalProperties": false
+}

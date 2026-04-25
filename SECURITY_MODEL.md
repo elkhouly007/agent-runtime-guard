@@ -82,13 +82,19 @@ The prompt injection patterns in `dangerous-patterns.json` scan the command stri
 
 ---
 
+## Fail-Closed Behavior Under ECC_ENFORCE=1
+
+Under `ECC_ENFORCE=1`, if `runtime.decide()` throws (e.g., corrupt `session-context.json`, partial deploy, or missing state file), the gate fails closed when any non-trivial safety signal is present: a dangerous-pattern hit at any severity (medium, high, or critical), a secret-bearing payload, or a high-sensitivity path. This trades availability for safety: a corrupt policy file under enforce can transiently block legitimate work, but the alternative — silently allowing tool calls when enforcement is requested — is worse. The existing `session-context.js` auto-backup-and-reset on parse error (lines 71-79) mitigates the availability cost. See `runtime/pretool-gate.js:182-200`.
+
+---
+
 ## Emergency Override
 
 `ECC_KILL_SWITCH=1` causes `runtime.decide()` to return `action: "block"` for every input, regardless of risk score, learned policy, or session state. Use this to immediately halt all runtime-permitted actions in an unsafe session.
 
 To re-enable normal operation, unset the variable: `unset ECC_KILL_SWITCH` (or close and reopen your terminal).
 
-The kill switch does not affect hooks that operate independently of the runtime decision layer (e.g., `secret-warning.js` still scans for secrets). For full blocking, also set `ECC_ENFORCE=1`.
+The kill switch does not affect hooks that operate independently of the runtime decision layer (e.g., `secret-warning.js` still scans for secrets, and informational hooks still pass stdin through). PreToolUse hooks exit 2 unconditionally — no additional flags are needed for complete PreToolUse blocking.
 
 ---
 

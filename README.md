@@ -1,10 +1,20 @@
 # Agent Runtime Guard
 
-Agent Runtime Guard is a local-first adaptation kit for Claude Code, OpenCode, and OpenClaw-style harnesses. It keeps the useful parts of an agent toolkit: planning prompts, review prompts, local hooks, project install helpers, and an audit script. It is evolving toward a safe-power model rather than a stripped-down model: keep capability, remove silent trust, and escalate only truly high-risk actions.
+**Agent Runtime Guard (ARG)** is a local-first runtime layer for AI coding agents. ECC — the upfront-contract model — is the foundation. The longer arc is broader: an intelligent, safety-bounded operating layer that decides which agent capabilities should run, when, and how.
 
-The next build phase has started: an autonomy layer is being added so the runtime can score risk, record decisions, learn bounded local approvals, surface learned-policy suggestions, explain why a decision was made, honor project-specific runtime config, auto-discover branch/project context, attach action plans to workflow decisions, recommend workflow lanes for common low-risk tasks such as checks, review/audit work, setup, payload handling, and wiring, expose concrete tool targets for those routes, bias source-file work toward local checks by default and toward review under strict trust posture, recognize direct hook/settings edits as wiring work, and route Class B/C payload work more conservatively, track session risk, and move toward choosing the right action automatically with bounded human intervention.
+The goal is **more capability with less silent risk**:
 
-This repository is not a drop-in copy of Everything Claude Code. It is a conservative fork shape built from the source references in this directory, with trust-expanding behavior rebuilt behind explicit policy.
+- **Safety floors that cannot be demoted** — kill-switch, critical risk, scope violation, secret payload class C, protected-branch writes, session-risk escalation.
+- **Context-aware decisions** — branch, project shape, session trajectory, payload class, and approval history all shape the next routing choice.
+- **Workflow-shaped actions** — `require-review`, `require-tests`, `modify`, `escalate` come with concrete next steps, not just allow/deny.
+- **A unified amplification surface** — specialist agents, language and domain rules, and high-leverage skills, all built around the ARG philosophy.
+- **One engine across harnesses** — runs on Claude Code, OpenCode, and OpenClaw through a single decision spine; adapters in flight for additional harnesses.
+
+Every decision is journaled locally. Decision state and learned policy stay on the machine by default; any external capability remains explicit, reviewed, and policy-bound.
+
+**Status, honestly.** ARG is being built toward a broader target. The runtime decision spine, amplification surface, and cross-harness integration are active and verified. A post-ship audit (v2.1.1) closed the contract acceptance path and verification script gaps. Remaining work is forward-looking hardening and expansion — see `CHANGELOG.md` and `ROADMAP.md`.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and decision flow. See [CONTRACT.md](CONTRACT.md) for the contract specification. See [ROADMAP.md](ROADMAP.md) for the roadmap.
 
 ## Operating Policy
 
@@ -43,7 +53,7 @@ This repository is not a drop-in copy of Everything Claude Code. It is a conserv
 # 6. Run runtime and structural checks, including install and apply-status verification:
 ./scripts/ecc-cli.sh check
 
-# 7. Run all 116 fixture-based tests:
+# 7. Run all 179 fixture-based tests:
 ./scripts/ecc-cli.sh fixtures
 
 # 8. Measure decision quality (FP/FN rates against the labeled corpus):
@@ -56,7 +66,7 @@ This repository is not a drop-in copy of Everything Claude Code. It is a conserv
 
 ### Hooks (`claude/hooks/`)
 
-12 Node.js hook files + shared utilities + pattern configs. All hooks: read stdin JSON, warn to stderr, echo stdin unchanged (or exit 2 to block in ECC_ENFORCE=1 mode).
+13 Node.js hook files + shared utilities + pattern configs. All hooks: read stdin JSON, warn to stderr, echo stdin unchanged (or exit 2 to block in ECC_ENFORCE=1 mode).
 
 | Hook | Event | Purpose |
 |------|-------|---------|
@@ -65,6 +75,7 @@ This repository is not a drop-in copy of Everything Claude Code. It is a conserv
 | `build-reminder.js` | PreToolUse Bash | Reminds to review build/test output before continuing |
 | `git-push-reminder.js` | PreToolUse Bash | Reminds before push; blocks force-push in enforce mode |
 | `quality-gate.js` | PostToolUse Edit/Write | Suggests linter/test commands after file edits |
+| `output-sanitizer.js` | PostToolUse | Scans tool output for secrets; warns if a credential was echoed by the tool |
 | `session-start.js` | SessionStart | Loads instinct store, shows pending review count |
 | `session-end.js` | Stop | Captures session metadata to instinct store |
 | `strategic-compact.js` | PostToolUse | Suggests /compact when context may be filling |
@@ -81,7 +92,7 @@ Set `ECC_KILL_SWITCH=1` to immediately block all `runtime.decide()` calls regard
 
 Specialist reviewers, planners, and resolvers: security-reviewer, architect, code-reviewer, tdd-guide, python/rust/go/kotlin/java/cpp/csharp/swift/typescript/flutter/dart reviewers, build-error-resolvers, performance-optimizer, a11y-architect, and more. Every agent follows the ARG amplification philosophy: clear Mission, ARG-aware Activation, numbered Protocol, and measurable Done When criteria. See `agents/ROUTING.md` for quick-reference dispatch guide.
 
-### Rules (`rules/`) — 81 rule files
+### Rules (`rules/`) — 82 rule files
 
 Security, coding-style, patterns, testing, hooks, and performance rules across 12 language directories (Python, TypeScript, Go, Rust, Java, C++, Kotlin, C#, Dart, Swift, Perl, PHP) plus common, database, infrastructure, and web domains. Every rule file is original content written for the ARG amplification philosophy.
 
@@ -89,7 +100,7 @@ Security, coding-style, patterns, testing, hooks, and performance rules across 1
 
 High-leverage workflow entry points: ARG runtime debug, policy tuning, learning review, capability audit, deep code analysis, intelligence amplification, autonomous improvement, multi-agent debug, semantic refactor, test intelligence, deployment safety, context maximizer, orchestration design, workflow acceleration, pattern extraction, plus domain-specific skills for git workflows, multi-agent orchestration, and infrastructure patterns.
 
-### Scripts (`scripts/`) — 51 files
+### Scripts (`scripts/`) — 64 files
 
 | Script | Purpose |
 |--------|---------|
@@ -102,7 +113,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `audit-local.sh` | Grep-based risk scanner for scripts and hooks |
 | `audit-examples.sh` | Scan prose and GOOD code blocks for dangerous patterns |
 | `verify-hooks-integrity.sh` | SHA-256 baseline check for all hook files |
-| `run-fixtures.sh` | 116-fixture automated test runner |
+| `run-fixtures.sh` | 179-fixture automated test runner |
 | `eval-decision-quality.sh` | Measure `runtime.decide()` FP/FN rates against a labeled corpus; exits 1 if thresholds exceeded |
 | `check-skills.sh` | Validate skill file structure |
 | `check-installation.sh` | Verify install profiles, config generation, and hook wiring |
@@ -144,6 +155,11 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `import-report.sh` | Generate import report from log and checklist |
 | `smoke-test.sh` | Fast integration smoke test |
 | `test-payload-protection.sh` | Verify redaction and classification on test payloads |
+| `check-zero-deps.sh` | Assert runtime/*.js has no third-party require() calls |
+| `check-counts.sh` | Assert agent/rule/skill/hook/fixture/script counts match documented values |
+| `check-decision-replay.sh` | CI gate: replay the shipped sample journal through the current decision engine; exit 1 on any action divergence |
+| `migrateV1ToV2.js` | Upgrade an ecc.contract.json from schema version 1 to version 2 (bumps revision, recomputes hash, validates result) |
+| `check-migrate-v1-v2.sh` | Verify the v1→v2 migration: version bumps, revision increments, hash recomputes, schema validates, idempotency |
 | `hooks-baseline.sha256` | SHA-256 baseline for hook integrity checks |
 
 ### Documentation

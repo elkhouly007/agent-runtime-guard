@@ -18,6 +18,7 @@ const MAIN_BRANCH = /\b(main|master|production|prod|release)\b/;
 
 readStdin()
   .then((raw) => {
+    if (process.env.ECC_KILL_SWITCH === "1") { process.stderr.write("[Agent Runtime Guard] Kill-switch engaged — blocked.\n"); process.exit(2); }
     if (!rateLimitCheck("git-push-reminder")) {
       process.stdout.write(raw);
       return;

@@ -3,6 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { emitEvent } = require("./telemetry");
 
 function defaultPolicy() {
   return {
@@ -71,7 +72,15 @@ function loadProjectPolicy(input = {}) {
       normalized.primaryStack = markers.find((item) => item !== 'common' && item !== 'infrastructure') || markers[0] || null;
     }
     return normalized;
-  } catch {
+  } catch (err) {
+    if (err && err.code !== "ENOENT") {
+      try {
+        const bak = `${candidate}.corrupt-${Date.now()}.bak`;
+        fs.copyFileSync(candidate, bak);
+        process.stderr.write(`[ARG] WARNING: ecc.config.json corrupt — backed up to ${path.basename(bak)}, using defaults.\n`);
+        emitEvent("project-policy-corrupt", { file: "ecc.config.json", errCode: String(err.code || "parse-error") });
+      } catch { /* backup is best-effort */ }
+    }
     return defaultPolicy();
   }
 }

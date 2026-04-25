@@ -129,9 +129,11 @@ function recordApproval(argv) {
     process.exit(2);
   }
 
-  const count = runtime.recordApproval(input);
-  const key = runtime.decisionKey(input);
-  const suggestion = runtime.getSuggestionForInput(input);
+  const discovered = runtime.discover(input);
+  const enriched = { ...input, ...discovered };
+  const count = runtime.recordApproval(enriched);
+  const key = runtime.decisionKey(enriched);
+  const suggestion = runtime.getSuggestionForInput(enriched);
   console.log(`Recorded approval: ${key} (count=${count})`);
   if (suggestion?.status === "pending") {
     console.log(`Pending suggestion created: ${suggestion.key}`);

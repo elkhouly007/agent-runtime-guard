@@ -79,7 +79,7 @@ git -C "$repo" checkout -b release >/dev/null 2>&1
 cat > "$repo/ecc.config.json" <<'EOF'
 {
   "runtime": {
-    "trust_posture": "strict",
+    "trust_posture": "balanced",
     "protected_branches": ["release"]
   }
 }
@@ -116,6 +116,22 @@ git -C "$tests_shape_repo" checkout -b feature/tests >/dev/null 2>&1
 cat > "$tests_shape_repo/package.json" <<'EOF'
 {"name":"tests-shape-repo"}
 EOF
+
+# Seed lifecycle state for the exact explain key so promotion-lifecycle fields appear.
+# Use discover() to resolve the branch so the stored key matches what decide() uses.
+HOME="$tmp_home" ECC_STATE_DIR="$tmp_home" node - <<NODE "$root" "$repo" >/dev/null
+const path = require('path');
+const runtime = require(path.join(process.argv[2], 'runtime'));
+const repoRoot = process.argv[3];
+const raw = { command: 'sudo systemctl restart app', targetPath: path.join(repoRoot, 'ops'), tool: 'Bash', projectRoot: repoRoot };
+const discovered = runtime.discover(raw);
+const enriched = { ...raw, ...discovered };
+runtime.recordApproval(enriched);
+runtime.recordApproval(enriched);
+runtime.recordApproval(enriched);
+const sug = runtime.listSuggestions().find((s) => s.key.includes('sudo'));
+if (sug) runtime.acceptSuggestion(sug.key);
+NODE
 
 explain_output="$(HOME="$tmp_home" ECC_STATE_DIR="$tmp_home" bash "$root/scripts/ecc-cli.sh" runtime explain --tool Bash --command 'sudo systemctl restart app' --target "$repo/ops" )"
 printf '%s\n' "$explain_output" | grep -q 'explanation:' || fail 'runtime explain prints explanation'

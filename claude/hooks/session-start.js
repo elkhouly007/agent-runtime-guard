@@ -17,6 +17,7 @@
 "use strict";
 
 const utils = require("./instinct-utils");
+const { startSession } = require("../../runtime/session-context");
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -31,6 +32,10 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged.
     process.stdout.write(raw || "");
+    if (process.env.ECC_KILL_SWITCH === "1") return;
+
+    // Write a fresh session ID so all decisions this session are partitioned.
+    try { startSession(); } catch { /* non-critical */ }
 
     // Run TTL pruning silently to keep the store clean.
     let pruned = 0;

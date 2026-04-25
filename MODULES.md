@@ -1,5 +1,7 @@
 # Modules
 
+Agent Runtime Guard is a runtime decision spine and amplification surface. ECC (the upfront-contract model) is the enforcement foundation; agents, rules, skills, and the CLI form the amplification layer. For the longer-term direction, see [ROADMAP.md](../ROADMAP.md). For the module architecture and decision flow, see [ARCHITECTURE.md](../ARCHITECTURE.md).
+
 ## Core Modules
 
 | Module | Path | Default | Purpose |
@@ -26,7 +28,7 @@
 | Phase 1 policy reference | `references/phase1-policy.md` | enabled by reference | Defines trusted-agent, MCP, and shell rules. |
 | Phase 2 policy reference | `references/phase2-policy.md` | enabled by reference | Defines plugin, browser, and notification rules. |
 | Phase 3 policy reference | `references/phase3-policy.md` | enabled by reference | Defines installers, wrappers, daemons, and integration templates. |
-| Upstream sync references | `references/upstream-sync.md`, `references/vendor-policy.md`, `references/import-checklist.md` | enabled by reference | Defines how to safely track and adopt upstream changes. |
+| Upstream sync references | `references/capability-log.md`, `references/parity-matrix.json` | enabled by reference | Tracks upstream capability coverage and adoption decisions. |
 | Phase 1 module registry | `modules/phase1/` | documentation only | Records policy for trusted agents, MCP, and shell classes. |
 | Phase 2 module registry | `modules/phase2/` | documentation only | Records policy for plugins, browser automation, and notifications. |
 | Phase 3 module registry | `modules/phase3/` | documentation only | Records policy for installers, wrappers, daemons, and integration templates. |
@@ -95,7 +97,7 @@ All runtime modules write only to `ECC_STATE_DIR` (or `~/.openclaw/agent-runtime
 
 ## Upstream Adoption Model
 
-Use upstream as a reviewed feature feed, not as the trusted runtime base. Follow `references/upstream-sync.md`, `references/vendor-policy.md`, and `references/import-checklist.md` before adopting changes.
+Use upstream as a reviewed feature feed, not as the trusted runtime base. Review `references/capability-log.md` and `references/parity-matrix.json` before adopting changes.
 
 ## Adding A Module
 

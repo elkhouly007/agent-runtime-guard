@@ -38,6 +38,12 @@ Also accepted: `tool_input.command`, `input.command`, direct `command` field.
 
 **Fixtures:** `tests/fixtures/opencode/` — 12 fixtures covering dangerous commands (rm -rf, force-push, curl\|sh, DROP TABLE, npx -y, git reset --hard), enforce mode, safe pass-through, and borderline sudo.
 
+## PostToolUse Parity
+
+Current wiring is **PreToolUse-only**. `opencode/hooks/adapter.js` runs as a PreToolUse hook that gates shell commands before execution. A PostToolUse hook (equivalent to `claude/hooks/output-sanitizer.js`) is a documented follow-up.
+
+OpenCode is a Claude Code fork and likely supports PostToolUse hooks via the same event model, but this has not been verified against the actual hook configuration in a real OpenCode installation. Until a contributor confirms upstream OpenCode PostToolUse support and documents the wiring path, the PostToolUse extension remains deferred. See `references/owasp-agentic-coverage.md` (ASI05) for the current coverage status.
+
 ## Target Paths
 
 Recommended project-local targets:

@@ -9,7 +9,8 @@
 const fs   = require("fs");
 const os   = require("os");
 const path = require("path");
-const runtime = require(path.join(__dirname, "..", "..", "runtime"));
+const runtime    = require(path.join(__dirname, "..", "..", "runtime"));
+const statePaths = require(path.join(__dirname, "..", "..", "runtime", "state-paths"));
 
 const MAX_STDIN_BYTES = 5 * 1024 * 1024; // 5 MB — prevent memory exhaustion on oversized payloads
 
@@ -91,9 +92,7 @@ function hookLog(hookName, eventType, label) {
   if (process.env.ECC_HOOK_LOG !== "1") return;
 
   try {
-    const eccDir  = process.env.ECC_STATE_DIR
-      ? path.resolve(process.env.ECC_STATE_DIR)
-      : path.join(os.homedir(), ".openclaw", "ecc-safe-plus");
+    const eccDir  = statePaths.hookStateDir();
     const logFile = path.join(eccDir, "hook-events.log");
 
     // Create directory if needed (0700 — private to user)
@@ -158,9 +157,7 @@ function rateLimitCheck(hookName, capacity = 60, refillRate = 30) {
   //   A correct fix would use fs.openSync(O_CREAT|O_RDWR) + flock(). Deferred.
 
   try {
-    const eccDir    = process.env.ECC_STATE_DIR
-      ? path.resolve(process.env.ECC_STATE_DIR)
-      : path.join(os.homedir(), ".openclaw", "ecc-safe-plus");
+    const eccDir    = statePaths.hookStateDir();
     const stateFile = path.join(eccDir, `rate-${hookName.replace(/[^a-z0-9-]/g, "")}.json`);
 
     if (!fs.existsSync(eccDir)) {
@@ -287,4 +284,41 @@ function runtimeContext(input) {
   return runtime.discover(input);
 }
 
-module.exports = { readStdin, commandFrom, collectText, ENFORCE, hookLog, rateLimitCheck, MAX_STDIN_BYTES, runtimeDecision, runtimeContext, classifyCommandPayload, readSessionRisk, classifyPathSensitivity };
+/**
+ * Shared adapter factory for all three harness adapters (claude, openclaw, opencode).
+ * Handles stdin read, rate-limit guard, JSON parse, pretool-gate delegation,
+ * stderr output, and hookLog — reducing each adapter to a single createAdapter() call.
+ *
+ * @param {object} opts
+ * @param {string} opts.harness         — harness name passed to runPreToolGate
+ * @param {string} opts.rateLimitKey    — key used for rate-limit bucket and hookLog
+ * @param {function} opts.extractCommand — (input) → command string
+ * @param {function} opts.extractCwd    — (input) → cwd string
+ * @param {function} opts.extractTool   — (input) → tool name string
+ */
+function createAdapter({ harness, rateLimitKey, extractCommand, extractCwd, extractTool }) {
+  const { runPreToolGate } = require(path.join(__dirname, "..", "..", "runtime", "pretool-gate"));
+  readStdin()
+    .then((raw) => {
+      if (!rateLimitCheck(rateLimitKey)) { process.stdout.write(raw); return; }
+      let input = {};
+      try { input = JSON.parse(raw || "{}"); } catch { /* malformed — proceed with empty */ }
+      const { exitCode, stderrLines, logAction, logHitName } = runPreToolGate({
+        harness,
+        tool:        extractTool(input),
+        command:     extractCommand(input),
+        cwd:         extractCwd(input),
+        rawInput:    input,
+        sessionRisk: readSessionRisk(),
+      });
+      for (const line of stderrLines) process.stderr.write(line + "\n");
+      if (logAction && logHitName) {
+        try { hookLog(rateLimitKey, logAction, logHitName); } catch { /* non-fatal */ }
+      }
+      process.stdout.write(raw);
+      if (exitCode !== 0) process.exit(exitCode);
+    })
+    .catch(() => process.exit(0));
+}
+
+module.exports = { readStdin, commandFrom, collectText, ENFORCE, hookLog, rateLimitCheck, MAX_STDIN_BYTES, runtimeDecision, runtimeContext, classifyCommandPayload, readSessionRisk, classifyPathSensitivity, createAdapter };

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
+const { globMatch } = require("./glob-match");
+
 function normalize(input = {}) {
   return {
     command: String(input.command || "").trim(),
@@ -24,9 +26,15 @@ function score(input = {}) {
 
   if (ctx.command) value += 1;
 
-  if (/\brm\s+(-[A-Za-z]*r[A-Za-z]*f|-{1,2}recursive)\b/.test(ctx.command)) {
+  // Match rm with -rf/-r flags in any position (e.g. rm --no-preserve-root -rf /)
+  if (/\brm\s+(?:\S+\s+)*-[A-Za-z]*r[A-Za-z]*f\b|\brm\s+-{1,2}recursive\b|\brm\b.*--recursive\b/.test(ctx.command)) {
     value += 6;
     reasons.push("destructive-delete-pattern");
+  }
+  // dd writing to a device or file is a disk-overwrite risk
+  if (/\bdd\s+/.test(ctx.command) && /\bof=/.test(ctx.command)) {
+    value += 8;
+    reasons.push("disk-write-pattern");
   }
   if (/\bgit\s+push\b.*(--force|-f\b|--force-with-lease\b)/.test(ctx.command)) {
     value += 6;
@@ -79,6 +87,12 @@ function score(input = {}) {
     value += 4;
     reasons.push("filesystem-root-target");
   }
+  // Detect filesystem root as rm target from command string (e.g. rm -rf /)
+  if (!reasons.includes("filesystem-root-target") &&
+      /\brm\b/.test(ctx.command) && /(?:^|\s)\/\s*$/.test(ctx.command)) {
+    value += 4;
+    reasons.push("filesystem-root-target");
+  }
   const sensitivePattern = ctx.sensitivePathPatterns.length > 0
     ? new RegExp(`(${ctx.sensitivePathPatterns.map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "i")
     : /\b(prod|production|secrets?|credentials?|\.env|terraform|infra)\b/i;
@@ -96,7 +110,7 @@ function score(input = {}) {
     reasons.push("payload-class-c");
   }
 
-  const branchProtected = ctx.protectedBranch || (ctx.branch && ctx.protectedBranches.includes(ctx.branch));
+  const branchProtected = ctx.protectedBranch || (ctx.branch && ctx.protectedBranches.some((p) => globMatch(ctx.branch, p)));
   if (branchProtected) {
     value += 3;
     reasons.push("protected-branch");

@@ -1,0 +1,496 @@
+#!/usr/bin/env node
+"use strict";
+
+// contract.js — Upfront security contract enforcement for Agent Runtime Guard.
+//
+// Implements the contract lifecycle defined in the v2.0 plan (Section 4):
+//   - load()        — read + validate ecc.contract.json for the current project
+//   - verify()      — recompute contractHash and compare to accepted-contracts.json
+//   - scopeMatch()  — check a decision input against contract scopes
+//   - generate()    — write ecc.contract.json.draft (used by ecc-cli contract init)
+//   - accept()      — finalise a draft → ecc.contract.json + accepted-contracts record
+//   - contractId()  — generate a fresh contract ID (zero-dep, no ULID library)
+//
+// Hard floors (Section 4.5) are enforced in decision-engine.js, not here.
+// Zero external dependencies.
+
+const fs     = require("fs");
+const path   = require("path");
+const crypto = require("crypto");
+const os     = require("os");
+
+const { canonicalJson }    = require("./canonical-json");
+const { validateContract } = require("./config-validator");
+const { globMatch }        = require("./glob-match");
+const { classifyCommand }  = require("./decision-key");
+const { extractPaths }     = require("./arg-extractor");
+
+// ---------------------------------------------------------------------------
+// Paths
+// ---------------------------------------------------------------------------
+
+function contractFilePath(projectRoot) {
+  return path.join(String(projectRoot || process.cwd()), "ecc.contract.json");
+}
+
+function draftFilePath(projectRoot) {
+  return path.join(String(projectRoot || process.cwd()), "ecc.contract.json.draft");
+}
+
+function acceptedContractsPath() {
+  if (process.env.ECC_STATE_DIR) {
+    return path.join(path.resolve(process.env.ECC_STATE_DIR), "accepted-contracts.json");
+  }
+  return path.join(os.homedir(), ".openclaw", "agent-runtime-guard", "accepted-contracts.json");
+}
+
+// ---------------------------------------------------------------------------
+// Contract ID generation (no ULID library)
+// ---------------------------------------------------------------------------
+
+function newContractId() {
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rand  = crypto.randomBytes(6).toString("hex");
+  return `arg-${today}-${rand}`;
+}
+
+// ---------------------------------------------------------------------------
+// Hashing
+// ---------------------------------------------------------------------------
+
+function hashContract(doc) {
+  const { contractHash: _omit, ...rest } = doc; // eslint-disable-line no-unused-vars
+  const canon = canonicalJson(rest);
+  return "sha256:" + crypto.createHash("sha256").update(canon, "utf8").digest("hex");
+}
+
+// ---------------------------------------------------------------------------
+// Load + validate
+// ---------------------------------------------------------------------------
+
+let _cache = null;
+let _cacheKey = null;
+
+/**
+ * Load and validate ecc.contract.json for the given project root.
+ * Returns null if no contract file exists.
+ * Throws if the file exists but fails schema validation.
+ *
+ * @param {string} projectRoot
+ * @returns {object|null}
+ */
+function load(projectRoot) {
+  const filePath = contractFilePath(projectRoot);
+  const cacheKey = filePath;
+  if (_cache !== null && _cacheKey === cacheKey) return _cache;
+
+  if (!fs.existsSync(filePath)) {
+    _cache = null;
+    _cacheKey = cacheKey;
+    return null;
+  }
+
+  let doc;
+  try {
+    doc = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (err) {
+    throw new Error(`contract.js: failed to parse ${filePath}: ${err.message}`);
+  }
+
+  const { valid, errors } = validateContract(doc);
+  if (!valid) {
+    throw new Error(`contract.js: schema validation failed:\n  ${errors.join("\n  ")}`);
+  }
+
+  _cache = doc;
+  _cacheKey = cacheKey;
+  return doc;
+}
+
+/** Invalidate the module-level cache (used in tests). */
+function invalidateCache() {
+  _cache = null;
+  _cacheKey = null;
+}
+
+// ---------------------------------------------------------------------------
+// Accepted-contracts registry
+// ---------------------------------------------------------------------------
+
+function loadAccepted() {
+  const filePath = acceptedContractsPath();
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function saveAccepted(data) {
+  const filePath = acceptedContractsPath();
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const tmp = filePath + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", { mode: 0o600 });
+  try { fs.renameSync(tmp, filePath); } catch {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", { mode: 0o600 });
+    try { fs.unlinkSync(tmp); } catch { /* best-effort */ }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Verify — recompute hash and compare to accepted registry
+// ---------------------------------------------------------------------------
+
+/**
+ * Verify the contract hash for the given project root.
+ *
+ * @param {string} projectRoot
+ * @returns {{ ok: boolean, reason?: string, contractId?: string }}
+ */
+function verify(projectRoot) {
+  const doc = load(projectRoot);
+  if (!doc) return { ok: false, reason: "no-contract-file" };
+
+  const computed = hashContract(doc);
+  if (computed !== doc.contractHash) {
+    return { ok: false, reason: "hash-mismatch", contractId: doc.contractId };
+  }
+
+  const accepted = loadAccepted();
+  const key = path.resolve(String(projectRoot || process.cwd()));
+  const record = accepted[key];
+
+  if (!record) {
+    return { ok: false, reason: "not-accepted", contractId: doc.contractId };
+  }
+  if (record.contractHash !== doc.contractHash) {
+    return { ok: false, reason: "accepted-hash-mismatch", contractId: doc.contractId };
+  }
+
+  return { ok: true, contractId: doc.contractId };
+}
+
+// ---------------------------------------------------------------------------
+// Accept — finalise a draft into ecc.contract.json
+// ---------------------------------------------------------------------------
+
+/**
+ * Accept ecc.contract.json.draft:
+ *   1. Validate schema.
+ *   2. Reject revision downgrade.
+ *   3. Compute and embed contractHash.
+ *   4. Write ecc.contract.json.
+ *   5. Record in accepted-contracts.json.
+ *
+ * @param {string} projectRoot
+ * @returns {{ contractId: string, contractHash: string }}
+ */
+function accept(projectRoot) {
+  // Refuse to self-accept inside a harness session
+  const sessionEnvVars = ["CLAUDE_CODE_SESSION_ID", "OPENCODE_SESSION", "OPENCLAW_SESSION"];
+  for (const envVar of sessionEnvVars) {
+    if (process.env[envVar]) {
+      throw new Error(`contract.js: refusing to accept inside a harness session (${envVar} is set). Run 'ecc-cli contract accept' in a separate terminal.`);
+    }
+  }
+
+  const draftPath    = draftFilePath(projectRoot);
+  const contractPath = contractFilePath(projectRoot);
+
+  if (!fs.existsSync(draftPath)) {
+    throw new Error(`contract.js: no draft found at ${draftPath}. Run 'ecc-cli contract init' first.`);
+  }
+
+  let draft;
+  try {
+    draft = JSON.parse(fs.readFileSync(draftPath, "utf8"));
+  } catch (err) {
+    throw new Error(`contract.js: failed to parse draft: ${err.message}`);
+  }
+
+  // Reject revision downgrade
+  if (fs.existsSync(contractPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(contractPath, "utf8"));
+      if (typeof existing.revision === "number" && draft.revision <= existing.revision) {
+        throw new Error(`contract.js: revision downgrade rejected (existing=${existing.revision}, draft=${draft.revision}). Bump revision in the draft.`);
+      }
+    } catch (err) {
+      if (err.message.includes("revision downgrade")) throw err;
+      // existing file unreadable — proceed
+    }
+  }
+
+  // Strip any existing hash before recomputing
+  delete draft.contractHash;
+  draft.contractHash = hashContract(draft);
+
+  // Validate final document
+  const { valid, errors } = validateContract(draft);
+  if (!valid) {
+    throw new Error(`contract.js: draft schema validation failed:\n  ${errors.join("\n  ")}`);
+  }
+
+  // Write final contract
+  invalidateCache();
+  fs.writeFileSync(contractPath, JSON.stringify(draft, null, 2) + "\n", { mode: 0o600 });
+
+  // Record acceptance
+  const accepted = loadAccepted();
+  const key = path.resolve(String(projectRoot || process.cwd()));
+  accepted[key] = {
+    contractHash: draft.contractHash,
+    contractId:   draft.contractId,
+    revision:     draft.revision,
+    acceptedAt:   new Date().toISOString(),
+  };
+  saveAccepted(accepted);
+
+  // Remove draft
+  try { fs.unlinkSync(draftPath); } catch { /* best-effort */ }
+
+  return { contractId: draft.contractId, contractHash: draft.contractHash };
+}
+
+// ---------------------------------------------------------------------------
+// Generate (init) — write a sensible default draft
+// ---------------------------------------------------------------------------
+
+/**
+ * Write ecc.contract.json.draft with sensible defaults.
+ *
+ * @param {string} projectRoot
+ * @param {object} opts — { harnesses?, trustPosture?, existingRevision? }
+ */
+function generate(projectRoot, opts = {}) {
+  const harnesses     = Array.isArray(opts.harnesses)  ? opts.harnesses  : ["claude"];
+  const trustPosture  = opts.trustPosture || "balanced";
+  const revision      = Number(opts.existingRevision || 0) + 1;
+  const draftPath     = draftFilePath(projectRoot);
+  const projRootNorm  = String(projectRoot || process.cwd()).replace(/\\/g, "/");
+
+  const draft = {
+    version:      1,
+    contractId:   newContractId(),
+    revision,
+    acceptedAt:   new Date().toISOString(),
+    acceptedBy:   os.userInfo().username || "unknown",
+    expiresAt:    null,
+    harnessScope: harnesses,
+    trustPosture,
+    scopes: {
+      filesystem: {
+        readAllow:        [`${projRootNorm}/**`],
+        writeAllow:       [`${projRootNorm}/src/**`, `${projRootNorm}/tests/**`],
+        writeDeny:        ["**/.env*", "**/*.pem", "**/secrets/**"],
+        destructiveAllow: [],
+      },
+      network: {
+        outboundAllow:   [],
+        outboundDeny:    ["*"],
+        remoteExecAllow: [],
+      },
+      secrets: {
+        scanMode:        "block",
+        redactInJournal: true,
+      },
+      elevation: {
+        sudoAllow:         false,
+        sudoAllowCommands: [],
+      },
+      branches: {
+        protected:      ["main", "master", "release/*"],
+        pushAllow:      ["feature/*", "fix/*"],
+        forcePushAllow: [],
+      },
+      shell: {
+        toolAllow:          [],
+        toolDeny:           ["curl", "wget", "nc"],
+        globalInstallAllow: false,
+      },
+      payloadClasses: { A: "allow", B: "warn", C: "block" },
+    },
+    contractHash: "sha256:" + "0".repeat(64), // placeholder, recomputed on accept
+  };
+
+  fs.writeFileSync(draftPath, JSON.stringify(draft, null, 2) + "\n", { mode: 0o600 });
+  return draftPath;
+}
+
+// ---------------------------------------------------------------------------
+// scopeMatch — check whether a decision input is covered by the contract
+// ---------------------------------------------------------------------------
+
+// Gated capability classes (Section 4.5a): require contract coverage in strict mode
+const GATED_CLASSES = new Set([
+  "destructive-delete", "force-push", "remote-exec", "auto-download",
+  "hard-reset", "destructive-db", "disk-write", "sudo", "global-pkg-install",
+  "network-outbound", "unknown",
+]);
+
+/**
+ * Determine whether the contract allows or gates a given decision input.
+ *
+ * @param {object} contract  — loaded contract document
+ * @param {object} input     — { command, commandClass, targetPath, branch, payloadClass, harness, projectRoot }
+ * @returns {{ allowed: boolean, reason: string, gated: boolean }}
+ */
+function scopeMatch(contract, input) {
+  if (!contract) return { allowed: false, reason: "no-contract", gated: true };
+
+  const cmdClass = input.commandClass || classifyCommand(input.command || "");
+  const ctx      = { projectRoot: input.projectRoot || "" };
+  const scopes   = contract.scopes || {};
+  const isGated  = GATED_CLASSES.has(cmdClass);
+
+  // Payload class check
+  const payloadClass = String(input.payloadClass || "A").toUpperCase();
+  const pcAction = scopes.payloadClasses?.[payloadClass] || "allow";
+  if (pcAction === "block") return { allowed: false, reason: `payload-class-${payloadClass}-blocked`, gated: true };
+
+  // Secret class C — always block regardless of scope (hard floor complement)
+  if (payloadClass === "C") return { allowed: false, reason: "payload-class-C", gated: true };
+
+  // Destructive-delete with multi-target all-or-nothing allowlist.
+  // Extracts all path-like targets from the command; every target must match
+  // an allow entry. Symlink / ".." escape is rejected after path resolution.
+  if (cmdClass === "destructive-delete") {
+    const allowed_list = scopes.filesystem?.destructiveAllow || [];
+    if (allowed_list.length === 0) {
+      return { allowed: false, reason: "destructive-delete-not-in-scope", gated: true };
+    }
+
+    // Extract path-like tokens; fall back to input.targetPath for bare relative paths.
+    const rawPaths  = extractPaths(input.command || "");
+    const candidates = rawPaths.length > 0 ? rawPaths : [String(input.targetPath || "")];
+    const projRoot   = String(input.projectRoot || ctx.projectRoot || process.cwd());
+
+    // Resolve and validate each target. Fail closed on any escape attempt.
+    const resolvedPaths = [];
+    for (const raw of candidates) {
+      if (!raw) continue;
+      const abs = path.resolve(projRoot, raw);
+      const rel = path.relative(projRoot, abs);
+      if (rel.startsWith("..") || path.isAbsolute(rel)) {
+        return { allowed: false, reason: "destructive-delete-path-escape", gated: true };
+      }
+      // Resolve symlinks. If path doesn't exist yet, use abs (no symlink to follow).
+      let real = abs;
+      try {
+        real = fs.realpathSync(abs);
+        const realRel = path.relative(projRoot, real);
+        if (realRel.startsWith("..") || path.isAbsolute(realRel)) {
+          return { allowed: false, reason: "destructive-delete-symlink-escape", gated: true };
+        }
+      } catch { /* nonexistent path — no symlink possible, use abs */ }
+      resolvedPaths.push(real);
+    }
+
+    if (resolvedPaths.length === 0) {
+      return { allowed: false, reason: "destructive-delete-no-targets", gated: true };
+    }
+
+    // All-or-nothing: every resolved target must match at least one allow entry.
+    for (const rp of resolvedPaths) {
+      const ok = allowed_list.some(
+        (entry) => entry.commandClass === "destructive-delete" &&
+          globMatch(rp, entry.pathGlob, ctx)
+      );
+      if (!ok) return { allowed: false, reason: "destructive-delete-path-not-in-scope", gated: true };
+    }
+    return { allowed: true, reason: "destructive-allow-matched", gated: true };
+  }
+
+  // Force-push
+  if (cmdClass === "force-push") {
+    const branch        = String(input.branch || "");
+    const forcePushAllow = scopes.branches?.forcePushAllow || [];
+    const ok = forcePushAllow.some((pat) => globMatch(branch, pat, ctx));
+    if (!ok) return { allowed: false, reason: "force-push-not-in-scope", gated: true };
+    return { allowed: true, reason: "force-push-branch-allowed", gated: true };
+  }
+
+  // Remote exec
+  if (cmdClass === "remote-exec") {
+    const remoteExecAllow = scopes.network?.remoteExecAllow || [];
+    if (remoteExecAllow.length === 0) {
+      return { allowed: false, reason: "remote-exec-not-in-scope", gated: true };
+    }
+    return { allowed: true, reason: "remote-exec-allowed", gated: true };
+  }
+
+  // Sudo
+  if (cmdClass === "sudo") {
+    const sudoAllow    = scopes.elevation?.sudoAllow === true;
+    const allowedCmds  = scopes.elevation?.sudoAllowCommands || [];
+    const cmd          = String(input.command || "");
+    const cmdOk = sudoAllow || allowedCmds.some((c) => cmd.includes(c));
+    if (!cmdOk) return { allowed: false, reason: "sudo-not-in-scope", gated: true };
+    return { allowed: true, reason: "sudo-allowed", gated: true };
+  }
+
+  // Global package install
+  if (cmdClass === "global-pkg-install") {
+    if (!scopes.shell?.globalInstallAllow) {
+      return { allowed: false, reason: "global-install-not-in-scope", gated: true };
+    }
+    return { allowed: true, reason: "global-install-allowed", gated: true };
+  }
+
+  // Auto-download (npx -y) — allowed only when remoteExecAllow is non-empty
+  if (cmdClass === "auto-download") {
+    const remoteExecAllow = scopes.network?.remoteExecAllow || [];
+    if (remoteExecAllow.length === 0) {
+      return { allowed: false, reason: "auto-download-not-in-scope", gated: true };
+    }
+    return { allowed: true, reason: "auto-download-remote-exec-allowed", gated: true };
+  }
+
+  // Hard-reset / destructive-db / disk-write — covered by destructiveAllow by commandClass.
+  // No path resolution needed for hard-reset (git ref target) or destructive-db (DB operation);
+  // disk-write could have a device target but class-level allow is the correct granularity here.
+  if (cmdClass === "hard-reset" || cmdClass === "destructive-db" || cmdClass === "disk-write") {
+    const allowed_list = scopes.filesystem?.destructiveAllow || [];
+    const ok = allowed_list.some((entry) => entry.commandClass === cmdClass);
+    if (!ok) return { allowed: false, reason: `${cmdClass}-not-in-scope`, gated: true };
+    return { allowed: true, reason: `${cmdClass}-allow-matched`, gated: true };
+  }
+
+  // Non-gated classes — not covered by scope, not gated either
+  if (!isGated) return { allowed: true, reason: "non-gated-class", gated: false };
+
+  // Fallback for other gated classes
+  return { allowed: false, reason: `gated-class-${cmdClass}-no-coverage`, gated: true };
+}
+
+// ---------------------------------------------------------------------------
+// Harness scope check
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether the given harness is covered by the contract.
+ * @param {object} contract
+ * @param {string} harness
+ * @returns {boolean}
+ */
+function harnessInScope(contract, harness) {
+  if (!contract) return false;
+  return Array.isArray(contract.harnessScope) && contract.harnessScope.includes(harness);
+}
+
+module.exports = {
+  load,
+  verify,
+  accept,
+  generate,
+  scopeMatch,
+  harnessInScope,
+  hashContract,
+  newContractId,
+  invalidateCache,
+  GATED_CLASSES,
+  contractFilePath,
+  draftFilePath,
+  acceptedContractsPath,
+};

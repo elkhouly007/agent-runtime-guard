@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecc.config.schema.json",
+  "title": "Agent Runtime Guard project config",
+  "description": "Schema for ecc.config.json. Validated by runtime/config-validator.js.",
+  "type": "object",
+  "properties": {
+    "_comment":  { "type": "string" },
+    "profile":   { "type": "string", "enum": ["minimal", "rules", "agents", "skills", "full"] },
+    "languages": { "type": "array",  "items": { "type": "string" } },
+    "agents":    { "type": "array",  "items": { "type": "string" } },
+    "skills":    { "type": "array",  "items": { "type": "string" } },
+    "extra_rules": { "type": "array", "items": { "type": "string" } },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "trust_posture": {
+          "type": "string",
+          "enum": ["relaxed", "balanced", "strict"]
+        },
+        "protected_branches": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sensitive_path_patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

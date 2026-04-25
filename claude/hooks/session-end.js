@@ -55,6 +55,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged — harness requires this.
     process.stdout.write(raw || "");
+    if (process.env.ECC_KILL_SWITCH === "1") return;
 
     let input = {};
     try {

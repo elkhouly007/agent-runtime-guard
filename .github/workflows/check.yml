@@ -10,6 +10,7 @@ jobs:
   check:
     name: Checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.allow_failure == true }}
 
     defaults:
       run:
@@ -23,6 +24,8 @@ jobs:
             bench_p99_ms: "10"
           - os: windows-latest
             bench_p99_ms: "500"
+          - os: macos-latest
+            bench_p99_ms: "200"
 
     steps:
       - uses: actions/checkout@v4
@@ -115,5 +118,42 @@ jobs:
       - name: Check OpenClaw adapter
         run: bash scripts/check-openclaw-adapter.sh
 
+      - name: Check zero deps (runtime/)
+        run: bash scripts/check-zero-deps.sh
+
+      - name: Check counts
+        run: bash scripts/check-counts.sh
+
+      - name: Cross-harness equivalence
+        run: bash scripts/check-cross-harness-equivalence.sh
+
+      - name: Decision replay (sample journal CI gate)
+        run: |
+          ECC_CONTRACT_ENABLED=0 ECC_TRAJECTORY_WINDOW_MIN=0 \
+          bash scripts/check-decision-replay.sh
+
+      - name: Contract module
+        run: bash scripts/check-contract.sh
+
+      - name: Contract schema v2 migration
+        run: bash scripts/check-migrate-v1-v2.sh
+
+      - name: Kill-switch (all 13 hooks)
+        run: bash scripts/check-kill-switch.sh
+
+      - name: Restore bench baseline
+        uses: actions/cache@v4
+        with:
+          path: artifacts/bench
+          key: bench-baseline-${{ matrix.os }}-${{ github.sha }}
+          restore-keys: bench-baseline-${{ matrix.os }}-
+
       - name: Runtime decision bench
         run: ECC_BENCH_P99_MS=${{ matrix.bench_p99_ms }} bash scripts/bench-runtime-decision.sh
+
+      - name: Save bench baseline
+        uses: actions/cache@v4
+        if: always()
+        with:
+          path: artifacts/bench
+          key: bench-baseline-${{ matrix.os }}-${{ github.sha }}
