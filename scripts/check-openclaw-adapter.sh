@@ -23,6 +23,12 @@ printf '[check-openclaw-adapter]\n'
 
 adapter="$root/openclaw/hooks/adapter.js"
 
+# Isolate state so accumulated session risk from prior check scripts does not
+# bleed in and produce unexpected stderr on "safe command" tests.
+_check_state_dir="$(mktemp -d)"
+export ECC_STATE_DIR="$_check_state_dir"
+trap 'rm -rf "$_check_state_dir"' EXIT
+
 # 1 — file exists
 [ -f "$adapter" ] || fail "openclaw/hooks/adapter.js missing"
 pass "adapter.js exists"
