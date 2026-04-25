@@ -24,7 +24,8 @@ FAILED=0
 printf '[check-zero-deps]\n'
 
 # Find all JS files in runtime/.
-mapfile -t runtime_files < <(find "$root/runtime" -maxdepth 1 -name "*.js" | sort)
+runtime_files=()
+while IFS= read -r f; do runtime_files+=("$f"); done < <(find "$root/runtime" -maxdepth 1 -name "*.js" | sort)
 
 if [ "${#runtime_files[@]}" -eq 0 ]; then
   fail "no runtime/*.js files found"
