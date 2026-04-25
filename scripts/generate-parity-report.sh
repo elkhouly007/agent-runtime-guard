@@ -6,7 +6,7 @@ parity_file="$root/references/parity-matrix.json"
 
 [ -f "$parity_file" ] || { printf 'parity-matrix.json missing\n' >&2; exit 1; }
 
-today="$(git -C "$root" log -1 --format=%cd --date=format:%Y-%m-%d 2>/dev/null || date -u +%Y-%m-%d)"
+today="$(git -C "$root" log -1 --format=%cd --date=format:%Y-%m-%d -- references/parity-report.md 2>/dev/null | grep . || date -u +%Y-%m-%d)"
 
 # Extract summary counts from parity-matrix.json
 read -r au ac aa ad ae <<EOF

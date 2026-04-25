@@ -12,7 +12,9 @@
 #   upgrade     Upgrade an existing installation in-place, preserving ecc.config.json.
 #   setup       Run the interactive onboarding wizard.
 #   audit       Audit scripts and hook files for unsafe patterns.
-#   check       Run registry, integration, skill, installation, config/settings, runtime core, runtime CLI, hook edge cases, apply-status, executable, setup, wiring-doc, superiority-evidence, status-doc, fixture-count, and harness-support checks.
+#   check       Fast runtime + unit checks (< 30 s). No fixtures, no audit scans, no bench.
+#   ci          Full CI superset: check + audit + fixtures + bench. Matches GitHub Actions.
+#   contract    Manage the upfront security contract (init/accept/show/verify/diff/amend).
 #   fixtures    Run all fixture-based tests.
 #   eval        Measure decision quality: run labeled corpus through runtime.decide(), report FP/FN rates.
 #   integrity   Verify hook file SHA-256 integrity baseline.
@@ -181,10 +183,26 @@ case "$cmd" in
     section "Scenarios"
     bash "${scripts}/check-scenarios.sh" || failed=1
 
-    section "Runtime bench"
-    bash "${scripts}/bench-runtime-decision.sh" || failed=1
+    section "Zero deps"
+    bash "${scripts}/check-zero-deps.sh" || failed=1
 
-    [ "$failed" -eq 0 ] && printf '\n%sAll checks passed.%s\n' "$GREEN" "$RESET" && exit 0
+    section "Count drift"
+    bash "${scripts}/check-counts.sh" || failed=1
+
+    section "Cross-harness equivalence"
+    bash "${scripts}/check-cross-harness-equivalence.sh" || failed=1
+
+    section "Contract module"
+    bash "${scripts}/check-contract.sh" || failed=1
+
+    section "Kill-switch (all 13 hooks)"
+    bash "${scripts}/check-kill-switch.sh" || failed=1
+
+    if [ "$failed" -eq 0 ]; then
+      printf '\n%sAll checks passed.%s\n' "$GREEN" "$RESET"
+      printf 'This is the fast loop. For the full CI set (fixtures, audit, bench), run: %s ci\n' "$0"
+      exit 0
+    fi
     printf '\n%sOne or more checks failed.%s\n' "$RED" "$RESET" >&2
     exit 1
     ;;
@@ -192,6 +210,36 @@ case "$cmd" in
   # ── fixtures ──────────────────────────────────────────────────────────────
   fixtures)
     exec bash "${scripts}/run-fixtures.sh" "$@"
+    ;;
+
+  # ── ci ────────────────────────────────────────────────────────────────────
+  # Full superset: check + audit + fixture tests + bench.
+  # Matches the GitHub Actions workflow step-for-step.
+  ci)
+    section() { printf '\n%s━━━ %s ━━━%s\n' "$CYAN" "$1" "$RESET"; }
+    failed=0
+
+    section "Fast checks"
+    bash "$0" check || failed=1
+
+    section "Audit local (scripts + hooks)"
+    bash "${scripts}/audit-local.sh" || failed=1
+
+    section "Audit examples (prose + GOOD blocks)"
+    bash "${scripts}/audit-examples.sh" || failed=1
+
+    section "Hook integrity"
+    bash "${scripts}/verify-hooks-integrity.sh" || failed=1
+
+    section "Fixtures"
+    bash "${scripts}/run-fixtures.sh" || failed=1
+
+    section "Runtime bench"
+    bash "${scripts}/bench-runtime-decision.sh" || failed=1
+
+    [ "$failed" -eq 0 ] && printf '\n%sAll CI checks passed.%s\n' "$GREEN" "$RESET" && exit 0
+    printf '\n%sOne or more CI checks failed.%s\n' "$RED" "$RESET" >&2
+    exit 1
     ;;
 
   # ── eval ──────────────────────────────────────────────────────────────────
@@ -287,6 +335,117 @@ for (const line of lines) {
     fi
     ;;
 
+  # ── contract ──────────────────────────────────────────────────────────────
+  # Manage the upfront security contract (ecc.contract.json) for the current
+  # project. The contract pre-agrees all permissions before work begins.
+  contract)
+    sub="${1:-status}"
+    shift || true
+    target_dir="${1:-.}"
+    case "$sub" in
+      init)
+        node - "$root" "$target_dir" <<'EOF'
+"use strict";
+const path = require("path");
+const { generate } = require(path.join(process.argv[2], "runtime/contract"));
+const projectRoot = path.resolve(process.argv[3] || ".");
+const draftPath = generate(projectRoot);
+console.log("Contract draft written to:", draftPath);
+console.log("Review and edit the draft, then run: ecc-cli.sh contract accept");
+EOF
+        ;;
+      accept)
+        node - "$root" "$target_dir" <<'EOF'
+"use strict";
+const path = require("path");
+const { accept } = require(path.join(process.argv[2], "runtime/contract"));
+const projectRoot = path.resolve(process.argv[3] || ".");
+try {
+  const { contractId, contractHash } = accept(projectRoot);
+  console.log("Contract accepted:", contractId);
+  console.log("Hash:", contractHash);
+} catch (err) {
+  process.stderr.write("Error: " + err.message + "\n");
+  process.exit(1);
+}
+EOF
+        ;;
+      show)
+        node - "$root" "$target_dir" <<'EOF'
+"use strict";
+const path = require("path");
+const { load } = require(path.join(process.argv[2], "runtime/contract"));
+const projectRoot = path.resolve(process.argv[3] || ".");
+const doc = load(projectRoot);
+if (!doc) { console.log("No contract found at", projectRoot); process.exit(0); }
+console.log(JSON.stringify(doc, null, 2));
+EOF
+        ;;
+      verify|status)
+        node - "$root" "$target_dir" <<'EOF'
+"use strict";
+const path = require("path");
+const { verify } = require(path.join(process.argv[2], "runtime/contract"));
+const projectRoot = path.resolve(process.argv[3] || ".");
+const result = verify(projectRoot);
+if (result.ok) {
+  console.log("Contract OK:", result.contractId);
+} else {
+  console.log("Contract status:", result.reason, result.contractId || "");
+  process.exit(1);
+}
+EOF
+        ;;
+      diff)
+        node - "$root" "$target_dir" <<'EOF'
+"use strict";
+const path = require("path");
+const fs   = require("fs");
+const { contractFilePath, draftFilePath } = require(path.join(process.argv[2], "runtime/contract"));
+const projectRoot = path.resolve(process.argv[3] || ".");
+const cf = contractFilePath(projectRoot);
+const df = draftFilePath(projectRoot);
+const left  = fs.existsSync(cf) ? JSON.parse(fs.readFileSync(cf,"utf8")) : null;
+const right = fs.existsSync(df) ? JSON.parse(fs.readFileSync(df,"utf8")) : null;
+if (!left && !right) { console.log("No contract or draft found."); process.exit(0); }
+console.log("--- ecc.contract.json (accepted)");
+console.log("+++ ecc.contract.json.draft");
+const l = JSON.stringify(left || {}, null, 2).split("\n");
+const r = JSON.stringify(right || {}, null, 2).split("\n");
+l.forEach((line, i) => { if (line !== r[i]) console.log("-", line, "\n+", r[i] || ""); });
+EOF
+        ;;
+      amend)
+        node - "$root" "$target_dir" <<'EOF'
+"use strict";
+const path = require("path");
+const fs   = require("fs");
+const { load, generate, contractFilePath, draftFilePath } = require(path.join(process.argv[2], "runtime/contract"));
+const projectRoot = path.resolve(process.argv[3] || ".");
+const cf = contractFilePath(projectRoot);
+if (!fs.existsSync(cf)) {
+  process.stderr.write("No accepted contract found. Run: ecc-cli contract init && ecc-cli contract accept first.\n");
+  process.exit(1);
+}
+const existing = JSON.parse(fs.readFileSync(cf, "utf8"));
+generate(projectRoot, {
+  existingRevision: existing.revision || 1,
+  harnesses:        existing.harnessScope,
+  trustPosture:     existing.trustPosture,
+});
+const df = draftFilePath(projectRoot);
+const next = (existing.revision || 1) + 1;
+process.stdout.write(`Draft written to ${path.relative(process.cwd(), df)} (revision ${next}).\nEdit it, then run: ecc-cli contract accept\n`);
+EOF
+        ;;
+      *)
+        printf '%sUnknown contract subcommand: %s%s\n' "$RED" "$sub" "$RESET" >&2
+        printf 'Available: init, accept, show, verify, status, diff, amend\n' >&2
+        exit 2
+        ;;
+    esac
+    ;;
+
   # ── version ───────────────────────────────────────────────────────────────
   version)
     ver_file="${root}/VERSION"
@@ -328,6 +487,53 @@ for (const line of lines) {
         ;;
       *)
         die "Unknown runtime subcommand: $sub"
+        ;;
+    esac
+    ;;
+
+  # ── telemetry ─────────────────────────────────────────────────────────────
+  telemetry)
+    sub="${1:-report}"
+    shift || true
+    case "$sub" in
+      report|show|summary)
+        node - "$root" <<'EOF'
+"use strict";
+const path = require("path");
+const { summarizeTelemetry } = require(path.join(process.argv[2], "runtime/telemetry"));
+const s = summarizeTelemetry();
+if (s.totalEvents === 0) {
+  console.log("No telemetry events recorded yet.");
+  console.log("Telemetry is written to: ~/.openclaw/agent-runtime-guard/telemetry.jsonl");
+  process.exit(0);
+}
+console.log(`Telemetry summary — ${s.totalEvents} event(s) total`);
+if (s.dateRange) {
+  console.log(`  earliest: ${s.dateRange.earliest}`);
+  console.log(`  latest:   ${s.dateRange.latest}`);
+}
+console.log("  By event type:");
+const sorted = Object.entries(s.byEvent).sort((a, b) => b[1].count - a[1].count);
+for (const [name, info] of sorted) {
+  console.log(`    ${name.padEnd(40)} count=${info.count}  last=${info.lastSeen}`);
+}
+EOF
+        ;;
+      clear)
+        node - "$root" <<'EOF'
+"use strict";
+const path = require("path");
+const fs   = require("fs");
+const { stateDir } = require(path.join(process.argv[2], "runtime/state-paths"));
+const f = path.join(stateDir(), "telemetry.jsonl");
+if (fs.existsSync(f)) { fs.unlinkSync(f); console.log("Telemetry log cleared."); }
+else { console.log("No telemetry log found."); }
+EOF
+        ;;
+      *)
+        printf '%sUnknown telemetry subcommand: %s%s\n' "$RED" "$sub" "$RESET" >&2
+        printf 'Available: report, clear\n' >&2
+        exit 2
         ;;
     esac
     ;;

@@ -36,16 +36,16 @@ done
 
 redact() {
   sed -E \
-    -e 's/\bsk-ant-[A-Za-z0-9_-]{20,}/[REDACTED_ANTHROPIC_KEY]/g' \
-    -e 's/\bsk_(live|test)_[A-Za-z0-9]{20,}/[REDACTED_STRIPE_KEY]/g' \
-    -e 's/\bsk-[A-Za-z0-9_-]{20,}/[REDACTED_OPENAI_KEY]/g' \
-    -e 's/\bAKIA[A-Z0-9]{16}/[REDACTED_AWS_KEY]/g' \
-    -e 's/\bgithub_pat_[A-Za-z0-9_]{40,}/[REDACTED_GITHUB_PAT]/g' \
-    -e 's/\bgh[pousr]_[A-Za-z0-9_]{20,}/[REDACTED_GITHUB_TOKEN]/g' \
-    -e 's/\bSG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/[REDACTED_SENDGRID_KEY]/g' \
-    -e 's/\bxox[baprs]-[A-Za-z0-9-]{20,}/[REDACTED_SLACK_TOKEN]/g' \
-    -e 's/\bpypi-[A-Za-z0-9_-]{40,}/[REDACTED_PYPI_TOKEN]/g' \
-    -e 's/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/[REDACTED_JWT]/g' \
+    -e 's/sk-ant-[A-Za-z0-9_-]{20,}/[REDACTED_ANTHROPIC_KEY]/g' \
+    -e 's/sk_(live|test)_[A-Za-z0-9]{20,}/[REDACTED_STRIPE_KEY]/g' \
+    -e 's/sk-[A-Za-z0-9_-]{20,}/[REDACTED_OPENAI_KEY]/g' \
+    -e 's/AKIA[A-Z0-9]{16}/[REDACTED_AWS_KEY]/g' \
+    -e 's/github_pat_[A-Za-z0-9_]{40,}/[REDACTED_GITHUB_PAT]/g' \
+    -e 's/gh[pousr]_[A-Za-z0-9_]{20,}/[REDACTED_GITHUB_TOKEN]/g' \
+    -e 's/SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/[REDACTED_SENDGRID_KEY]/g' \
+    -e 's/xox[baprs]-[A-Za-z0-9-]{20,}/[REDACTED_SLACK_TOKEN]/g' \
+    -e 's/pypi-[A-Za-z0-9_-]{40,}/[REDACTED_PYPI_TOKEN]/g' \
+    -e 's/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/[REDACTED_JWT]/g' \
     -e 's/DefaultEndpointsProtocol=https;AccountName=[^;[:space:]]*/[REDACTED_AZURE_CONN]/g' \
     -e 's|-----BEGIN [A-Z ]* KEY-----|[REDACTED_PRIVATE_KEY_BEGIN]|g' \
     -e 's|-----END [A-Z ]* KEY-----|[REDACTED_PRIVATE_KEY_END]|g' \
@@ -59,7 +59,7 @@ redact() {
     -e 's#/Users/[^[:space:]"'"'"']+#[REDACTED_UNIX_PATH]#g' \
     -e 's#[A-Za-z]:\\\\[^[:space:]"'"'"']+#[REDACTED_WIN_PATH]#g' \
     -e 's/(api[_ -]?key|token|password|passwd|secret|auth_key)[[:space:]]*[:=][[:space:]]*[^[:space:]]{8,}/\1=[REDACTED_SECRET]/gi' \
-    -e 's/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/[REDACTED_IP]/g' \
+    -e 's/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/[REDACTED_IP]/g' \
     "$1"
 }
 

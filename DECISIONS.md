@@ -83,3 +83,7 @@ Every runtime decision should carry structured promotion guidance that tells the
 ## D21: Lifecycle History Should Stay Auditable And Compact
 
 Promotion lifecycle data is useful only if operators can inspect it quickly. The runtime should therefore preserve raw timestamps for creation, eligibility, acceptance, dismissal, and latest approval, while also emitting a compact lifecycle summary on each explained decision. This keeps audits readable without throwing away the underlying evidence.
+
+## D22: ARG Is An Operating Layer, Not Just A Guard
+
+ECC — the upfront-contract model — is the foundation, not the whole destination. The project's longer-term direction is an intelligent, safety-bounded operating layer that decides which agent capabilities should run, when, and how; learns reviewed local defaults from operator-approved patterns; routes intent to the right skill, agent, rule, or check; and improves over time. Security floors remain non-negotiable and engine-baked. The framing shift matters because it shapes which capabilities get built: operational intelligence, context-aware routing, and amplification of what agents can do well are first-class goals alongside enforcement.

@@ -4,6 +4,8 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { emitEvent } = require("./telemetry");
+const { fineKey: computeFineKey } = require("./decision-key");
 
 function paths() {
   const baseDir = process.env.ECC_STATE_DIR
@@ -39,16 +41,26 @@ let _policyCache = null;
 
 function loadPolicy() {
   if (_policyCache !== null) return _policyCache;
+  const { policyFile } = paths();
   try {
-    const { policyFile } = paths();
     _policyCache = JSON.parse(fs.readFileSync(policyFile, "utf8"));
-  } catch {
+  } catch (err) {
+    // If the file exists but is corrupt, back it up and warn.
+    if (err && err.code !== "ENOENT") {
+      try {
+        const bak = `${policyFile}.corrupt-${Date.now()}.bak`;
+        fs.copyFileSync(policyFile, bak);
+        process.stderr.write(`[ARG] WARNING: learned-policy.json corrupt — backed up to ${path.basename(bak)}, resetting to defaults.\n`);
+        emitEvent("policy-store-corrupt", { file: "learned-policy.json", errCode: String(err.code || "parse-error") });
+      } catch { /* backup is best-effort */ }
+    }
     _policyCache = emptyPolicy();
   }
   return _policyCache;
 }
 
 function savePolicy(policy) {
+  if (process.env.ECC_READONLY_CONTRACT === "1") { _policyCache = policy; return; }
   _policyCache = null;
   try {
     ensureBaseDir();
@@ -95,26 +107,26 @@ function decisionKey(input = {}) {
 
 function getApprovalCount(input = {}) {
   const policy = loadPolicy();
-  const key = decisionKey(input);
-  return Number(policy.approvalCounts?.[key] || 0);
+  const fine = computeFineKey(input);
+  return Number(policy.approvalCounts?.[fine] || 0);
 }
 
 function isLearnedAllowed(input = {}) {
   const policy = loadPolicy();
-  const key = decisionKey(input);
-  return Boolean(policy.learnedAllows?.[key]);
+  const fine = computeFineKey(input);
+  return Boolean(policy.learnedAllows?.[fine]);
 }
 
 function recordApproval(input = {}) {
   const policy = loadPolicy();
-  const key = decisionKey(input);
-  const current = Number(policy.approvalCounts?.[key] || 0) + 1;
+  const fine = computeFineKey(input);
+  const current = Number(policy.approvalCounts?.[fine] || 0) + 1;
   const now = new Date().toISOString();
-  policy.approvalCounts[key] = current;
+  policy.approvalCounts[fine] = current;
 
-  if (current >= 3 && !policy.learnedAllows?.[key]) {
-    const previous = policy.suggestions?.[key] || {};
-    policy.suggestions[key] = {
+  if (current >= 3 && !policy.learnedAllows?.[fine]) {
+    const previous = policy.suggestions?.[fine] || {};
+    policy.suggestions[fine] = {
       type: "learned-allow",
       status: "pending",
       approvalCount: current,
@@ -122,7 +134,7 @@ function recordApproval(input = {}) {
       eligibleAt: previous.eligibleAt || now,
       updatedAt: now,
       lastApprovedAt: now,
-      summary: key,
+      summary: fine,
     };
   }
 
@@ -132,14 +144,14 @@ function recordApproval(input = {}) {
 
 function setLearnedAllow(input = {}, enabled = true) {
   const policy = loadPolicy();
-  const key = decisionKey(input);
-  policy.learnedAllows[key] = Boolean(enabled);
-  if (policy.suggestions?.[key]) {
-    policy.suggestions[key].status = enabled ? "accepted" : "dismissed";
-    policy.suggestions[key].updatedAt = new Date().toISOString();
+  const fine = computeFineKey(input);
+  policy.learnedAllows[fine] = Boolean(enabled);
+  if (policy.suggestions?.[fine]) {
+    policy.suggestions[fine].status = enabled ? "accepted" : "dismissed";
+    policy.suggestions[fine].updatedAt = new Date().toISOString();
   }
   savePolicy(policy);
-  return key;
+  return fine;
 }
 
 function listSuggestions() {
@@ -157,8 +169,8 @@ function getSuggestion(key) {
 }
 
 function getSuggestionForInput(input = {}) {
-  const key = decisionKey(input);
-  return getSuggestion(key);
+  const fine = computeFineKey(input);
+  return getSuggestion(fine);
 }
 
 function acceptSuggestion(key) {
@@ -237,16 +249,16 @@ function hasAutoAllowOnce(key) {
 }
 
 function getPolicyFacts(input = {}) {
-  const key = decisionKey(input);
+  const fine = computeFineKey(input);
   const policy = loadPolicy();
-  const suggestion = policy.suggestions?.[key] || null;
+  const suggestion = policy.suggestions?.[fine] || null;
   return {
-    key,
-    approvalCount: Number(policy.approvalCounts?.[key] || 0),
-    learnedAllow: Boolean(policy.learnedAllows?.[key]),
-    pendingSuggestion: suggestion && suggestion.status === "pending" ? { key, ...suggestion } : null,
-    acceptedSuggestion: suggestion && suggestion.status === "accepted" ? { key, ...suggestion } : null,
-    dismissedSuggestion: suggestion && suggestion.status === "dismissed" ? { key, ...suggestion } : null,
+    key: fine,
+    approvalCount: Number(policy.approvalCounts?.[fine] || 0),
+    learnedAllow: Boolean(policy.learnedAllows?.[fine]),
+    pendingSuggestion: suggestion && suggestion.status === "pending" ? { key: fine, ...suggestion } : null,
+    acceptedSuggestion: suggestion && suggestion.status === "accepted" ? { key: fine, ...suggestion } : null,
+    dismissedSuggestion: suggestion && suggestion.status === "dismissed" ? { key: fine, ...suggestion } : null,
   };
 }
 

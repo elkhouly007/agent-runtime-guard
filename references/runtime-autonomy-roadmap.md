@@ -8,6 +8,8 @@ This roadmap starts the next improvement cycle after parity-to-superiority close
 
 Turn Agent Runtime Guard from a verified runtime kit into an adaptive runtime layer that can choose the right action automatically with one-time setup or minimal human intervention, while preserving safety and auditability.
 
+> Long-term framing and three-horizon summary: see [ROADMAP.md — Executive Summary](../ROADMAP.md).
+
 ## Design Principles
 
 1. Local-first learning, no hidden cloud dependency

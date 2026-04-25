@@ -52,7 +52,8 @@ process.env.ECC_DECISION_JOURNAL = '0'; // suppress journal file writes during t
 const { score } = require(path.join(root, 'runtime/risk-score.js'));
 const { decide } = require(path.join(root, 'runtime/decision-engine.js'));
 const { discover } = require(path.join(root, 'runtime/context-discovery.js'));
-const { recordApproval, setLearnedAllow, isLearnedAllowed, listSuggestions, acceptSuggestion, summarizePolicy, decisionKey, getSuggestion, grantAutoAllowOnce, hasAutoAllowOnce } = require(path.join(root, 'runtime/policy-store.js'));
+const { recordApproval, setLearnedAllow, isLearnedAllowed, listSuggestions, acceptSuggestion, summarizePolicy, decisionKey, getSuggestion, grantAutoAllowOnce, hasAutoAllowOnce, getSuggestionForInput } = require(path.join(root, 'runtime/policy-store.js'));
+const { fineKey: computeFineKey } = require(path.join(root, 'runtime/decision-key.js'));
 const { getSessionRisk, saveState } = require(path.join(root, 'runtime/session-context.js'));
 
 // Diagnostic helper: writes current test step to stderr before each block.
@@ -87,11 +88,29 @@ const suggestions = listSuggestions();
 if (suggestions.length < 1) throw new Error('expected at least one pending suggestion');
 if (!acceptSuggestion(suggestions[0].key)) throw new Error('expected suggestion acceptance to succeed');
 setLearnedAllow(mediumInput, true);
-const learned = decide(mediumInput);
-if (learned.action !== 'allow') throw new Error(`expected allow from learned policy, got ${learned.action}`);
-if (learned.decisionSource !== 'learned-allow') throw new Error(`expected learned-allow source, got ${learned.decisionSource}`);
+// B2: learned-allow is narrowed to destructive-delete-pattern at high risk only.
+// Medium-risk commands (sudo) stay 'route' even with a learned allow set.
+const learnedMedium = decide(mediumInput);
+if (learnedMedium.action !== 'route') throw new Error(`expected route for medium-risk with learned-allow (B2 narrowed), got ${learnedMedium.action}`);
 const summary = summarizePolicy();
 if (summary.learnedAllowCount < 1) throw new Error('expected learned allow count >= 1');
+
+step('learned-allow-destructive-delete');
+// Verify the valid learned-allow demotion path: high-risk destructive-delete +
+// explicit learned allow + no floor → action: "allow", source: "learned-allow".
+// projectRoot + absolute targetPath ensure fineKey is identical in setLearnedAllow and
+// inside decide() (which enriches via discover() and would otherwise find a different root).
+const destructiveInput = { command: 'rm -rf dist/old', targetPath: path.join(root, 'dist', 'old'), tool: 'Bash', sessionRisk: 0, branch: 'feature/build-cleanup', protectedBranches: [], projectRoot: root, repeatedApprovals: 0 };
+recordApproval(destructiveInput);
+recordApproval(destructiveInput);
+recordApproval(destructiveInput);
+const destSuggestions = listSuggestions();
+if (destSuggestions.length < 1) throw new Error('expected suggestion for destructive input');
+if (!acceptSuggestion(destSuggestions[0].key)) throw new Error('expected destructive suggestion acceptance to succeed');
+setLearnedAllow(destructiveInput, true);
+const learnedDestructive = decide(destructiveInput);
+if (learnedDestructive.action !== 'allow') throw new Error(`expected allow for destructive-delete with learned-allow, got ${learnedDestructive.action}`);
+if (learnedDestructive.decisionSource !== 'learned-allow') throw new Error(`expected learned-allow source, got ${learnedDestructive.decisionSource}`);
 
 step('session-risk-buildup');
 const destructive2 = decide({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
@@ -101,6 +120,9 @@ if (!['require-tests', 'escalate', 'block', 'allow'].includes(destructive3.actio
 if (getSessionRisk() < 1) throw new Error('expected session risk to increase after repeated risky actions');
 
 step('discover-git-repo');
+// Clear accumulated trajectory from prior test steps so the protected-branch assertion
+// runs without trajectory-nudge interference (3 blocks accumulate above).
+saveState({ sessions: {}, recent: [], updatedAt: null });
 const repo = path.resolve(process.env.HOME, 'sample-repo');
 fs.mkdirSync(repo, { recursive: true });
 execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
@@ -138,10 +160,14 @@ if (stackAwareTestsDecision.action !== 'require-tests') throw new Error(`expecte
 if (stackAwareTestsDecision.actionPlan.commands.join(' | ') !== 'npm test | npm run lint') throw new Error(`expected stack-aware test commands, got ${stackAwareTestsDecision.actionPlan.commands.join(' | ')}`);
 
 step('adaptive-tests-decision');
-recordApproval({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
-recordApproval({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
-recordApproval({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash' });
-const adaptiveTestsDecision = decide({ command: ['rm', '-rf', '/tmp/cache'].join(' '), targetPath: '/tmp/cache', tool: 'Bash', sessionRisk: 0 });
+// Use explicit projectRoot + absolute targetPath inside root so fineKey is identical in
+// recordApproval (no discover) and decide() (enriched via discover). /tmp/cache paths
+// produce discover.projectRoot=/tmp which diverges from recordApproval's default-target bucket.
+const _adaptiveKey = { command: 'rm -rf dist/cache', targetPath: path.join(root, 'dist', 'cache'), tool: 'Bash', branch: 'feature/cleanup', protectedBranches: [], projectRoot: root };
+recordApproval(_adaptiveKey);
+recordApproval(_adaptiveKey);
+recordApproval(_adaptiveKey);
+const adaptiveTestsDecision = decide({ ..._adaptiveKey, sessionRisk: 0 });
 if (!adaptiveTestsDecision.actionPlan.summary.includes('consider')) throw new Error('expected adaptive require-tests summary');
 if (adaptiveTestsDecision.workflowRoute?.lane !== 'verification') throw new Error(`expected verification lane, got ${adaptiveTestsDecision.workflowRoute?.lane}`);
 if (adaptiveTestsDecision.workflowRoute?.suggestedTarget !== 'ecc-cli.check') throw new Error(`expected verification target ecc-cli.check, got ${adaptiveTestsDecision.workflowRoute?.suggestedTarget}`);
@@ -310,14 +336,16 @@ if (classifyCommandPayload('npm test') !== 'A') throw new Error('expected A for 
 
 step('B1-auto-allow-once');
 // B.1 auto-allow-once: grant for eligible (pending) policy, consume on decide, expire after single use
-const autoInput = { command: 'npx -y tsx scripts/migrate.ts', tool: 'Bash', targetPath: 'scripts/', payloadClass: 'A', branch: 'feature/docs', sessionRisk: 0 };
+// Use explicit projectRoot + branch so fineKey is identical in recordApproval (no discover) and
+// inside decide() (enriched via discover, explicit overrides). policyKey in decide() now uses fineKey.
+const autoInput = { command: 'npx -y tsx scripts/migrate.ts', tool: 'Bash', targetPath: 'scripts/', payloadClass: 'A', branch: 'feature/docs', sessionRisk: 0, protectedBranches: [], projectRoot: root };
 for (let i = 0; i < 3; i++) recordApproval(autoInput);
-const autoKey = decisionKey(autoInput);
+const autoKey = computeFineKey(autoInput);
 const autoSuggestion = getSuggestion(autoKey);
 if (!autoSuggestion || autoSuggestion.status !== 'pending') throw new Error('expected pending suggestion for auto-allow-once test');
 if (!grantAutoAllowOnce(autoKey)) throw new Error('grantAutoAllowOnce should succeed for eligible pending policy');
 if (!hasAutoAllowOnce(autoKey)) throw new Error('hasAutoAllowOnce should return true after grant');
-if (grantAutoAllowOnce('bash|generic|default-target|A')) throw new Error('grantAutoAllowOnce should fail for non-eligible key');
+if (grantAutoAllowOnce('bash|generic|default-target|unknown-branch|A')) throw new Error('grantAutoAllowOnce should fail for non-eligible key');
 const autoDecision = decide({ ...autoInput });
 if (autoDecision.action !== 'allow') throw new Error(`expected allow from auto-allow-once, got ${autoDecision.action}`);
 if (autoDecision.decisionSource !== 'auto-allow-once') throw new Error(`expected auto-allow-once source, got ${autoDecision.decisionSource}`);
@@ -355,9 +383,11 @@ saveState({
   ],
   updatedAt: new Date().toISOString(),
 });
-// setLearnedAllow takes an input object (decisionKey is computed internally)
-setLearnedAllow({ command: 'npm test', tool: 'Bash', targetPath: '.', branch: 'main' });
-const learnedDecision = decide({ command: 'npm test', tool: 'Bash', targetPath: '.', branch: 'main', sessionRisk: 0, repeatedApprovals: 0 });
+// B2: learned-allow only applies to high-risk destructive-delete; must use that command class.
+// Explicit projectRoot + branch ensures fineKey in setLearnedAllow matches policyKey in decide().
+const _laInput = { command: 'rm -rf dist/nudge-test', targetPath: path.join(root, 'dist', 'nudge-test'), tool: 'Bash', branch: 'feature/cleanup', protectedBranches: [], projectRoot: root, sessionRisk: 0, repeatedApprovals: 0 };
+setLearnedAllow(_laInput, true);
+const learnedDecision = decide(_laInput);
 if (learnedDecision.decisionSource !== 'learned-allow') throw new Error(`expected learned-allow source, got ${learnedDecision.decisionSource}`);
 if (learnedDecision.trajectoryNudge) throw new Error('trajectory nudge must NOT fire when source is learned-allow');
 console.log('trajectory-nudge exempt for learned-allow: ok');
@@ -366,8 +396,9 @@ step('B3-trajectory-nudge-negative-auto-allow-once');
 // Case B: auto-allow-once must NOT be nudged either
 // Re-use the eligible suggestion left by the B.1 lifecycle test above (npx -y)
 // That test consumed the token but left the suggestion as pending; re-grant it.
-const aaoInput = { command: 'npx -y tsx scripts/migrate.ts', tool: 'Bash', targetPath: 'scripts/', payloadClass: 'A', branch: 'feature/docs', sessionRisk: 0 };
-const aaoKey = decisionKey(aaoInput);
+// Use same projectRoot/branch as autoInput in B1 so fineKey matches.
+const aaoInput = { command: 'npx -y tsx scripts/migrate.ts', tool: 'Bash', targetPath: 'scripts/', payloadClass: 'A', branch: 'feature/docs', sessionRisk: 0, protectedBranches: [], projectRoot: root };
+const aaoKey = computeFineKey(aaoInput);
 const aaoSugg = getSuggestion(aaoKey);
 if (!aaoSugg || aaoSugg.status !== 'pending') throw new Error('expected pending suggestion for auto-allow-once negative test (re-grant)');
 // Seed 3 escalations using the correct session-context format
@@ -413,7 +444,9 @@ step('R1-learned-allow-destructive-delete');
 // This test verifies that at "high" risk + destructive-delete, a learned-allow is
 // correctly attributed as decisionSource=learned-allow, not risk-engine.
 saveState({ recent: [], updatedAt: new Date().toISOString() }); // clear trajectory
-const destructiveLearnedInput = { command: 'rm -rf dist/', targetPath: 'dist/', tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [] };
+// Explicit projectRoot + absolute targetPath ensure fineKey matches in setLearnedAllow (raw input)
+// and in decide() (enriched via discover). Without projectRoot, pathBucket diverges.
+const destructiveLearnedInput = { command: 'rm -rf dist/', targetPath: path.join(root, 'dist'), tool: 'Bash', sessionRisk: 0, repeatedApprovals: 0, branch: 'feature/build-cleanup', protectedBranches: [], projectRoot: root };
 setLearnedAllow(destructiveLearnedInput, true);
 // Direct module-level assertion: isLearnedAllowed must return true immediately after setLearnedAllow.
 // This verifies the in-process cache is always updated (try-finally in savePolicy guarantees this
@@ -456,6 +489,35 @@ if (blockDecision.action !== 'block') throw new Error(`R4: expected block for rm
 if (blockDecision.workflowRoute?.lane !== 'blocked') throw new Error(`R4: expected blocked lane, got ${blockDecision.workflowRoute?.lane}`);
 if (!blockDecision.workflowRoute?.suggestedCommand?.includes('ecc-cli.sh runtime explain')) throw new Error('R4: expected runtime explain command in blocked route');
 console.log('block-action workflowRoute: ok');
+
+step('cross-harness-secret-scan');
+// Verify that runPreToolGate calls scanSecrets and emits a warning for all harnesses.
+// This closes the parity gap where secret detection previously only fired in the
+// Claude-specific secret-warning.js hook.
+const { scanSecrets } = require(path.join(root, 'runtime/secret-scan.js'));
+const { runPreToolGate } = require(path.join(root, 'runtime/pretool-gate.js'));
+
+// Direct scanSecrets call: must detect an OpenAI-style API key in command text.
+const secretCmd = 'curl -H "Authorization: Bearer sk-proj-abc123def456ghi789jkl012"';
+const scanHit = scanSecrets(secretCmd);
+if (!scanHit) throw new Error('scanSecrets: expected API key hit, got null');
+if (!scanHit.name) throw new Error('scanSecrets: expected hit.name to be present');
+
+// runPreToolGate must emit the secret warning and upgrade payloadClass to C.
+// Test with harness=opencode to prove the cross-harness path (not the Claude hook).
+const secretGateResult = runPreToolGate({
+  harness: 'opencode', tool: 'Bash',
+  command: secretCmd, cwd: '', rawInput: {}, sessionRisk: 0,
+});
+if (!secretGateResult.stderrLines.some(l => l.includes('detected')))
+  throw new Error('runPreToolGate: expected secret detected warning in stderrLines');
+if (!secretGateResult.stderrLines.some(l => l.includes('Remove secrets')))
+  throw new Error('runPreToolGate: expected secret removal hint in stderrLines');
+if (!secretGateResult.stderrLines.some(l => l.includes('Payload class: C')))
+  throw new Error('runPreToolGate: expected payloadClass upgraded to C in stderrLines');
+if (secretGateResult.logHitName !== scanHit.name)
+  throw new Error(`runPreToolGate: expected logHitName=${scanHit.name}, got ${secretGateResult.logHitName}`);
+console.log('cross-harness-secret-scan: ok');
 
 console.log('runtime-core-node-check: ok');
 NODE

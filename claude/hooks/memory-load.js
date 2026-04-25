@@ -3,7 +3,7 @@
  * memory-load.js — ECC Safe-Plus  (SessionStart hook)
  *
  * Fires at session start. Reads the memory index file and prints a brief
- * orientation summary to stderr so Ahmed knows what context is loaded.
+ * orientation summary to stderr so the user knows what context is loaded.
  *
  * SAFETY CONTRACT:
  * - Reads JSON from stdin.
@@ -13,9 +13,7 @@
  * - No external packages, no network calls.
  * - Silent fail on errors.
  *
- * Memory file locations (in priority order):
- *   1. ~/.claude/projects/-home-khouly--openclaw-workspace-sand/memory/MEMORY.md
- *   2. ~/.openclaw/memory/MEMORY.md
+ * Memory file location: ~/.openclaw/memory/MEMORY.md
  */
 
 "use strict";
@@ -27,7 +25,6 @@ const path = require("path");
 const HOME = os.homedir();
 
 const MEMORY_PATHS = [
-  path.join(HOME, ".claude", "projects", "-home-khouly--openclaw-workspace-sand", "memory", "MEMORY.md"),
   path.join(HOME, ".openclaw", "memory", "MEMORY.md"),
 ];
 
@@ -68,6 +65,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged first.
     process.stdout.write(raw || "");
+    if (process.env.ECC_KILL_SWITCH === "1") return;
 
     try {
       const content = readMemoryFile();

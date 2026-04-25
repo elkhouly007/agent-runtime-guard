@@ -11,10 +11,10 @@ Agent Runtime Guard currently includes:
 - reviewed capability packs for MCP, wrappers, plugins, browser, notifications, and daemons;
 - ARG amplification philosophy throughout: every agent, rule, and skill is purpose-built for this project;
 - **49 specialist agents** following the ARG amplification philosophy — Mission, ARG-aware Activation, numbered Protocol, measurable Done When;
-- **81 rule files** covering 12 language directories plus common, database, infrastructure, and web domains;
+- **82 rule files** covering 12 language directories plus common, database, infrastructure, and web domains;
 - **22 skills** for ARG debug, policy tuning, capability auditing, code analysis, orchestration design, and more;
 - 20 approval-boundary scenarios and 14 prompt-injection scenarios;
-- executable fixture coverage with **92/92 passing**;
+- executable fixture coverage with **179/179 passing**;
 - clean verification across audit, smoke, payload protection, fixtures, integration smoke, installation/profile checks, config/settings integration checks, apply-status validation, executable hygiene, setup-wizard edge cases, per-tool wiring-doc coverage, unified status-artifact checks, policy-lint, sensitive-data-detection, and superiority-evidence checks.
 
 ## Verification Snapshot
@@ -25,7 +25,7 @@ Current verified state:
 - `audit-examples.sh` — passing
 - `check-registries.sh` — passing
 - `check-scenarios.sh` — passing
-- `run-fixtures.sh` — passing (92/92)
+- `run-fixtures.sh` — passing (179/179)
 - `test-payload-protection.sh` — passing
 - `check-integration-smoke.sh` — passing
 - `smoke-test.sh` — passing
@@ -48,7 +48,7 @@ Current verified state:
 | Component | Prior Baseline | Current | Original | Notes |
 |---|---:|---:|---:|---|
 | Agents | 0 | 49 | 49 | All written for ARG amplification philosophy |
-| Rules | 0 | 81 | 81 | 12 languages + common/database/infra/web domains |
+| Rules | 0 | 82 | 82 | 12 languages + common/database/infra/web domains |
 | Skills | 0 | 22 | 22 | ARG debug, policy, analysis, orchestration |
 
 ## Sprint Status
@@ -81,13 +81,13 @@ Note: Windows numbers are dominated by `fs.appendFileSync` / `fs.writeFileSync` 
 All content in Agent Runtime Guard is original — written specifically for the ARG amplification philosophy. There is no upstream comparison because this project has no upstream source.
 
 - **Agents**: 49 original specialists; every file encodes Mission, Activation, Protocol, Amplification Techniques, and measurable Done-When criteria
-- **Rules**: 81 original files; 12 language domains plus common/database/infra/web; YAML frontmatter with `last_reviewed` and `version_target` on every file
+- **Rules**: 82 original files; 12 language domains plus common/database/infra/web; YAML frontmatter with `last_reviewed` and `version_target` on every file
 - **Skills**: 22 original skills spanning ARG configuration, analysis, orchestration, and amplification workflows
 - **Runtime**: fully verified; bounded autonomous decision layer with kill-switch, learned-allow, auto-allow-once, session-trajectory nudge, payload classification, and JSONL audit trail
 
 The correct current description is:
 
-> **Agent Runtime Guard is a purpose-built, all-original agentic policy and amplification framework with a verified runtime decisioning layer, comprehensive rule coverage across 12 languages, and 92 passing integration fixtures.**
+> **Agent Runtime Guard is a purpose-built, all-original agentic policy and amplification framework with a verified runtime decisioning layer, comprehensive rule coverage across 12 languages, and 179 passing integration fixtures.**
 
 ## v1.0.x Runtime Sprint Highlights
 

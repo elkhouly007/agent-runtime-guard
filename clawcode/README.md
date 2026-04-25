@@ -1,6 +1,6 @@
 # Claw Code Harness — NOT YET SUPPORTED
 
-> **NOT YET SUPPORTED.** This directory is an integration contract sketch only. No wiring, no policy maps, no wizard path, and no verified behavior exist here. Do not treat this as a supported harness.
+> **NOT YET SUPPORTED** for production use. A best-effort `hooks/adapter.js` exists using the broadest input-shape fallback chain, but the Claw Code hook API is not publicly documented and the adapter is unverified. No wiring plan, no policy maps, no wizard path. Test your actual Claw Code hook payload against the adapter before relying on it.
 
 ## What This Would Be
 

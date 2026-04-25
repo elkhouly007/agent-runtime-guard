@@ -8,7 +8,7 @@ status_script="$root/scripts/status-summary.sh"
 [ -f "$parity_file" ] || { printf 'parity-matrix.json missing\n' >&2; exit 1; }
 [ -f "$status_script" ] || { printf 'status-summary.sh missing\n' >&2; exit 1; }
 
-today="$(git -C "$root" log -1 --format=%cd --date=format:%Y-%m-%d 2>/dev/null || date -u +%Y-%m-%d)"
+today="$(git -C "$root" log -1 --format=%cd --date=format:%Y-%m-%d -- references/superiority-evidence.md 2>/dev/null | grep . || date -u +%Y-%m-%d)"
 
 # ECC-only extension total (sum of current_only_total across agents/rules/skills)
 ecc_only_total="$(awk '

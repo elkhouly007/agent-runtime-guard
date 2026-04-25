@@ -20,12 +20,12 @@
 "use strict";
 
 const fs   = require("fs");
-const os   = require("os");
 const path = require("path");
 const { readStdin, hookLog } = require("./hook-utils");
+const { hookStateDir }       = require("../../runtime/state-paths");
 
 // User-private directory — not world-writable like /tmp.
-const ECC_DIR      = path.join(os.homedir(), ".openclaw", "ecc-safe-plus");
+const ECC_DIR      = hookStateDir();
 const COUNTER_FILE = path.join(ECC_DIR, "session-counter.json");
 
 const EXPENSIVE_TOOLS = new Set(["Agent", "WebFetch", "WebSearch"]);
@@ -73,6 +73,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged first.
     process.stdout.write(raw || "");
+    if (process.env.ECC_KILL_SWITCH === "1") return;
 
     try {
       const input    = JSON.parse(raw || "{}");

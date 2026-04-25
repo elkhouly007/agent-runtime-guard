@@ -1,0 +1,51 @@
+{
+  "_comment": "Example ecc.contract.json. Copy to your project root, edit scopes, then run: ecc-cli.sh contract accept",
+  "version": 1,
+  "contractId": "arg-20260425-a7b2f1c3d4e5",
+  "revision": 1,
+  "acceptedAt": "2026-04-25T12:00:00Z",
+  "acceptedBy": "developer@host",
+  "expiresAt": null,
+  "harnessScope": ["claude"],
+  "trustPosture": "balanced",
+  "scopes": {
+    "filesystem": {
+      "readAllow":  ["${projectRoot}/**"],
+      "writeAllow": ["${projectRoot}/src/**", "${projectRoot}/tests/**"],
+      "writeDeny":  ["**/.env*", "**/*.pem", "**/secrets/**"],
+      "destructiveAllow": [
+        { "commandClass": "destructive-delete", "pathGlob": "${projectRoot}/build/**" },
+        { "commandClass": "destructive-delete", "pathGlob": "${projectRoot}/dist/**" }
+      ]
+    },
+    "network": {
+      "outboundAllow":   ["registry.npmjs.org", "pypi.org", "github.com"],
+      "outboundDeny":    ["*"],
+      "remoteExecAllow": []
+    },
+    "secrets": {
+      "scanMode":        "block",
+      "redactInJournal": true
+    },
+    "elevation": {
+      "sudoAllow":         false,
+      "sudoAllowCommands": []
+    },
+    "branches": {
+      "protected":      ["main", "master", "release/*"],
+      "pushAllow":      ["feature/*", "fix/*"],
+      "forcePushAllow": []
+    },
+    "shell": {
+      "toolAllow":          ["git", "npm", "node", "pytest"],
+      "toolDeny":           ["curl", "wget", "nc", "ssh"],
+      "globalInstallAllow": false
+    },
+    "payloadClasses": {
+      "A": "allow",
+      "B": "warn",
+      "C": "block"
+    }
+  },
+  "contractHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}
