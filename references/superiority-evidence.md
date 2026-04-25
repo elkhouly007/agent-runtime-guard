@@ -1,6 +1,6 @@
 # Superiority Evidence
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 Reference baseline: `affaan-m/everything-claude-code` `v1.10.0`
 
 This file records measured or directly verifiable ways Agent Runtime Guard now exceeds upstream, rather than only matching it.
