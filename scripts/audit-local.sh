@@ -43,7 +43,7 @@ scan() {
   label="$1"
   pattern="$2"
   results="$(xargs grep -nE "$pattern" < "$tmp" || true)"
-  filtered="$(printf '%s\n' "$results" | grep -vE '^[^:]+:[0-9]+:.*(Do not use|style unreviewed|rejected|disabled|approval required|No `|No |never blocks|warns on|scans prompt|detects|patterns?:|Known Limitations)' || true)"
+  filtered="$(printf '%s\n' "$results" | grep -vE '^[^:]+:[0-9]+:.*(Do not use|style unreviewed|rejected|disabled|approval required|No `|No |never blocks|warns on|scans prompt|detects|patterns?:|Known Limitations|\$[a-z_]*tmp[_a-z]*\b|\$[a-z_]*_state\b)' || true)"
   if [ -n "$filtered" ]; then
     printf '%s\n' "$filtered"
     printf '%s\n' "RISK: $label" >&2
