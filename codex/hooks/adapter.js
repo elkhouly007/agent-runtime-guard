@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-// adapter.js — Codex PreToolUse adapter for Agent Runtime Guard (best-effort).
+// adapter.js — Codex PreToolUse adapter for Horus Agentic Power (best-effort).
 //
-// Codex hook API is not publicly documented. This adapter uses the broadest
-// possible fallback chain to cover likely input shapes. Test against your
-// actual Codex hook payload before relying on this in production.
+// Confirmed Codex hook shape (OpenAI Codex CLI, verified 2026-04):
+//   { "session_id": "...", "hook_event_name": "PreToolUse",
+//     "tool_name": "Bash", "tool_input": { "command": "..." } }
 //
-// Likely Codex shapes (not verified):
-//   { "tool": "bash", "command": "...", "workdir": "..." }
-//   { "tool_name": "Bash", "tool_input": { "command": "..." } }  (Claude Code compat)
-//
-// To enable block mode: export ECC_ENFORCE=1
+// Falls back to flat { "command": "...", "cmd": "..." } shapes for resilience.
+// Exit 2 blocks execution; exit 0 allows it.
+// To enable block mode: export HORUS_ENFORCE=1
 
 "use strict";
 

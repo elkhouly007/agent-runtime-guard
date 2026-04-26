@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-// adapter.js — antegravity PreToolUse adapter for Agent Runtime Guard (best-effort).
+// adapter.js — Antegravity PreToolUse adapter for Horus Agentic Power (best-effort).
 //
-// antegravity hook API is not publicly documented. This adapter uses the broadest
-// possible fallback chain to cover likely input shapes. Test against your
-// actual antegravity hook payload before relying on this in production.
+// Antegravity hook API is not publicly documented (possibly an internal Google tool).
+// This adapter applies the broadest possible fallback chain. Test against your
+// actual Antegravity hook payload before relying on this in production.
 //
-// To enable block mode: export ECC_ENFORCE=1
+// Assumed shape (unverified — best-effort based on Claude Code compat):
+//   { "tool_name": "Bash", "tool_input": { "command": "..." } }
+//
+// Exit 2 blocks execution; exit 0 allows it.
+// To enable block mode: export HORUS_ENFORCE=1
 
 "use strict";
 

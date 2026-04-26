@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// adapter.js — Claw Code PreToolUse adapter for Agent Runtime Guard (best-effort).
+// adapter.js — ClawCode PreToolUse adapter for Horus Agentic Power (best-effort).
 //
-// Claw Code hook API is not publicly documented. This adapter uses the broadest
-// possible fallback chain to cover likely input shapes. Test against your
-// actual Claw Code hook payload before relying on this in production.
+// ClawCode hook API is not publicly documented. Based on available evidence,
+// ClawCode mirrors the Claude Code hook shape:
+//   { "tool_name": "Bash", "tool_input": { "command": "..." } }
 //
-// To enable block mode: export ECC_ENFORCE=1
+// Falls back to flat { "command": "...", "cmd": "..." } shapes for resilience.
+// Exit 2 blocks execution; exit 0 allows it.
+// To enable block mode: export HORUS_ENFORCE=1
 
 "use strict";
 
