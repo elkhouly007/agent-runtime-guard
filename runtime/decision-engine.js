@@ -12,6 +12,7 @@ const { build } = require("./action-planner");
 const { evaluate } = require("./promotion-guidance");
 const { recommend } = require("./workflow-router");
 const { classifyCommand } = require("./decision-key");
+const { classifyIntent } = require("./intent-classifier");
 
 // Contract is loaded lazily — disabled only when ECC_CONTRACT_ENABLED=0
 let _contract = null;
@@ -115,6 +116,9 @@ function decide(input = {}) {
     repeatedApprovals: input.repeatedApprovals != null ? input.repeatedApprovals : getApprovalCount({ ...projectPolicy, ...discovered, ...explicit }),
     sessionRisk: input.sessionRisk != null ? input.sessionRisk : getSessionRisk(),
   };
+
+  // Classify command intent for routing intelligence and journaling
+  const intentResult = classifyIntent(input.command || "");
 
   // ── Section 4.6 precedence matrix: contract verification (Steps 2 + 5) ──
   const contract    = getContract(discovered.projectRoot || process.cwd());
@@ -256,6 +260,7 @@ function decide(input = {}) {
   if (discovered.primaryStack) explanationParts.push(`stack=${discovered.primaryStack}`);
   if (discovered.hasConfig === false && discovered.primaryStack) explanationParts.push('config=missing');
   if (projectPolicy.trustPosture) explanationParts.push(`trust=${projectPolicy.trustPosture}`);
+  if (intentResult.intent !== "unknown") explanationParts.push(`intent=${intentResult.intent}`);
 
   const actionPlan = build(action, enriched, risk, discovered, policyFacts);
   const promotionGuidance = evaluate(policyFacts, risk);
@@ -303,6 +308,7 @@ function decide(input = {}) {
     workflowRoute,
     actionPlan,
     trajectoryNudge,
+    intent: intentResult.intent,
     context: risk.context,
   };
 
@@ -313,6 +319,7 @@ function decide(input = {}) {
     riskScore: result.riskScore,
     reasonCodes: result.reasonCodes,
     tool: input.tool || "",
+    intent: intentResult.intent,
     branch: input.branch || "",
     targetPath: input.targetPath || "",
     notes: `${source}${input.notes ? ` | ${input.notes}` : ""}`,

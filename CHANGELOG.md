@@ -8,6 +8,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Phase 3 — Autonomous routing foundation
+
+#### Added
+- `runtime/intent-classifier.js`: Pure pattern-based classifier mapping shell commands to one of eight intents (`explore`, `build`, `deploy`, `modify`, `configure`, `cleanup`, `debug`, `unknown`). Returns `{ intent, confidence, indicators }`. Zero external dependencies.
+- `runtime/route-resolver.js`: Static routing table mapping classified intents to workflow lanes (`direct`, `verification`, `review`) plus an optional target script. Supports per-project overrides via `context.routingTable`. Exports `resolveRoute`, `DEFAULT_ROUTING_TABLE`, `KNOWN_INTENTS`.
+- `runtime/decision-engine.js`: `decide()` now calls `classifyIntent(input.command)` and exposes `intent` in the return object, the explanation string, and the decision journal entry.
+- `runtime/index.js`: Exports `classifyIntent`, `resolveRoute`, `DEFAULT_ROUTING_TABLE`, `KNOWN_INTENTS`.
+- `scripts/ecc-cli.sh runtime classify <command>`: CLI subcommand that classifies a shell command and prints `{ intent, confidence, indicators }` as JSON.
+- `scripts/ecc-cli.sh runtime route <command>`: CLI subcommand that classifies then routes a command, printing combined classification + route JSON.
+- `scripts/run-fixtures.sh`: 18 new inline assertions — 12 intent-classifier unit tests + 6 route-resolver unit tests. Executed test count: 158 → 180.
+
+---
+
 ### Phase 1 — Context isolation + fixture correctness
 
 #### Added

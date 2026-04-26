@@ -485,6 +485,30 @@ EOF
       explain)
         exec node "${scripts}/runtime-state.js" explain "$@"
         ;;
+      classify)
+        # Classify the intent of a shell command: ecc-cli.sh runtime classify <command>
+        cmd_arg="${1:-}"
+        node - "$root" "$cmd_arg" <<'__CLASSIFY_EOF__'
+"use strict";
+const path = require("path");
+const { classifyIntent } = require(path.join(process.argv[2], "runtime/intent-classifier"));
+const result = classifyIntent(process.argv[3] || "");
+console.log(JSON.stringify(result, null, 2));
+__CLASSIFY_EOF__
+        ;;
+      route)
+        # Resolve the workflow route for a shell command: ecc-cli.sh runtime route <command>
+        cmd_arg="${1:-}"
+        node - "$root" "$cmd_arg" <<'__ROUTE_EOF__'
+"use strict";
+const path = require("path");
+const { classifyIntent } = require(path.join(process.argv[2], "runtime/intent-classifier"));
+const { resolveRoute } = require(path.join(process.argv[2], "runtime/route-resolver"));
+const classified = classifyIntent(process.argv[3] || "");
+const route = resolveRoute(classified.intent);
+console.log(JSON.stringify({ ...classified, ...route }, null, 2));
+__ROUTE_EOF__
+        ;;
       *)
         die "Unknown runtime subcommand: $sub"
         ;;

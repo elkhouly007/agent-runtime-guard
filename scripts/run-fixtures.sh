@@ -292,6 +292,64 @@ if [ -d "$contract_dir" ]; then
   done
 fi
 
+# ── inline: intent-classifier unit tests ─────────────────────────────────────
+printf '\nIntent-classifier inline tests...\n'
+
+run_intent_test() {
+  local name="$1" cmd="$2" expected_intent="$3"
+  local actual
+  # Use relative require path — run-fixtures.sh already cd'd to $root
+  actual=$(node -e "
+const { classifyIntent } = require('./runtime/intent-classifier');
+const r = classifyIntent(process.argv[1]);
+process.stdout.write(r.intent);
+" -- "$cmd" 2>/dev/null) || { fail "intent:$name" "node error"; return; }
+  if [ "$actual" = "$expected_intent" ]; then
+    ok "intent:$name"
+  else
+    fail "intent:$name" "got '$actual', expected '$expected_intent' (cmd='$cmd')"
+  fi
+}
+
+run_intent_test "ls"                "ls -la /tmp"                          "explore"
+run_intent_test "git-status"        "git status"                           "explore"
+run_intent_test "npm-test"          "npm test"                             "build"
+run_intent_test "jest"              "jest --coverage"                      "build"
+run_intent_test "git-push"         "git push origin main"                  "deploy"
+run_intent_test "terraform-apply"  "terraform apply"                       "deploy"
+run_intent_test "rm"               "rm -rf ./dist"                         "cleanup"
+run_intent_test "npm-install"      "npm install lodash"                    "configure"
+run_intent_test "sed"              "sed -i 's/foo/bar/g' file.txt"         "modify"
+run_intent_test "git-commit"       "git commit -m 'fix'"                   "modify"
+run_intent_test "gdb"              "gdb ./program"                         "debug"
+run_intent_test "unknown"          "frobnicate --xyzzy"                    "unknown"
+
+# ── inline: route-resolver unit tests ────────────────────────────────────────
+printf '\nRoute-resolver inline tests...\n'
+
+run_route_test() {
+  local name="$1" intent="$2" expected_lane="$3"
+  local actual
+  # Use relative require path — run-fixtures.sh already cd'd to $root
+  actual=$(node -e "
+const { resolveRoute } = require('./runtime/route-resolver');
+const r = resolveRoute(process.argv[1]);
+process.stdout.write(r.lane);
+" -- "$intent" 2>/dev/null) || { fail "route:$name" "node error"; return; }
+  if [ "$actual" = "$expected_lane" ]; then
+    ok "route:$name"
+  else
+    fail "route:$name" "got '$actual', expected '$expected_lane' (intent='$intent')"
+  fi
+}
+
+run_route_test "explore"   "explore"   "direct"
+run_route_test "build"     "build"     "verification"
+run_route_test "deploy"    "deploy"    "review"
+run_route_test "cleanup"   "cleanup"   "review"
+run_route_test "configure" "configure" "verification"
+run_route_test "unknown"   "unknown"   "direct"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 
 printf '\n'

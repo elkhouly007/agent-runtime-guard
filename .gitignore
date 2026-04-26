@@ -1,0 +1,22 @@
+# ── Runtime ephemeral output ─────────────────────────────────────────────────
+ann*.json
+jobs*.json
+ubuntu_log.txt
+
+# ── Benchmark artifacts ───────────────────────────────────────────────────────
+artifacts/bench/
+
+# ── Claude Code session artifacts ─────────────────────────────────────────────
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+.vscode/settings.json
+*.swp
