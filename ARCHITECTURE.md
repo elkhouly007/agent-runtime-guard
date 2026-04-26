@@ -4,9 +4,12 @@
 
 ```
 runtime/
+├── index.js                Flat re-export namespace. Hooks require("../../../runtime") for all symbols.
 ├── decision-engine.js      Entry point. Walks the Section 3 precedence matrix and returns a decision.
 ├── risk-score.js           12 pattern classes, bounded 0–10, deterministic. No I/O.
 ├── decision-key.js         fineKey (5-part) + legacyKey (4-part back-compat). Classifies commands.
+├── intent-classifier.js    8-intent pattern classifier: explore/build/deploy/modify/configure/cleanup/debug/unknown.
+├── route-resolver.js       Maps intents to routing lanes (direct/verification/review). Per-project override.
 ├── policy-store.js         Learned-allow, auto-allow-once, approval counts. Atomic tmp+rename writes.
 ├── session-context.js      Per-session risk tracking. Session-id partitioning. Atomic writes.
 ├── decision-journal.js     JSONL append-only log with 5 MB rotation, 3-generation retention.
@@ -15,7 +18,7 @@ runtime/
 ├── promotion-guidance.js   6-stage promotion lifecycle. Deterministic.
 ├── workflow-router.js      Recommends CI, PR, or review workflow based on action + risk.
 ├── action-planner.js       Builds a step-by-step action plan for the decided action.
-├── pretool-gate.js         Single enforcement spine called by all three harness adapters.
+├── pretool-gate.js         Single enforcement spine called by all harness adapters.
 ├── secret-scan.js          Cross-harness secret pattern scanner (was Claude-only before v1.7).
 ├── contract.js             Contract lifecycle: load, verify, accept, generate, scopeMatch.
 ├── glob-match.js           Zero-dep glob matcher (**/*/?/[abc]/! negation/${projectRoot}).

@@ -83,6 +83,8 @@ Agent Runtime Guard is a runtime decision spine and amplification surface. ECC (
 | --- | --- | --- |
 | Runtime entry point | `runtime/index.js` | Re-exports all runtime module functions as a flat namespace. Required by hooks via `require("../../../runtime")`. |
 | Decision engine | `runtime/decision-engine.js` | Core `decide(input)` function — scores risk, checks learned policy and auto-allow-once, applies trajectory nudge, returns action/explanation/workflow-route. `ECC_KILL_SWITCH=1` returns block immediately. |
+| Intent classifier | `runtime/intent-classifier.js` | Maps shell commands to 8 intents (explore/build/deploy/modify/configure/cleanup/debug/unknown) using pure pattern matching. Zero I/O, zero deps. |
+| Route resolver | `runtime/route-resolver.js` | Maps intents to routing lanes (direct/verification/review) via a static table with per-project override support. |
 | Risk scorer | `runtime/risk-score.js` | Computes 0–10 risk score from command patterns, path sensitivity, payload class, branch, session risk, and trust posture. |
 | Policy store | `runtime/policy-store.js` | Learned local allows, approval counts, pending suggestions, and auto-allow-once tokens. Persists to `~/.openclaw/agent-runtime-guard/learned-policy.json` (overridable via `ECC_STATE_DIR`). |
 | Session context | `runtime/session-context.js` | Rolling per-session decision history (last 12 entries). Powers `getSessionRisk()` and `getSessionTrajectory()`. State file mode 0600. |
