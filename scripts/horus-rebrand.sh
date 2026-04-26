@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# scripts/horus-rebrand.sh — one-time rename of ECC_* → HORUS_* across the tree.
+# scripts/horus-rebrand.sh — one-time rename: ECC_* → HORUS_*, ecc.* → horus.*.
+# NOTE: This script self-modified during the rebrand run (ECC_ → HORUS_ in comments).
+# The rebrand has been applied. This file is retained as historical documentation.
 #
 # Usage:
-#   bash scripts/horus-rebrand.sh           # preview only (dry run, default)
-#   bash scripts/horus-rebrand.sh --apply   # apply all changes
-#   bash scripts/horus-rebrand.sh --verify  # check how many ECC_ refs remain
+#   bash scripts/horus-rebrand.sh           # preview (dry run, default)
+#   bash scripts/horus-rebrand.sh --apply   # apply changes
+#   bash scripts/horus-rebrand.sh --verify  # check remaining old-brand refs
 #
-# What this script changes:
+# What this script applied:
 #   1. Content: ECC_ env-var prefix → HORUS_ in all tracked source files
-#   2. Content: ecc.{config,contract}.json → horus.{config,contract}.json references
-#   3. Content: ecc.{config,contract}.schema.json → horus.*.schema.json references
-#   4. Content: ecc-cli.sh / ecc-cli → horus-cli.sh / horus-cli references
-#   5. Content: .openclaw/agent-runtime-guard → .horus  (state dir)
+#   2. Content: ecc.{config,contract}.json → horus.{config,contract}.json refs
+#   3. Content: ecc.*.schema.json → horus.*.schema.json refs
+#   4. Content: ecc-cli.sh / ecc-cli → horus-cli.sh / horus-cli refs
+#   5. Content: .openclaw/agent-runtime-guard → .horus  (primary state dir)
 #   6. Content: .openclaw/ecc-safe-plus → .horus  (legacy hook state dir)
 #   7. Content: contractId prefix arg- → hap- in contract.js and schema
 #   8. File renames: schemas/ecc.*.json → schemas/horus.*.json
@@ -105,45 +107,45 @@ rename_file() {
 # ── Phase 0: Verify mode ────────────────────────────────────────────────────────
 
 if [[ "${1:-}" == "--verify" ]]; then
-  printf '\n=== Verification: remaining ECC_ references ===\n'
-  count=$(grep -r "ECC_" --include="*.js" --include="*.sh" --include="*.json" \
+  printf '\n=== Verification: remaining HORUS_ references ===\n'
+  count=$(grep -r "HORUS_" --include="*.js" --include="*.sh" --include="*.json" \
     --include="*.md" --include="*.jsonc" \
     --exclude-dir=".git" --exclude-dir="node_modules" --exclude-dir=".claude" \
     . 2>/dev/null | wc -l || echo 0)
-  printf 'ECC_ occurrences remaining: %s\n' "$count"
-  ecc_files=$(grep -rl "ECC_" --include="*.js" --include="*.sh" --include="*.json" \
+  printf 'HORUS_ occurrences remaining: %s\n' "$count"
+  ecc_files=$(grep -rl "HORUS_" --include="*.js" --include="*.sh" --include="*.json" \
     --include="*.md" --include="*.jsonc" \
     --exclude-dir=".git" --exclude-dir="node_modules" --exclude-dir=".claude" \
     . 2>/dev/null | wc -l || echo 0)
-  printf 'Files with ECC_ remaining: %s\n' "$ecc_files"
+  printf 'Files with HORUS_ remaining: %s\n' "$ecc_files"
   [ "$count" -eq 0 ] && printf 'Rebrand complete.\n' || printf 'Rebrand incomplete — run with --apply.\n'
   exit 0
 fi
 
-# ── Phase 1: Bulk env-var prefix replacement (ECC_ → HORUS_) ──────────────────
+# ── Phase 1: Bulk env-var prefix replacement (HORUS_ → HORUS_) ──────────────────
 
-printf '\n=== Phase 1: env-var prefix ECC_ → HORUS_ ===\n'
+printf '\n=== Phase 1: env-var prefix HORUS_ → HORUS_ ===\n'
 
 if [ "$DRY_RUN" -eq 1 ]; then
-  ecc_files=$(grep -rl "ECC_" --include="*.js" --include="*.sh" --include="*.json" \
+  ecc_files=$(grep -rl "HORUS_" --include="*.js" --include="*.sh" --include="*.json" \
     --include="*.md" --include="*.jsonc" --include="*.yaml" --include="*.yml" \
     --include="*.txt" --include="*.example" \
     --exclude-dir=".git" --exclude-dir="node_modules" --exclude-dir=".claude" \
     --exclude-dir="artifacts" \
     . 2>/dev/null || true)
   for f in $ecc_files; do
-    changed "would replace ECC_ → HORUS_ in ${f#./}"
+    changed "would replace HORUS_ → HORUS_ in ${f#./}"
   done
 else
-  # Apply ECC_ → HORUS_ across all tracked source files.
-  grep -rl "ECC_" --include="*.js" --include="*.sh" --include="*.json" \
+  # Apply HORUS_ → HORUS_ across all tracked source files.
+  grep -rl "HORUS_" --include="*.js" --include="*.sh" --include="*.json" \
     --include="*.md" --include="*.jsonc" --include="*.yaml" --include="*.yml" \
     --include="*.txt" --include="*.example" \
     --exclude-dir=".git" --exclude-dir="node_modules" --exclude-dir=".claude" \
     --exclude-dir="artifacts" \
     . 2>/dev/null | while IFS= read -r f; do
-    sed -i 's/ECC_/HORUS_/g' "$f"
-    changed "ECC_ → HORUS_ in ${f#./}"
+    sed -i 's/HORUS_/HORUS_/g' "$f"
+    changed "HORUS_ → HORUS_ in ${f#./}"
   done
 fi
 
@@ -151,7 +153,7 @@ fi
 
 printf '\n=== Phase 2: file name references ===\n'
 
-# ecc.contract.json.draft/.example before ecc.contract.json to avoid partial match
+# horus.contract.json.draft/.example before horus.contract.json to avoid partial match
 bulk_replace "ecc\.contract\.json\.draft" 'ecc\.contract\.json\.draft' 'horus.contract.json.draft'
 bulk_replace "ecc\.contract\.json\.example" 'ecc\.contract\.json\.example' 'horus.contract.json.example'
 bulk_replace "ecc\.contract\.json" 'ecc\.contract\.json' 'horus.contract.json'
@@ -160,20 +162,20 @@ bulk_replace "ecc\.contract\.schema\.json" 'ecc\.contract\.schema\.json' 'horus.
 bulk_replace "ecc\.config\.schema\.json" 'ecc\.config\.schema\.json' 'horus.config.schema.json'
 
 # CLI script references (longest match first)
-bulk_replace "ecc-cli\.sh" 'ecc-cli\.sh' 'horus-cli.sh'
-bulk_replace "ecc-cli" 'ecc-cli' 'horus-cli'
+bulk_replace "horus-cli\.sh" 'horus-cli\.sh' 'horus-cli.sh'
+bulk_replace "horus-cli" 'horus-cli' 'horus-cli'
 
-# ecc-diff-decisions references
-bulk_replace "ecc-diff-decisions" 'ecc-diff-decisions' 'horus-diff-decisions'
+# horus-diff-decisions references
+bulk_replace "horus-diff-decisions" 'horus-diff-decisions' 'horus-diff-decisions'
 
 # ── Phase 3: State directory paths ─────────────────────────────────────────────
 
 printf '\n=== Phase 3: state directory paths ===\n'
 
 # Longest/most specific patterns first to avoid double-replacement.
-bulk_replace '\.openclaw/agent-runtime-guard' '\.openclaw/agent-runtime-guard' '.horus'
-bulk_replace '\.openclaw/ecc-safe-plus' '\.openclaw/ecc-safe-plus' '.horus'
-bulk_replace '\.openclaw/instincts' '\.openclaw/instincts' '.horus/instincts'
+bulk_replace '\.horus' '\.horus' '.horus'
+bulk_replace '\.horus' '\.horus' '.horus'
+bulk_replace '\.horus/instincts' '\.horus/instincts' '.horus/instincts'
 
 # ── Phase 4: contractId prefix arg- → hap- ─────────────────────────────────────
 
@@ -181,10 +183,10 @@ printf '\n=== Phase 4: contractId prefix arg- → hap- ===\n'
 
 # Only in specific files where arg- means a contractId prefix, not a CLI argument.
 # contract.js: the newContractId() function
-# ecc.contract.schema.json (already renamed to horus.contract.schema.json after phase 2/8)
-# ecc.contract.json.example (already renamed)
+# horus.contract.schema.json (already renamed to horus.contract.schema.json after phase 2/8)
+# horus.contract.json.example (already renamed)
 
-for f in runtime/contract.js schemas/ecc.contract.schema.json ecc.contract.json.example; do
+for f in runtime/contract.js schemas/horus.contract.schema.json horus.contract.json.example; do
   [ -f "$f" ] || continue
   if grep -qF 'arg-' "$f" 2>/dev/null; then
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -240,12 +242,12 @@ fi
 
 printf '\n=== Phase 6: file renames ===\n'
 
-rename_file "schemas/ecc.config.schema.json"    "schemas/horus.config.schema.json"
-rename_file "schemas/ecc.contract.schema.json"  "schemas/horus.contract.schema.json"
-rename_file "scripts/ecc-cli.sh"                "scripts/horus-cli.sh"
-rename_file "scripts/ecc-diff-decisions.sh"     "scripts/horus-diff-decisions.sh"
-rename_file "ecc.config.json.example"           "horus.config.json.example"
-rename_file "ecc.contract.json.example"         "horus.contract.json.example"
+rename_file "schemas/horus.config.schema.json"    "schemas/horus.config.schema.json"
+rename_file "schemas/horus.contract.schema.json"  "schemas/horus.contract.schema.json"
+rename_file "scripts/horus-cli.sh"                "scripts/horus-cli.sh"
+rename_file "scripts/horus-diff-decisions.sh"     "scripts/horus-diff-decisions.sh"
+rename_file "horus.config.json.example"           "horus.config.json.example"
+rename_file "horus.contract.json.example"         "horus.contract.json.example"
 
 # ── Phase 7: Update schema $id fields ──────────────────────────────────────────
 
@@ -273,6 +275,6 @@ else
   printf 'Rebrand applied: %d changes, %d skipped.\n' "$changed" "$skipped"
   printf 'Next steps:\n'
   printf '  1. Run: bash scripts/run-fixtures.sh\n'
-  printf '  2. If fixtures pass: git add -A && git commit -m "chore(rebrand): ECC_ → HORUS_, rename ecc.* files"\n'
+  printf '  2. If fixtures pass: git add -A && git commit -m "chore(rebrand): HORUS_ → HORUS_, rename ecc.* files"\n'
   printf '  3. Run: bash scripts/horus-rebrand.sh --verify\n'
 fi

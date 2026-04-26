@@ -8,8 +8,8 @@ const { emitEvent } = require("./telemetry");
 const { fineKey: computeFineKey } = require("./decision-key");
 
 function paths() {
-  const baseDir = process.env.ECC_STATE_DIR
-    ? path.resolve(process.env.ECC_STATE_DIR)
+  const baseDir = process.env.HORUS_STATE_DIR
+    ? path.resolve(process.env.HORUS_STATE_DIR)
     : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
   return {
     baseDir,
@@ -60,7 +60,7 @@ function loadPolicy() {
 }
 
 function savePolicy(policy) {
-  if (process.env.ECC_READONLY_CONTRACT === "1") { _policyCache = policy; return; }
+  if (process.env.HORUS_READONLY_CONTRACT === "1") { _policyCache = policy; return; }
   _policyCache = null;
   try {
     ensureBaseDir();

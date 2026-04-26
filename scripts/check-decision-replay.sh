@@ -30,9 +30,9 @@ tmp_state="$(mktemp -d)"
 cleanup() { rm -rf "$tmp_state"; }
 trap cleanup EXIT
 
-ECC_STATE_DIR="$tmp_state" \
-ECC_CONTRACT_ENABLED=0 \
-ECC_TRAJECTORY_WINDOW_MIN=0 \
-  bash scripts/ecc-diff-decisions.sh --journal "$JOURNAL" 2>&1
+HORUS_STATE_DIR="$tmp_state" \
+HORUS_CONTRACT_ENABLED=0 \
+HORUS_TRAJECTORY_WINDOW_MIN=0 \
+  bash scripts/horus-diff-decisions.sh --journal "$JOURNAL" 2>&1
 
 printf '\ncheck-decision-replay passed.\n'

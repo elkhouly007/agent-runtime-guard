@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // adapter.js — OpenCode PreToolUse adapter for Agent Runtime Guard.
 // OpenCode uses Claude Code's hook format: { "tool_name": "Bash", "tool_input": { "command": "..." } }
-// Delegates all enforcement to runtime/pretool-gate.js. ECC_ENFORCE=1 = block mode.
+// Delegates all enforcement to runtime/pretool-gate.js. HORUS_ENFORCE=1 = block mode.
 
 "use strict";
 

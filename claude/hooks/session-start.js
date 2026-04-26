@@ -11,7 +11,7 @@
  * - Summary printed to stderr only (visible to user, not to model).
  * - No file writes during session-start.
  * - No external packages, no network calls.
- * - Read-only: only reads ~/.openclaw/instincts/pending.json and confident.json.
+ * - Read-only: only reads ~/.horus/instincts/pending.json and confident.json.
  */
 
 "use strict";
@@ -32,7 +32,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged.
     process.stdout.write(raw || "");
-    if (process.env.ECC_KILL_SWITCH === "1") return;
+    if (process.env.HORUS_KILL_SWITCH === "1") return;
 
     // Write a fresh session ID so all decisions this session are partitioned.
     try { startSession(); } catch { /* non-critical */ }

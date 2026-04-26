@@ -63,7 +63,7 @@ Current verified state:
 - **Sprint R2, Runtime autonomy follow-on / policy lifecycle auditability**: complete
 - Delivered emphasis: adaptive action plans, explicit promotion flows, reviewed-default lifecycle visibility, lifecycle timing, and audit-friendly runtime history
 - **Sprint R3, Routing and workflow fidelity**: CLOSED
-- Sprint R3 delivered: `payloadClass` and `sessionRisk` flow through the hook path at full fidelity; `escalate` action has a dedicated human-gated workflow lane; one-time opt-in auto-allow (eligible-gated, single-use); session-trajectory-driven routing nudges actions up after repeated escalations (threshold/window env-tunable); `ECC_KILL_SWITCH=1` emergency block.
+- Sprint R3 delivered: `payloadClass` and `sessionRisk` flow through the hook path at full fidelity; `escalate` action has a dedicated human-gated workflow lane; one-time opt-in auto-allow (eligible-gated, single-use); session-trajectory-driven routing nudges actions up after repeated escalations (threshold/window env-tunable); `HORUS_KILL_SWITCH=1` emergency block.
 
 ## Runtime Performance
 
@@ -101,5 +101,5 @@ The runtime sprint (R1–R3, now closed) delivered:
 6. promoted and dismissed default tracking with audit timestamps,
 7. lifecycle timing output (`created-at`, `eligible-at`, accepted/dismissed, `last-approved-at`),
 8. compact lifecycle summaries in `runtime explain`,
-9. `ECC_KILL_SWITCH=1` emergency block; `auto-allow-once` single-use eligibility-gated grants; session-trajectory-driven routing nudges,
-10. clean verification across `check-runtime-core.sh`, `check-runtime-cli.sh`, and the full `ecc-cli.sh check` path.
+9. `HORUS_KILL_SWITCH=1` emergency block; `auto-allow-once` single-use eligibility-gated grants; session-trajectory-driven routing nudges,
+10. clean verification across `check-runtime-core.sh`, `check-runtime-cli.sh`, and the full `horus-cli.sh check` path.

@@ -123,7 +123,7 @@ After those fixes, clean verification was re-established, including successful c
 - `check-status-docs.sh`
 - `check-status-artifact.sh`
 - `check-superiority-evidence.sh`
-- `./scripts/ecc-cli.sh check`
+- `./scripts/horus-cli.sh check`
 
 Recent commit of note:
 - `5030115` — `tools: harden status artifact self-maintenance`
@@ -134,23 +134,23 @@ You must verify this state yourself, but this is the intended continuation point
 
 ## Current State at v1.0.0 (2026-04-23)
 
-`VERSION` is `1.0.0`. All 20/20 `ecc-cli check` groups pass on Windows (node in PATH via LMStudio). CI runs 24 check steps on ubuntu-latest.
+`VERSION` is `1.0.0`. All 20/20 `horus-cli check` groups pass on Windows (node in PATH via LMStudio). CI runs 24 check steps on ubuntu-latest.
 
 ### Sprint R3 — CLOSED (all acceptance items complete)
-- **B.1 Auto-allow-once**: `grantAutoAllowOnce` / `consumeAutoAllowOnce` / `hasAutoAllowOnce` in `runtime/policy-store.js`; CLI verb `ecc-cli runtime auto-allow-once '<key>'`; eligible-stage (pending + approvalCount ≥ 3) gate enforced.
-- **B.2 Session-trajectory routing**: `getSessionTrajectory()` in `runtime/session-context.js`; nudges action up one step after `ECC_TRAJECTORY_THRESHOLD` (default 3) escalations in `ECC_TRAJECTORY_WINDOW_MIN` (default 30 min); surfaces "trajectory-nudge" in explain output.
+- **B.1 Auto-allow-once**: `grantAutoAllowOnce` / `consumeAutoAllowOnce` / `hasAutoAllowOnce` in `runtime/policy-store.js`; CLI verb `horus-cli runtime auto-allow-once '<key>'`; eligible-stage (pending + approvalCount ≥ 3) gate enforced.
+- **B.2 Session-trajectory routing**: `getSessionTrajectory()` in `runtime/session-context.js`; nudges action up one step after `HORUS_TRAJECTORY_THRESHOLD` (default 3) escalations in `HORUS_TRAJECTORY_WINDOW_MIN` (default 30 min); surfaces "trajectory-nudge" in explain output.
 - **C.1 OWASP coverage doc**: `references/owasp-agentic-coverage.md` (ASI01–ASI10 matrix); enforced by `scripts/check-owasp-coverage.sh`.
 - **C.2 Path-sensitivity classifier**: `classifyPathSensitivity()` in `claude/hooks/hook-utils.js`; feeds `pathSensitivity` (+1/+2) into `risk-score.js`; advisory only — no standalone block.
-- **C.3 Kill switch**: `ECC_KILL_SWITCH=1` forces `action: "block"` for all `runtime.decide()` calls.
+- **C.3 Kill switch**: `HORUS_KILL_SWITCH=1` forces `action: "block"` for all `runtime.decide()` calls.
 - **C.4 Runtime bench**: `scripts/bench-runtime-decision.sh`; p50/p95/p99 over 1000 decisions; platform-aware ceiling (500ms Windows, 5ms Linux CI).
-- **C.5 JSONL audit trail**: `hookLog()` emits JSONL; `ecc-cli log --since '<timestamp>'` filter added.
-- **E.1 CI completeness**: all 24 check steps wired in `.github/workflows/check.yml` (was 8); 20 ecc-cli check groups wired locally.
-- **E.2 Windows state isolation**: `ECC_STATE_DIR` override in `policy-store.js`, `session-context.js`, `decision-journal.js`.
+- **C.5 JSONL audit trail**: `hookLog()` emits JSONL; `horus-cli log --since '<timestamp>'` filter added.
+- **E.1 CI completeness**: all 24 check steps wired in `.github/workflows/check.yml` (was 8); 20 horus-cli check groups wired locally.
+- **E.2 Windows state isolation**: `HORUS_STATE_DIR` override in `policy-store.js`, `session-context.js`, `decision-journal.js`.
 
 ### Known environment notes
 - Node path on this machine: `/c/Users/Khouly/.lmstudio/.internal/utils/node.exe` — add to `PATH` before running checks.
-- Windows bench p99 ~95ms (FS overhead) vs Linux <5ms; CI uses `ECC_BENCH_P99_MS=10`.
-- `os.homedir()` ignores `HOME` on Windows — always use `ECC_STATE_DIR` for test isolation.
+- Windows bench p99 ~95ms (FS overhead) vs Linux <5ms; CI uses `HORUS_BENCH_P99_MS=10`.
+- `os.homedir()` ignores `HOME` on Windows — always use `HORUS_STATE_DIR` for test isolation.
 
 ---
 
@@ -221,7 +221,7 @@ Reference/status docs:
 - `references/parity-report.md`
 
 Core scripts:
-- `scripts/ecc-cli.sh`
+- `scripts/horus-cli.sh`
 - `scripts/status-summary.sh`
 - `scripts/generate-status-artifact.sh`
 - `scripts/check-status-artifact.sh`
@@ -380,7 +380,7 @@ Before finishing, you must:
 4. ensure the repo ends in a stronger and cleaner state.
 
 At minimum, use the repository’s own verification flow where appropriate, especially:
-- `./scripts/ecc-cli.sh check`
+- `./scripts/horus-cli.sh check`
 
 Also run targeted checks relevant to the areas you touched.
 

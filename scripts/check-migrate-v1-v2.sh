@@ -21,11 +21,11 @@ tmp="$(mktemp -d)"
 cleanup() { rm -rf "$tmp"; }
 trap cleanup EXIT
 
-# Generate a v1 contract via `ecc-cli contract init`, then accept the draft.
-# We use ECC_STATE_DIR + ECC_CONTRACT_ENABLED=1 so the contract subsystem is live.
-export ECC_STATE_DIR="$tmp/state"
-export ECC_CONTRACT_ENABLED=1
-mkdir -p "$ECC_STATE_DIR"
+# Generate a v1 contract via `horus-cli contract init`, then accept the draft.
+# We use HORUS_STATE_DIR + HORUS_CONTRACT_ENABLED=1 so the contract subsystem is live.
+export HORUS_STATE_DIR="$tmp/state"
+export HORUS_CONTRACT_ENABLED=1
+mkdir -p "$HORUS_STATE_DIR"
 
 # Use the Node contract module to write a minimal v1 fixture directly.
 node - "$tmp" <<'NODE'

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# ecc-cli.sh — Unified command-line interface for Agent Runtime Guard.
+# horus-cli.sh — Unified command-line interface for Agent Runtime Guard.
 #
 # Consolidates 14 individual scripts into one entry point.
 #
 # Usage:
-#   ./scripts/ecc-cli.sh <subcommand> [args...]
+#   ./scripts/horus-cli.sh <subcommand> [args...]
 #   ecc <subcommand> [args...]          (if symlinked to PATH)
 #
 # Subcommands:
 #   install     Install Agent Runtime Guard into a target project directory (one command).
-#   upgrade     Upgrade an existing installation in-place, preserving ecc.config.json.
+#   upgrade     Upgrade an existing installation in-place, preserving horus.config.json.
 #   setup       Run the interactive onboarding wizard.
 #   audit       Audit scripts and hook files for unsafe patterns.
 #   check       Fast runtime + unit checks (< 30 s). No fixtures, no audit scans, no bench.
@@ -23,27 +23,27 @@
 #   classify    Classify a payload file (A/B/C tier).
 #   redact      Redact a payload file (print sanitised version).
 #   wire        Generate a settings.json snippet for hook wiring.
-#   log         Show or clear the hook event log (ECC_HOOK_LOG=1).
+#   log         Show or clear the hook event log (HORUS_HOOK_LOG=1).
 #   version     Print Agent Runtime Guard version.
 #   runtime     Show runtime roadmap, state, approvals, promotions, and decision explanations.
 #   help        Show this help, or help for a specific subcommand.
 #
 # Examples:
-#   ecc-cli.sh install ./my-project --profile rules --auto
-#   ecc-cli.sh setup --non-interactive --target ./my-project --profile full
-#   ecc-cli.sh audit
-#   ecc-cli.sh check
-#   ecc-cli.sh eval
-#   ecc-cli.sh eval --verbose
-#   ecc-cli.sh eval --max-fp-pct 5 --max-fn-pct 10
-#   ecc-cli.sh redact payload.json --diff
-#   ecc-cli.sh log --tail 20
-#   ecc-cli.sh log --clear
-#   ecc-cli.sh runtime state
-#   ecc-cli.sh runtime accept 'bash|sudo|default-target|A'
-#   ecc-cli.sh runtime record-approval --tool Bash --command 'sudo systemctl restart app' --target ops/service
-#   ecc-cli.sh runtime promote 'bash|sudo|default-target|A'
-#   ecc-cli.sh runtime explain --tool Bash --command 'sudo systemctl restart app' --target ops/service
+#   horus-cli.sh install ./my-project --profile rules --auto
+#   horus-cli.sh setup --non-interactive --target ./my-project --profile full
+#   horus-cli.sh audit
+#   horus-cli.sh check
+#   horus-cli.sh eval
+#   horus-cli.sh eval --verbose
+#   horus-cli.sh eval --max-fp-pct 5 --max-fn-pct 10
+#   horus-cli.sh redact payload.json --diff
+#   horus-cli.sh log --tail 20
+#   horus-cli.sh log --clear
+#   horus-cli.sh runtime state
+#   horus-cli.sh runtime accept 'bash|sudo|default-target|A'
+#   horus-cli.sh runtime record-approval --tool Bash --command 'sudo systemctl restart app' --target ops/service
+#   horus-cli.sh runtime promote 'bash|sudo|default-target|A'
+#   horus-cli.sh runtime explain --tool Bash --command 'sudo systemctl restart app' --target ops/service
 
 set -eu
 
@@ -279,7 +279,7 @@ case "$cmd" in
 
   # ── log ───────────────────────────────────────────────────────────────────
   log)
-    log_file="${HOME}/.openclaw/ecc-safe-plus/hook-events.log"
+    log_file="${HOME}/.horus/hook-events.log"
 
     # Parse sub-flags
     tail_n=""
@@ -309,7 +309,7 @@ case "$cmd" in
 
     if [ ! -f "$log_file" ]; then
       printf 'No log file found at %s\n' "$log_file"
-      printf 'Set ECC_HOOK_LOG=1 to enable event logging.\n'
+      printf 'Set HORUS_HOOK_LOG=1 to enable event logging.\n'
       exit 0
     fi
 
@@ -336,7 +336,7 @@ for (const line of lines) {
     ;;
 
   # ── contract ──────────────────────────────────────────────────────────────
-  # Manage the upfront security contract (ecc.contract.json) for the current
+  # Manage the upfront security contract (horus.contract.json) for the current
   # project. The contract pre-agrees all permissions before work begins.
   contract)
     sub="${1:-status}"
@@ -351,7 +351,7 @@ const { generate } = require(path.join(process.argv[2], "runtime/contract"));
 const projectRoot = path.resolve(process.argv[3] || ".");
 const draftPath = generate(projectRoot);
 console.log("Contract draft written to:", draftPath);
-console.log("Review and edit the draft, then run: ecc-cli.sh contract accept");
+console.log("Review and edit the draft, then run: horus-cli.sh contract accept");
 EOF
         ;;
       accept)
@@ -408,8 +408,8 @@ const df = draftFilePath(projectRoot);
 const left  = fs.existsSync(cf) ? JSON.parse(fs.readFileSync(cf,"utf8")) : null;
 const right = fs.existsSync(df) ? JSON.parse(fs.readFileSync(df,"utf8")) : null;
 if (!left && !right) { console.log("No contract or draft found."); process.exit(0); }
-console.log("--- ecc.contract.json (accepted)");
-console.log("+++ ecc.contract.json.draft");
+console.log("--- horus.contract.json (accepted)");
+console.log("+++ horus.contract.json.draft");
 const l = JSON.stringify(left || {}, null, 2).split("\n");
 const r = JSON.stringify(right || {}, null, 2).split("\n");
 l.forEach((line, i) => { if (line !== r[i]) console.log("-", line, "\n+", r[i] || ""); });
@@ -424,7 +424,7 @@ const { load, generate, contractFilePath, draftFilePath } = require(path.join(pr
 const projectRoot = path.resolve(process.argv[3] || ".");
 const cf = contractFilePath(projectRoot);
 if (!fs.existsSync(cf)) {
-  process.stderr.write("No accepted contract found. Run: ecc-cli contract init && ecc-cli contract accept first.\n");
+  process.stderr.write("No accepted contract found. Run: horus-cli contract init && horus-cli contract accept first.\n");
   process.exit(1);
 }
 const existing = JSON.parse(fs.readFileSync(cf, "utf8"));
@@ -435,7 +435,7 @@ generate(projectRoot, {
 });
 const df = draftFilePath(projectRoot);
 const next = (existing.revision || 1) + 1;
-process.stdout.write(`Draft written to ${path.relative(process.cwd(), df)} (revision ${next}).\nEdit it, then run: ecc-cli contract accept\n`);
+process.stdout.write(`Draft written to ${path.relative(process.cwd(), df)} (revision ${next}).\nEdit it, then run: horus-cli contract accept\n`);
 EOF
         ;;
       *)
@@ -486,7 +486,7 @@ EOF
         exec node "${scripts}/runtime-state.js" explain "$@"
         ;;
       classify)
-        # Classify the intent of a shell command: ecc-cli.sh runtime classify <command>
+        # Classify the intent of a shell command: horus-cli.sh runtime classify <command>
         cmd_arg="${1:-}"
         node - "$root" "$cmd_arg" <<'__CLASSIFY_EOF__'
 "use strict";
@@ -497,7 +497,7 @@ console.log(JSON.stringify(result, null, 2));
 __CLASSIFY_EOF__
         ;;
       route)
-        # Resolve the workflow route for a shell command: ecc-cli.sh runtime route <command>
+        # Resolve the workflow route for a shell command: horus-cli.sh runtime route <command>
         cmd_arg="${1:-}"
         node - "$root" "$cmd_arg" <<'__ROUTE_EOF__'
 "use strict";
@@ -528,7 +528,7 @@ const { summarizeTelemetry } = require(path.join(process.argv[2], "runtime/telem
 const s = summarizeTelemetry();
 if (s.totalEvents === 0) {
   console.log("No telemetry events recorded yet.");
-  console.log("Telemetry is written to: ~/.openclaw/agent-runtime-guard/telemetry.jsonl");
+  console.log("Telemetry is written to: ~/.horus/telemetry.jsonl");
   process.exit(0);
 }
 console.log(`Telemetry summary — ${s.totalEvents} event(s) total`);

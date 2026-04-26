@@ -12,7 +12,7 @@ ECC — the upfront-contract model — is the foundation we build on, not the fi
 
 ### Three horizons
 
-**Today — what runs.** A single enforcement spine across Claude Code, OpenCode, and OpenClaw; contract verification including acceptance, hash-checking, and schema validation; learned-allow with project-scoped fineKey; session trajectory nudges; workflow-shaped actions; a JSONL audit trail; an `ECC_KILL_SWITCH=1` emergency block; an amplification surface of agents, rules, and skills, plus a unified CLI. Cross-harness secret-scan parity (all harnesses call `scanSecrets()` and upgrade payloadClass to C on a hit); post-tool output sanitization (`output-sanitizer.js` PostToolUse hook); protected-branch glob matching (`release/*` patterns now match in `risk-score.js`); telemetry aggregation (`ecc-cli telemetry report`). 183 fixture pairs, 13 hooks. A post-ship audit (v2.1.1) closed gaps in the contract acceptance path and verification scripts.
+**Today — what runs.** A single enforcement spine across Claude Code, OpenCode, and OpenClaw; contract verification including acceptance, hash-checking, and schema validation; learned-allow with project-scoped fineKey; session trajectory nudges; workflow-shaped actions; a JSONL audit trail; an `HORUS_KILL_SWITCH=1` emergency block; an amplification surface of agents, rules, and skills, plus a unified CLI. Cross-harness secret-scan parity (all harnesses call `scanSecrets()` and upgrade payloadClass to C on a hit); post-tool output sanitization (`output-sanitizer.js` PostToolUse hook); protected-branch glob matching (`release/*` patterns now match in `risk-score.js`); telemetry aggregation (`horus-cli telemetry report`). 183 fixture pairs, 13 hooks. A post-ship audit (v2.1.1) closed gaps in the contract acceptance path and verification scripts.
 
 **In flight — what we are building now.** All three "in flight" items (contract schema v2 evolution, legacy 4-part key removal, scope-defined contract CI gate) are now closed — see `[Unreleased]` in CHANGELOG.md.
 
@@ -28,9 +28,9 @@ Cross-harness and post-tool hardening batch: secret-scan parity across all harne
 
 Correctness hardening batch (H1–H3 + doc sync):
 
-- **H1 — Hermetic fixture state**: `scripts/run-fixtures.sh` now exports `ECC_STATE_DIR=$(mktemp -d)` at suite level and uses a per-fixture `ECC_STATE_DIR` for each hook invocation, preventing trajectory state from accumulating across fixtures. Also adds `require-tests` to the `enforcementAction` block set in `runtime/decision-engine.js` so high-risk destructive-delete commands block (not just warn) under ECC_ENFORCE=1. Fixture count: 158 pass, 0 fail.
+- **H1 — Hermetic fixture state**: `scripts/run-fixtures.sh` now exports `HORUS_STATE_DIR=$(mktemp -d)` at suite level and uses a per-fixture `HORUS_STATE_DIR` for each hook invocation, preventing trajectory state from accumulating across fixtures. Also adds `require-tests` to the `enforcementAction` block set in `runtime/decision-engine.js` so high-risk destructive-delete commands block (not just warn) under HORUS_ENFORCE=1. Fixture count: 158 pass, 0 fail.
 - **H2 — Bench platform detection + baseline reset**: `scripts/bench-runtime-decision.sh` now detects Windows via `OS=Windows_NT`, MinGW/MSYS/Cygwin, and WSL-on-`/mnt/`; passes a `slow_fs` flag to Node; keys the baseline by `platformKey` (`win32-slowfs` on Windows, `linux` on real Linux CI) instead of raw `process.platform`. Added a 3× sanity guard to prevent overwriting the baseline when the filesystem context is wrong. `artifacts/bench/baseline.json` reset: the prior `"linux"` entry contained Windows-magnitude p99=178.876ms (~30–50× real Linux latency), written during a WSL-on-`/mnt/c` session where `process.platform === "linux"` but FS IO was Windows-class.
-- **H3 — Fail-closed under ECC_ENFORCE=1 when decide() throws**: `runtime/pretool-gate.js` catch block now blocks (exit 2) under enforce when any non-trivial signal is present: a dangerous-pattern hit at any severity, a secret-bearing payload, or a high-sensitivity path. Previously only critical/high pattern hits triggered fail-closed; medium patterns, secret-only payloads, and sensitive-path signals were silently allowed.
+- **H3 — Fail-closed under HORUS_ENFORCE=1 when decide() throws**: `runtime/pretool-gate.js` catch block now blocks (exit 2) under enforce when any non-trivial signal is present: a dangerous-pattern hit at any severity, a secret-bearing payload, or a high-sensitivity path. Previously only critical/high pattern hits triggered fail-closed; medium patterns, secret-only payloads, and sensitive-path signals were silently allowed.
 - **H4 — OpenCode PostToolUse parity**: deferred. In-repo wiring (`opencode/WIRING_PLAN.md`) documents PreToolUse only; no confirmed upstream PostToolUse support. See `Post-v2.1 Candidates` below.
 - **H5 — Doc sync**: `SECURITY_MODEL.md` documents the decide()-throw fail-closed semantics. `references/owasp-agentic-coverage.md` updated: ASI05 now reflects the Claude Code `output-sanitizer.js` implementation and honest deferral status for OpenCode and OpenClaw.
 
@@ -44,7 +44,7 @@ Post-implementation reality audit: contract accept/verify broken by integer-type
 
 ## v2.1.0 — Shipped (2026-04-25)
 
-Phase D hardening: macOS CI required, bench baseline persisted via `actions/cache`, three new best-effort adapters (codex, clawcode, antegravity), telemetry aggregation (`ecc-cli telemetry report`).
+Phase D hardening: macOS CI required, bench baseline persisted via `actions/cache`, three new best-effort adapters (codex, clawcode, antegravity), telemetry aggregation (`horus-cli telemetry report`).
 
 ---
 
@@ -75,11 +75,11 @@ Key fixes:
 The upfront security contract model. All fourteen structural weaknesses (W1–W14) from the v2.0 plan audit are addressed.
 
 Key deliverables:
-- Upfront `ecc.contract.json` pre-agrees all permissions before agent work starts
+- Upfront `horus.contract.json` pre-agrees all permissions before agent work starts
 - Single enforcement spine (`runtime/pretool-gate.js`) for all harnesses
 - Session-id partitioning for correct `session-risk` floors
-- `ECC_CONTRACT_REQUIRED=1` strict mode gates by capability class
-- `ECC_READONLY_CONTRACT=1` read-only mode for CI/review runs
+- `HORUS_CONTRACT_REQUIRED=1` strict mode gates by capability class
+- `HORUS_READONLY_CONTRACT=1` read-only mode for CI/review runs
 - macOS added to CI matrix
 - 57 scripts, 12 hooks, 49 agents, 22 skills, 130 fixture pairs
 
@@ -99,9 +99,9 @@ These are real gaps, ordered by security impact. None are on a fixed timeline.
 
 ### Medium Priority
 
-~~**Scope-defined contract CI gate**~~ — CLOSED. `scripts/check-decision-replay.sh` ships a sample journal (`artifacts/journal/sample-journal.jsonl`, 12 representative entries covering allow/route/modify/require-tests/escalate/block) and replays it through the current decision engine in CI. The step runs in `.github/workflows/check.yml` with `ECC_CONTRACT_ENABLED=0 ECC_TRAJECTORY_WINDOW_MIN=0` for deterministic replay. Exit 1 on any action divergence. Regenerate the sample journal when the risk model or decision routing changes.
+~~**Scope-defined contract CI gate**~~ — CLOSED. `scripts/check-decision-replay.sh` ships a sample journal (`artifacts/journal/sample-journal.jsonl`, 12 representative entries covering allow/route/modify/require-tests/escalate/block) and replays it through the current decision engine in CI. The step runs in `.github/workflows/check.yml` with `HORUS_CONTRACT_ENABLED=0 HORUS_TRAJECTORY_WINDOW_MIN=0` for deterministic replay. Exit 1 on any action divergence. Regenerate the sample journal when the risk model or decision routing changes.
 
-~~**Contract schema v2 evolution**~~ — CLOSED. `schemas/ecc.contract.schema.json` now accepts `version: 2` and adds three optional top-level sections: `validity` (UTC time-windows, day-of-week), `contextTrust` (per-branch trust posture overrides), and `scopes.tools` (per-tool commandGlobs/pathGlobs allowlists). `scripts/migrateV1ToV2.js` upgrades a v1 contract in-place: bumps version and revision, recomputes `contractHash`, validates the result. `scripts/check-migrate-v1-v2.sh` verifies round-trip correctness in CI.
+~~**Contract schema v2 evolution**~~ — CLOSED. `schemas/horus.contract.schema.json` now accepts `version: 2` and adds three optional top-level sections: `validity` (UTC time-windows, day-of-week), `contextTrust` (per-branch trust posture overrides), and `scopes.tools` (per-tool commandGlobs/pathGlobs allowlists). `scripts/migrateV1ToV2.js` upgrades a v1 contract in-place: bumps version and revision, recomputes `contractHash`, validates the result. `scripts/check-migrate-v1-v2.sh` verifies round-trip correctness in CI.
 
 ~~**Protected-branch glob matching**~~ — CLOSED. `risk-score.js` now uses `globMatch()` from `runtime/glob-match.js`; `release/*` patterns correctly match `release/1.2` and similar branch names.
 
@@ -115,7 +115,7 @@ Best-effort adapters shipped in v2.1.0 (`codex/hooks/adapter.js`, etc.) using a 
 **OpenCode PostToolUse output-sanitizer parity**
 `claude/hooks/output-sanitizer.js` scans tool output for the 23-pattern set and warns when a credential is echoed. OpenCode is a Claude Code fork and likely supports the same PostToolUse hook event model, but in-repo wiring (`opencode/WIRING_PLAN.md`) documents PreToolUse only. Extension deferred until a contributor confirms upstream OpenCode PostToolUse support and documents the wiring path.
 
-~~**Telemetry aggregation**~~ — CLOSED. `ecc-cli.sh telemetry report` prints event summary by type with count and lastSeen. `telemetry clear` removes the local log.
+~~**Telemetry aggregation**~~ — CLOSED. `horus-cli.sh telemetry report` prints event summary by type with count and lastSeen. `telemetry clear` removes the local log.
 
 ---
 

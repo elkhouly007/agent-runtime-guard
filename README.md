@@ -36,28 +36,28 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and decision flow. See
 
 ```bash
 # 1. One-command install (validates prereqs, copies files, prints wire-hooks snippet):
-./scripts/ecc-cli.sh install ./my-project --profile rules --auto
+./scripts/horus-cli.sh install ./my-project --profile rules --auto
 
-# 2. Upgrade an existing installation in-place (preserves ecc.config.json):
-./scripts/ecc-cli.sh upgrade ./my-project
+# 2. Upgrade an existing installation in-place (preserves horus.config.json):
+./scripts/horus-cli.sh upgrade ./my-project
 
 # 3. Interactive setup wizard — answers 5 questions then gives you the command to run:
-./scripts/ecc-cli.sh setup
+./scripts/horus-cli.sh setup
 
 # 4. Wire hooks into your Claude Code settings.json:
-./scripts/ecc-cli.sh wire ./my-project
+./scripts/horus-cli.sh wire ./my-project
 
 # 5. Run a local audit of this repository:
-./scripts/ecc-cli.sh audit
+./scripts/horus-cli.sh audit
 
 # 6. Run runtime and structural checks, including install and apply-status verification:
-./scripts/ecc-cli.sh check
+./scripts/horus-cli.sh check
 
 # 7. Run all 183 fixture-based tests:
-./scripts/ecc-cli.sh fixtures
+./scripts/horus-cli.sh fixtures
 
 # 8. Measure decision quality (FP/FN rates against the labeled corpus):
-./scripts/ecc-cli.sh eval
+./scripts/horus-cli.sh eval
 ```
 
 ## What Is Included
@@ -66,7 +66,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and decision flow. See
 
 ### Hooks (`claude/hooks/`)
 
-13 Node.js hook files + shared utilities + pattern configs. All hooks: read stdin JSON, warn to stderr, echo stdin unchanged (or exit 2 to block in ECC_ENFORCE=1 mode).
+13 Node.js hook files + shared utilities + pattern configs. All hooks: read stdin JSON, warn to stderr, echo stdin unchanged (or exit 2 to block in HORUS_ENFORCE=1 mode).
 
 | Hook | Event | Purpose |
 |------|-------|---------|
@@ -84,9 +84,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and decision flow. See
 | `hook-utils.js` | (shared library) | readStdin (5MB cap), commandFrom, hookLog, rateLimitCheck, classifyCommandPayload, classifyPathSensitivity, readSessionRisk |
 | `instinct-utils.js` | (shared library) | Instinct store read/write/prune/TTL management |
 
-Set `ECC_ENFORCE=1` to activate block mode (exit 2) for secret-warning, dangerous-command-gate, and git-push-reminder.
-Set `ECC_HOOK_LOG=1` to log all detection events to `~/.openclaw/ecc-safe-plus/hook-events.log`.
-Set `ECC_KILL_SWITCH=1` to immediately block all `runtime.decide()` calls regardless of risk score — emergency override for unsafe sessions.
+Set `HORUS_ENFORCE=1` to activate block mode (exit 2) for secret-warning, dangerous-command-gate, and git-push-reminder.
+Set `HORUS_HOOK_LOG=1` to log all detection events to `~/.horus/hook-events.log`.
+Set `HORUS_KILL_SWITCH=1` to immediately block all `runtime.decide()` calls regardless of risk score — emergency override for unsafe sessions.
 
 ### Agents (`agents/`) — 49 agents
 
@@ -104,10 +104,10 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 
 | Script | Purpose |
 |--------|---------|
-| `ecc-cli.sh` | Unified CLI entry point — all subcommands in one place |
+| `horus-cli.sh` | Unified CLI entry point — all subcommands in one place |
 | `install.sh` | One-command install: validates prereqs, copies files, prints wire-hooks snippet |
-| `upgrade.sh` | In-place upgrade preserving `ecc.config.json` and state files |
-| `setup-wizard.sh` | Interactive 5-question onboarding → install command + ecc.config.json |
+| `upgrade.sh` | In-place upgrade preserving `horus.config.json` and state files |
+| `setup-wizard.sh` | Interactive 5-question onboarding → install command + horus.config.json |
 | `install-local.sh` | Low-level file copy (profiles: minimal/rules/agents/skills/full) |
 | `wire-hooks.sh` | Generate settings.json hook wiring snippet |
 | `audit-local.sh` | Grep-based risk scanner for scripts and hooks |
@@ -147,7 +147,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `detect-sensitive-data.sh` | Scan for common secrets/PII in files or stdin |
 | `policy-lint.sh` | Verify rule files follow Agent Runtime Guard standards |
 | `audit-staleness.sh` | Flag rule files with stale last_reviewed dates |
-| `generate-config.sh` | Probe project and generate starter ecc.config.json |
+| `generate-config.sh` | Probe project and generate starter horus.config.json |
 | `check-registries.sh` | Verify capability pack registry files |
 | `check-scenarios.sh` | Verify approval and injection scenario files |
 | `check-integration-smoke.sh` | Verify integration smoke cases |
@@ -158,7 +158,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `check-zero-deps.sh` | Assert runtime/*.js has no third-party require() calls |
 | `check-counts.sh` | Assert agent/rule/skill/hook/fixture/script counts match documented values |
 | `check-decision-replay.sh` | CI gate: replay the shipped sample journal through the current decision engine; exit 1 on any action divergence |
-| `migrateV1ToV2.js` | Upgrade an ecc.contract.json from schema version 1 to version 2 (bumps revision, recomputes hash, validates result) |
+| `migrateV1ToV2.js` | Upgrade an horus.contract.json from schema version 1 to version 2 (bumps revision, recomputes hash, validates result) |
 | `check-migrate-v1-v2.sh` | Verify the v1→v2 migration: version bumps, revision increments, hash recomputes, schema validates, idempotency |
 | `hooks-baseline.sha256` | SHA-256 baseline for hook integrity checks |
 
@@ -175,7 +175,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 - `audit-notes.md` — construction notes on what was intentionally excluded
 - `CHANGELOG.md` — full version history
 - `references/` — 15 policy, coverage, and capability reference documents
-- `ecc.config.json.example` — per-project configuration template, including runtime trust posture, protected branches, and sensitive path patterns
+- `horus.config.json.example` — per-project configuration template, including runtime trust posture, protected branches, and sensitive path patterns
 
 ## Optional Risky Extensions
 

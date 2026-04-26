@@ -25,14 +25,14 @@ const { readStdin, hookLog } = require("./hook-utils");
 const { hookStateDir }       = require("../../runtime/state-paths");
 
 // User-private directory — not world-writable like /tmp.
-const ECC_DIR      = hookStateDir();
-const COUNTER_FILE = path.join(ECC_DIR, "session-counter.json");
+const HORUS_DIR      = hookStateDir();
+const COUNTER_FILE = path.join(HORUS_DIR, "session-counter.json");
 
 const EXPENSIVE_TOOLS = new Set(["Agent", "WebFetch", "WebSearch"]);
 
 function ensureDir() {
   try {
-    fs.mkdirSync(ECC_DIR, { recursive: true, mode: 0o700 });
+    fs.mkdirSync(HORUS_DIR, { recursive: true, mode: 0o700 });
   } catch {
     // Already exists or permission denied — handled silently below.
   }
@@ -73,7 +73,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged first.
     process.stdout.write(raw || "");
-    if (process.env.ECC_KILL_SWITCH === "1") return;
+    if (process.env.HORUS_KILL_SWITCH === "1") return;
 
     try {
       const input    = JSON.parse(raw || "{}");

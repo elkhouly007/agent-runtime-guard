@@ -65,7 +65,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged first.
     process.stdout.write(raw || "");
-    if (process.env.ECC_KILL_SWITCH === "1") return;
+    if (process.env.HORUS_KILL_SWITCH === "1") return;
 
     try {
       const content = readMemoryFile();

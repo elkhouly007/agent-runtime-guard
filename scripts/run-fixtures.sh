@@ -12,12 +12,12 @@
 #   tests/fixtures/dangerous-command-gate/<name>.input          — JSON piped into hook
 #   tests/fixtures/dangerous-command-gate/<name>.expected_exit  — expected exit code
 #   tests/fixtures/dangerous-command-gate/<name>.expected_stderr — stderr substring
-#   (files ending in -enforce.* are run with ECC_ENFORCE=1)
+#   (files ending in -enforce.* are run with HORUS_ENFORCE=1)
 #
 #   tests/fixtures/git-push-reminder/<name>.input          — JSON piped into hook
 #   tests/fixtures/git-push-reminder/<name>.expected_exit  — expected exit code
 #   tests/fixtures/git-push-reminder/<name>.expected_stderr — stderr substring
-#   (files ending in -enforce.* are run with ECC_ENFORCE=1)
+#   (files ending in -enforce.* are run with HORUS_ENFORCE=1)
 #
 # Exit 0 = all pass. Exit 1 = one or more failures.
 
@@ -27,17 +27,17 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 
 # Disable rate limiting during fixture tests so all invocations are processed.
-export ECC_RATE_LIMIT=0
+export HORUS_RATE_LIMIT=0
 
 # Hermetic test mode: prevent live git branch detection from contaminating fixture
-# results. When ECC_HERMETIC_TEST=1, all fixture runs that don't supply a "branch"
+# results. When HORUS_HERMETIC_TEST=1, all fixture runs that don't supply a "branch"
 # field in their input JSON will fall back to this non-protected override branch,
 # ensuring results are identical regardless of the current working branch.
 #
 # This does NOT affect fixtures that explicitly set "branch" in their input JSON;
 # those already override git detection via rawInput.branch in pretool-gate.js.
-if [ "${ECC_HERMETIC_TEST:-0}" = "1" ]; then
-  export ECC_BRANCH_OVERRIDE="feature/hermetic-test-run"
+if [ "${HORUS_HERMETIC_TEST:-0}" = "1" ]; then
+  export HORUS_BRANCH_OVERRIDE="feature/hermetic-test-run"
 fi
 
 pass=0
@@ -46,7 +46,7 @@ fail=0
 hooks_tmp_state="$(mktemp -d)"
 cleanup_hooks_state() { rm -rf "$hooks_tmp_state"; }
 trap cleanup_hooks_state EXIT
-export ECC_STATE_DIR="$hooks_tmp_state"
+export HORUS_STATE_DIR="$hooks_tmp_state"
 
 ok()     { printf '  PASS  %s\n' "$1"; pass=$((pass + 1)); }
 fail()   { printf '  FAIL  %s — %s\n' "$1" "$2" >&2; fail=$((fail + 1)); }
@@ -72,7 +72,7 @@ run_hook_fixtures() {
     expected_exit_file="${fixture_dir}/${name}.expected_exit"
     expected_stderr_file="${fixture_dir}/${name}.expected_stderr"
 
-    # Fixtures containing "enforce" in their name run with ECC_ENFORCE=1
+    # Fixtures containing "enforce" in their name run with HORUS_ENFORCE=1
     enforce_val="0"
     case "$name" in *enforce*) enforce_val="1" ;; esac
 
@@ -81,7 +81,7 @@ run_hook_fixtures() {
 
     actual_exit=0
     fix_state="$(mktemp -d)"
-    ECC_ENFORCE="$enforce_val" ECC_STATE_DIR="$fix_state" node "$hook" < "$input_file" > /dev/null 2> "$tmp_stderr" || actual_exit=$?
+    HORUS_ENFORCE="$enforce_val" HORUS_STATE_DIR="$fix_state" node "$hook" < "$input_file" > /dev/null 2> "$tmp_stderr" || actual_exit=$?
     rm -rf "$fix_state"
 
     fixture_ok=1
@@ -202,7 +202,7 @@ run_hook_fixtures \
   "openclaw adapter fixtures"
 
 # ── kill-switch fixtures ───────────────────────────────────────────────────────
-# Each hook is tested with ECC_KILL_SWITCH=1 ECC_ENFORCE=1.
+# Each hook is tested with HORUS_KILL_SWITCH=1 HORUS_ENFORCE=1.
 # PreToolUse hooks must exit 2 (block). Informational hooks must exit 0 (no-op).
 
 printf '\n%s\n' "[kill-switch fixtures]"
@@ -213,7 +213,7 @@ run_ks() {
   [ -f "$hook" ]       || { skip "$label" "hook missing: $hook"; return; }
   local tmp_stderr; tmp_stderr="$(mktemp)"
   local actual_exit=0
-  ECC_KILL_SWITCH=1 ECC_ENFORCE=1 node "$hook" < "$input_file" > /dev/null 2>"$tmp_stderr" \
+  HORUS_KILL_SWITCH=1 HORUS_ENFORCE=1 node "$hook" < "$input_file" > /dev/null 2>"$tmp_stderr" \
     || actual_exit=$?
   rm -f "$tmp_stderr"
   if [ "$actual_exit" -eq "$expected_exit" ]; then
@@ -239,8 +239,8 @@ run_ks "claude/hooks/quality-gate.js"           "$ks_dir/ks-quality-gate.input" 
 run_ks "claude/hooks/output-sanitizer.js"       "$ks_dir/ks-output-sanitizer.input"        0 "kill-switch: output-sanitizer (exit 0, no-op)"
 
 # ── contract fixtures ──────────────────────────────────────────────────────────
-# Fixture names containing "strict" → run with ECC_CONTRACT_REQUIRED=1 (no contract file = block gated)
-# All others → ECC_CONTRACT_REQUIRED=0 (risk-engine-only path).
+# Fixture names containing "strict" → run with HORUS_CONTRACT_REQUIRED=1 (no contract file = block gated)
+# All others → HORUS_CONTRACT_REQUIRED=0 (risk-engine-only path).
 # State dir is isolated per run so no real contract interferes.
 
 printf '\n%s\n' "[contract fixtures]"
@@ -263,8 +263,8 @@ if [ -d "$contract_dir" ]; then
     tmp_state="$(mktemp -d)"
     tmp_stderr="$(mktemp)"
     actual_exit=0
-    ECC_STATE_DIR="$tmp_state" ECC_CONTRACT_REQUIRED="$contract_required" \
-      ECC_CONTRACT_ENABLED="1" ECC_ENFORCE="$cc_enforce" ECC_RATE_LIMIT=0 \
+    HORUS_STATE_DIR="$tmp_state" HORUS_CONTRACT_REQUIRED="$contract_required" \
+      HORUS_CONTRACT_ENABLED="1" HORUS_ENFORCE="$cc_enforce" HORUS_RATE_LIMIT=0 \
       node "claude/hooks/dangerous-command-gate.js" < "$input_file" > /dev/null 2>"$tmp_stderr" \
       || actual_exit=$?
     rm -rf "$tmp_state"
@@ -360,7 +360,7 @@ const crypto = require('crypto');
 const { canonicalJson } = require('./runtime/canonical-json');
 const body = {
   version: 1,
-  contractId: 'arg-20260101-000000000001',
+  contractId: 'hap-20260101-000000000001',
   revision: 1,
   acceptedAt: '2026-01-01T00:00:00Z',
   acceptedBy: 'test',

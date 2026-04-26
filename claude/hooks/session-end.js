@@ -9,7 +9,7 @@
  * - Reads JSON from stdin.
  * - Echoes original input to stdout UNCHANGED.
  * - Writes observations to stderr only (visible to user, not to model).
- * - Writes one candidate instinct to ~/.openclaw/instincts/pending.json.
+ * - Writes one candidate instinct to ~/.horus/instincts/pending.json.
  * - No external packages, no network calls, no access to file content.
  * - Does NOT auto-promote. Ahmed must manually promote via /instinct-status.
  *
@@ -55,7 +55,7 @@ readStdin()
   .then((raw) => {
     // Always echo input unchanged — harness requires this.
     process.stdout.write(raw || "");
-    if (process.env.ECC_KILL_SWITCH === "1") return;
+    if (process.env.HORUS_KILL_SWITCH === "1") return;
 
     let input = {};
     try {

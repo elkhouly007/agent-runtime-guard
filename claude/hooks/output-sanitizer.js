@@ -15,7 +15,7 @@ const { scanSecrets } = require("../../runtime/secret-scan");
 
 readStdin()
   .then((raw) => {
-    if (process.env.ECC_KILL_SWITCH === "1") {
+    if (process.env.HORUS_KILL_SWITCH === "1") {
       process.stdout.write(raw);
       return;
     }

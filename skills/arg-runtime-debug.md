@@ -20,7 +20,7 @@ Diagnose why ARG approved, blocked, or escalated a specific command or action.
 
 1. Check the decision journal:
    ```bash
-   tail -50 ~/.openclaw/ecc-safe-plus/decision-journal.jsonl | node -e "
+   tail -50 ~/.horus/decision-journal.jsonl | node -e "
      const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\n');
      lines.forEach(l => { try { console.log(JSON.stringify(JSON.parse(l), null, 2)) } catch(e) {} });
    "
@@ -37,7 +37,7 @@ Diagnose why ARG approved, blocked, or escalated a specific command or action.
 
 3. Trace the decision path manually:
    ```bash
-   ECC_DEBUG=1 node -e "
+   HORUS_DEBUG=1 node -e "
      const {decide} = require('./runtime/decision-engine');
      decide({ tool: 'Bash', input: { command: 'YOUR_COMMAND' } }).then(r => console.log(r));
    "
@@ -54,7 +54,7 @@ Diagnose why ARG approved, blocked, or escalated a specific command or action.
 
 5. Verify kill switches are not engaged:
    ```bash
-   echo "ECC_KILL_SWITCH: ${ECC_KILL_SWITCH:-unset}"
+   echo "HORUS_KILL_SWITCH: ${HORUS_KILL_SWITCH:-unset}"
    echo "ARG_DECISION_JOURNAL: ${ARG_DECISION_JOURNAL:-unset}"
    ```
 

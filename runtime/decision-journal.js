@@ -6,13 +6,13 @@ const os   = require("os");
 const path = require("path");
 const zlib = require("zlib");
 
-// Maximum size before rotation. Override with ECC_JOURNAL_MAX_MB (integer MB).
+// Maximum size before rotation. Override with HORUS_JOURNAL_MAX_MB (integer MB).
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_GENERATIONS   = 3;               // keep .1.jsonl, .2.jsonl.gz, .3.jsonl.gz
 
 function journalPaths() {
-  const baseDir = process.env.ECC_STATE_DIR
-    ? path.resolve(process.env.ECC_STATE_DIR)
+  const baseDir = process.env.HORUS_STATE_DIR
+    ? path.resolve(process.env.HORUS_STATE_DIR)
     : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
   return {
     baseDir,
@@ -28,7 +28,7 @@ function ensureBaseDir() {
 }
 
 function maxBytes() {
-  const mb = Number(process.env.ECC_JOURNAL_MAX_MB);
+  const mb = Number(process.env.HORUS_JOURNAL_MAX_MB);
   return Number.isFinite(mb) && mb > 0 ? mb * 1024 * 1024 : DEFAULT_MAX_BYTES;
 }
 
@@ -79,10 +79,10 @@ function rotateIfNeeded(logFile) {
 }
 
 function append(entry) {
-  if (process.env.ECC_DECISION_JOURNAL === "0") return false;
-  if (process.env.ECC_READONLY_CONTRACT === "1") return false;
+  if (process.env.HORUS_DECISION_JOURNAL === "0") return false;
+  if (process.env.HORUS_READONLY_CONTRACT === "1") return false;
   if (process.env.ARG_DECISION_JOURNAL === "0") {
-    process.stderr.write("[ARG_DECISION_JOURNAL] deprecated — use ECC_DECISION_JOURNAL=0 instead\n");
+    process.stderr.write("[ARG_DECISION_JOURNAL] deprecated — use HORUS_DECISION_JOURNAL=0 instead\n");
     return false;
   }
   ensureBaseDir();

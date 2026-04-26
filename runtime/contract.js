@@ -4,11 +4,11 @@
 // contract.js — Upfront security contract enforcement for Agent Runtime Guard.
 //
 // Implements the contract lifecycle defined in the v2.0 plan (Section 4):
-//   - load()        — read + validate ecc.contract.json for the current project
+//   - load()        — read + validate horus.contract.json for the current project
 //   - verify()      — recompute contractHash and compare to accepted-contracts.json
 //   - scopeMatch()  — check a decision input against contract scopes
-//   - generate()    — write ecc.contract.json.draft (used by ecc-cli contract init)
-//   - accept()      — finalise a draft → ecc.contract.json + accepted-contracts record
+//   - generate()    — write horus.contract.json.draft (used by horus-cli contract init)
+//   - accept()      — finalise a draft → horus.contract.json + accepted-contracts record
 //   - contractId()  — generate a fresh contract ID (zero-dep, no ULID library)
 //
 // Hard floors (Section 4.5) are enforced in decision-engine.js, not here.
@@ -30,16 +30,16 @@ const { extractPaths }     = require("./arg-extractor");
 // ---------------------------------------------------------------------------
 
 function contractFilePath(projectRoot) {
-  return path.join(String(projectRoot || process.cwd()), "ecc.contract.json");
+  return path.join(String(projectRoot || process.cwd()), "horus.contract.json");
 }
 
 function draftFilePath(projectRoot) {
-  return path.join(String(projectRoot || process.cwd()), "ecc.contract.json.draft");
+  return path.join(String(projectRoot || process.cwd()), "horus.contract.json.draft");
 }
 
 function acceptedContractsPath() {
-  if (process.env.ECC_STATE_DIR) {
-    return path.join(path.resolve(process.env.ECC_STATE_DIR), "accepted-contracts.json");
+  if (process.env.HORUS_STATE_DIR) {
+    return path.join(path.resolve(process.env.HORUS_STATE_DIR), "accepted-contracts.json");
   }
   return path.join(os.homedir(), ".openclaw", "agent-runtime-guard", "accepted-contracts.json");
 }
@@ -51,7 +51,7 @@ function acceptedContractsPath() {
 function newContractId() {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const rand  = crypto.randomBytes(6).toString("hex");
-  return `arg-${today}-${rand}`;
+  return `hap-${today}-${rand}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ let _cache = null;
 let _cacheKey = null;
 
 /**
- * Load and validate ecc.contract.json for the given project root.
+ * Load and validate horus.contract.json for the given project root.
  * Returns null if no contract file exists.
  * Throws if the file exists but fails schema validation.
  *
@@ -172,15 +172,15 @@ function verify(projectRoot) {
 }
 
 // ---------------------------------------------------------------------------
-// Accept — finalise a draft into ecc.contract.json
+// Accept — finalise a draft into horus.contract.json
 // ---------------------------------------------------------------------------
 
 /**
- * Accept ecc.contract.json.draft:
+ * Accept horus.contract.json.draft:
  *   1. Validate schema.
  *   2. Reject revision downgrade.
  *   3. Compute and embed contractHash.
- *   4. Write ecc.contract.json.
+ *   4. Write horus.contract.json.
  *   5. Record in accepted-contracts.json.
  *
  * @param {string} projectRoot
@@ -191,7 +191,7 @@ function accept(projectRoot) {
   const sessionEnvVars = ["CLAUDE_CODE_SESSION_ID", "OPENCODE_SESSION", "OPENCLAW_SESSION"];
   for (const envVar of sessionEnvVars) {
     if (process.env[envVar]) {
-      throw new Error(`contract.js: refusing to accept inside a harness session (${envVar} is set). Run 'ecc-cli contract accept' in a separate terminal.`);
+      throw new Error(`contract.js: refusing to accept inside a harness session (${envVar} is set). Run 'horus-cli contract accept' in a separate terminal.`);
     }
   }
 
@@ -199,7 +199,7 @@ function accept(projectRoot) {
   const contractPath = contractFilePath(projectRoot);
 
   if (!fs.existsSync(draftPath)) {
-    throw new Error(`contract.js: no draft found at ${draftPath}. Run 'ecc-cli contract init' first.`);
+    throw new Error(`contract.js: no draft found at ${draftPath}. Run 'horus-cli contract init' first.`);
   }
 
   let draft;
@@ -258,7 +258,7 @@ function accept(projectRoot) {
 // ---------------------------------------------------------------------------
 
 /**
- * Write ecc.contract.json.draft with sensible defaults.
+ * Write horus.contract.json.draft with sensible defaults.
  *
  * @param {string} projectRoot
  * @param {object} opts — { harnesses?, trustPosture?, existingRevision? }

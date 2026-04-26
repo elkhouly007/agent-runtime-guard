@@ -12,7 +12,7 @@ Local-only Node.js scripts. All hooks follow the same safety contract:
 | No network calls | Zero outbound connections |
 | No content access | Never read prompt text, file contents, or API responses |
 | Silent fail | `catch(() => process.exit(0))` — hooks never crash the harness |
-| Local writes only | Only `~/.openclaw/instincts/` and `/tmp/ecc-*` (session-scoped) |
+| Local writes only | Only `~/.horus/instincts/` and `/tmp/ecc-*` (session-scoped) |
 
 ---
 
@@ -27,7 +27,7 @@ Local-only Node.js scripts. All hooks follow the same safety contract:
 ### Stop Hooks
 | Hook | What it does |
 |------|-------------|
-| `session-end.js` | Captures tool_name + event_type metadata, writes one candidate instinct to `~/.openclaw/instincts/pending.json`. Never captures content. |
+| `session-end.js` | Captures tool_name + event_type metadata, writes one candidate instinct to `~/.horus/instincts/pending.json`. Never captures content. |
 
 ### PreToolUse Hooks
 | Hook | Matcher | What it does |
@@ -112,13 +112,13 @@ Copy this block into `~/.claude/settings.json` (replace `/ABS_PATH/` with the fu
 
 | Variable | Values | Effect |
 |----------|--------|--------|
-| `ECC_ENFORCE` | `0` (default) / `1` | When `1`, hooks exit code 2 to block the tool call instead of warning. |
-| `ECC_KILL_SWITCH` | unset (default) / `1` | When `1`, `runtime.decide()` returns `action: "block"` for **every** input, regardless of risk score. Use in emergencies to stop all agentic tool use immediately. Unset with `unset ECC_KILL_SWITCH` to restore normal operation. Hook output will print `kill-switch engaged` prominently when active. |
-| `ECC_HOOK_LOG` | `0` (default) / `1` | When `1`, writes structured JSONL events to `~/.openclaw/ecc-safe-plus/hook-events.log`. |
-| `ECC_RATE_LIMIT` | `1` (default) / `0` | When `0`, disables the token-bucket rate limiter (useful in CI / tests). |
-| `ECC_STATE_DIR` | path | Override the runtime state directory (policy store, session context, decision journal). Defaults to `~/.openclaw/agent-runtime-guard`. Useful for test isolation. |
-| `ECC_TRAJECTORY_THRESHOLD` | integer (default `3`) | Number of recent escalations before trajectory nudge activates. |
-| `ECC_TRAJECTORY_WINDOW_MIN` | integer (default `30`) | Sliding window in minutes for trajectory escalation counting. |
+| `HORUS_ENFORCE` | `0` (default) / `1` | When `1`, hooks exit code 2 to block the tool call instead of warning. |
+| `HORUS_KILL_SWITCH` | unset (default) / `1` | When `1`, `runtime.decide()` returns `action: "block"` for **every** input, regardless of risk score. Use in emergencies to stop all agentic tool use immediately. Unset with `unset HORUS_KILL_SWITCH` to restore normal operation. Hook output will print `kill-switch engaged` prominently when active. |
+| `HORUS_HOOK_LOG` | `0` (default) / `1` | When `1`, writes structured JSONL events to `~/.horus/hook-events.log`. |
+| `HORUS_RATE_LIMIT` | `1` (default) / `0` | When `0`, disables the token-bucket rate limiter (useful in CI / tests). |
+| `HORUS_STATE_DIR` | path | Override the runtime state directory (policy store, session context, decision journal). Defaults to `~/.horus`. Useful for test isolation. |
+| `HORUS_TRAJECTORY_THRESHOLD` | integer (default `3`) | Number of recent escalations before trajectory nudge activates. |
+| `HORUS_TRAJECTORY_WINDOW_MIN` | integer (default `30`) | Sliding window in minutes for trajectory escalation counting. |
 
 ## Verify Installation
 

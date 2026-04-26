@@ -9,7 +9,7 @@
 //   { "tool": "bash", "command": "...", "workdir": "..." }
 //   { "tool_name": "Bash", "tool_input": { "command": "..." } }  (Claude Code compat)
 //
-// To enable block mode: export ECC_ENFORCE=1
+// To enable block mode: export HORUS_ENFORCE=1
 
 "use strict";
 

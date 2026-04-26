@@ -7,7 +7,7 @@
  * - No external packages (stdlib only: fs, path, os)
  * - No network calls
  * - No access to session content or payloads
- * - Writes only to ~/.openclaw/instincts/ (user-local, not synced)
+ * - Writes only to ~/.horus/instincts/ (user-local, not synced)
  */
 
 "use strict";

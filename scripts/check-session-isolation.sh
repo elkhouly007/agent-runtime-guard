@@ -12,8 +12,8 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 
 if ! command -v node >/dev/null 2>&1; then
-  if [ "${ECC_ALLOW_MISSING_NODE:-0}" = "1" ]; then
-    printf 'Warning: node not found — skipping check-session-isolation.sh (ECC_ALLOW_MISSING_NODE=1)\n' >&2
+  if [ "${HORUS_ALLOW_MISSING_NODE:-0}" = "1" ]; then
+    printf 'Warning: node not found — skipping check-session-isolation.sh (HORUS_ALLOW_MISSING_NODE=1)\n' >&2
     exit 0
   fi
   printf 'Error: node not found on PATH — check-session-isolation.sh requires Node.js\n' >&2
@@ -31,9 +31,9 @@ const os   = require("os");
 const root     = process.argv[2];
 const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "arg-isolation-"));
 process.chdir(root);
-process.env.ECC_STATE_DIR        = stateDir;
-process.env.ECC_ENFORCE          = "0";
-process.env.ECC_CONTRACT_ENABLED = "0";
+process.env.HORUS_STATE_DIR        = stateDir;
+process.env.HORUS_ENFORCE          = "0";
+process.env.HORUS_CONTRACT_ENABLED = "0";
 
 const { getSessionTrajectory, startSession, resetCache } = require("./runtime/session-context");
 const { runPreToolGate } = require("./runtime/pretool-gate");

@@ -27,7 +27,7 @@ function detectProjectShape(projectRoot = "") {
     .map(([, marker]) => marker);
 
   return {
-    hasConfig: fs.existsSync(path.join(root, "ecc.config.json")),
+    hasConfig: fs.existsSync(path.join(root, "horus.config.json")),
     markers: [...new Set(markers)],
     primaryStack: markers[0] || null,
   };
@@ -56,7 +56,7 @@ function discover(input = {}) {
   const projectRoot = configPath ? path.dirname(configPath) : (rawProjectRoot || inferredRoot);
   const gitRoot = safeGit(["rev-parse", "--show-toplevel"], projectRoot) || projectRoot;
   const branch = String(input.branch || "").trim()
-    || String(process.env.ECC_BRANCH_OVERRIDE || "").trim()
+    || String(process.env.HORUS_BRANCH_OVERRIDE || "").trim()
     || safeGit(["symbolic-ref", "--short", "HEAD"], gitRoot)
     || safeGit(["rev-parse", "--abbrev-ref", "HEAD"], gitRoot);
 

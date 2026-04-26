@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // dangerous-command-gate.js — Claude PreToolUse adapter for Agent Runtime Guard.
-// Delegates all enforcement to runtime/pretool-gate.js. ECC_ENFORCE=1 = block mode.
+// Delegates all enforcement to runtime/pretool-gate.js. HORUS_ENFORCE=1 = block mode.
 
 "use strict";
 
