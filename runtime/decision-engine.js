@@ -220,9 +220,15 @@ function decide(input = {}) {
     floorFired = floorFired || "session-risk-floor";
   }
 
-  // Step 11: contract-allow — demotes baseline only; never demotes a floor.
-  // B4: also protects require-review (protected-branch floor) from demotion.
-  if (contractAllow && risk.level !== "critical" && action !== "block" && action !== "escalate" && action !== "require-review") {
+  // Step 11: contract-allow — demotes baseline only; never demotes hard floors.
+  // B4: protects require-review (protected-branch floor) from demotion.
+  // W11: tool-allow reason permits escalate demotion (explicit per-tool pre-approval).
+  const canDemoteEscalate = contractAllow && contractReason === "tool-allow-matched";
+  if (contractAllow &&
+      risk.level !== "critical" &&
+      action !== "block" &&
+      action !== "require-review" &&
+      (action !== "escalate" || canDemoteEscalate)) {
     action = "allow";
     source = "contract-allow";
   }

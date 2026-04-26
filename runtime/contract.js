@@ -411,6 +411,20 @@ function scopeMatch(contract, input) {
     return { allowed: true, reason: "force-push-branch-allowed", gated: true };
   }
 
+  // Shell tool-allow: explicit per-tool pre-approval for high-risk-non-destructive commands.
+  // Checked after destructive-delete and force-push (those keep their own safety checks)
+  // but before remote-exec/sudo/global-install/auto-download so a named pre-approval can
+  // demote escalate→allow for commands like "npx -y", "curl | bash", "npm install -g". (W11)
+  const toolAllow = scopes.shell?.toolAllow || [];
+  if (toolAllow.length > 0) {
+    const cmd = String(input.command || "").trim();
+    const matched = toolAllow.some((pattern) => {
+      const p = String(pattern).trim();
+      return cmd === p || cmd.startsWith(p + " ") || cmd.startsWith(p + "\t");
+    });
+    if (matched) return { allowed: true, reason: "tool-allow-matched", gated: true };
+  }
+
   // Remote exec
   if (cmdClass === "remote-exec") {
     const remoteExecAllow = scopes.network?.remoteExecAllow || [];

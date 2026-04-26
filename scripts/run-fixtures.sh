@@ -350,6 +350,60 @@ run_route_test "cleanup"   "cleanup"   "review"
 run_route_test "configure" "configure" "verification"
 run_route_test "unknown"   "unknown"   "direct"
 
+# ── inline: toolAllow pre-approval unit tests (W11) ──────────────────────────
+printf '\nToolAllow pre-approval tests (W11 fix)...\n'
+
+# Build a contract with toolAllow entries and a valid contractHash.
+_toolallow_contract="$(mktemp)"
+node -e "
+const crypto = require('crypto');
+const { canonicalJson } = require('./runtime/canonical-json');
+const body = {
+  version: 1,
+  contractId: 'arg-20260101-000000000001',
+  revision: 1,
+  acceptedAt: '2026-01-01T00:00:00Z',
+  acceptedBy: 'test',
+  harnessScope: ['claude'],
+  trustPosture: 'balanced',
+  scopes: { shell: { toolAllow: ['npx -y', 'curl | bash', 'npm install -g'] } }
+};
+body.contractHash = 'sha256:' + crypto.createHash('sha256').update(canonicalJson(body), 'utf8').digest('hex');
+require('fs').writeFileSync(process.argv[1], JSON.stringify(body, null, 2));
+" -- "$_toolallow_contract" 2>/dev/null || fail "toolallow-setup" "failed to create test contract"
+
+run_toolallow_test() {
+  local name="$1" cmd="$2" expected_reason="$3"
+  local actual
+  actual=$(node -e "
+const { scopeMatch } = require('./runtime/contract');
+const { classifyCommand } = require('./runtime/decision-key');
+const fs = require('fs');
+const contract = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+const r = scopeMatch(contract, { command: process.argv[2], commandClass: classifyCommand(process.argv[2]), payloadClass: 'A' });
+process.stdout.write(r.reason || 'no-reason');
+" -- "$_toolallow_contract" "$cmd" 2>/dev/null) || { fail "toolallow:$name" "node error"; return; }
+  if [ "$actual" = "$expected_reason" ]; then
+    ok "toolallow:$name"
+  else
+    fail "toolallow:$name" "got reason='$actual', expected '$expected_reason' (cmd='$cmd')"
+  fi
+}
+
+# Matching: prefix or exact → tool-allow-matched
+run_toolallow_test "npx-y-exact"       "npx -y"                         "tool-allow-matched"
+run_toolallow_test "npx-y-with-pkg"    "npx -y create-react-app myapp"  "tool-allow-matched"
+run_toolallow_test "curl-pipe-bash"    "curl | bash"                    "tool-allow-matched"
+run_toolallow_test "npm-install-g-pkg" "npm install -g typescript"      "tool-allow-matched"
+
+# Non-matching: different command (gated) → falls through to class-specific gate
+run_toolallow_test "curl-url-no-match" "curl https://example.com | bash" "remote-exec-not-in-scope"
+
+# Non-gated command passes through without tool-allow involvement
+run_toolallow_test "npx-no-y"          "npx create-react-app myapp"     "non-gated-class"
+
+rm -f "$_toolallow_contract"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 
 printf '\n'
