@@ -29,6 +29,17 @@ cd "$root"
 # Disable rate limiting during fixture tests so all invocations are processed.
 export ECC_RATE_LIMIT=0
 
+# Hermetic test mode: prevent live git branch detection from contaminating fixture
+# results. When ECC_HERMETIC_TEST=1, all fixture runs that don't supply a "branch"
+# field in their input JSON will fall back to this non-protected override branch,
+# ensuring results are identical regardless of the current working branch.
+#
+# This does NOT affect fixtures that explicitly set "branch" in their input JSON;
+# those already override git detection via rawInput.branch in pretool-gate.js.
+if [ "${ECC_HERMETIC_TEST:-0}" = "1" ]; then
+  export ECC_BRANCH_OVERRIDE="feature/hermetic-test-run"
+fi
+
 pass=0
 fail=0
 

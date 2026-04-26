@@ -220,6 +220,83 @@ const vcBadRevision = validateContract({ ...draft, revision: 0 });
 assert(!vcBadRevision.valid, "validateContract: revision:0 fails minimum");
 assert(vcBadRevision.errors.some((e) => e.includes("revision")), "validateContract: revision error message");
 
+// ---------------------------------------------------------------------------
+// contract.js — v2 schema coverage (validity, contextTrust, scopes.tools)
+// ---------------------------------------------------------------------------
+
+// v2 contract with validity window (expired hours) — schema must accept it
+const v2Validity = {
+  ...draft,
+  version: 2,
+  validity: { activeHoursUtc: { start: "00:00", end: "00:01" } },
+};
+delete v2Validity.contractHash;
+v2Validity.contractHash = hashContract(v2Validity);
+const vcV2Validity = validateContract(v2Validity);
+assert(vcV2Validity.valid, "validateContract: v2 with validity passes schema");
+if (!vcV2Validity.valid) vcV2Validity.errors.forEach((e) => console.error("    " + e));
+
+// v2 contract with contextTrust per-branch posture overrides
+const v2ContextTrust = {
+  ...draft,
+  version: 2,
+  contextTrust: [
+    { branchPattern: "master",       trustPosture: "strict"   },
+    { branchPattern: "release/*",    trustPosture: "strict"   },
+    { branchPattern: "feature/*",    trustPosture: "relaxed"  },
+  ],
+};
+delete v2ContextTrust.contractHash;
+v2ContextTrust.contractHash = hashContract(v2ContextTrust);
+const vcV2CT = validateContract(v2ContextTrust);
+assert(vcV2CT.valid, "validateContract: v2 with contextTrust passes schema");
+if (!vcV2CT.valid) vcV2CT.errors.forEach((e) => console.error("    " + e));
+
+// v2 contract with per-tool allowlists (scopes.tools.perToolAllow)
+const v2PerTool = {
+  ...draft,
+  version: 2,
+  scopes: {
+    ...draft.scopes,
+    tools: {
+      perToolAllow: [
+        { tool: "Bash",  commandGlobs: ["npm run *", "git status", "ls *"] },
+        { tool: "Edit",  pathGlobs:    ["src/**", "tests/**"] },
+        { tool: "Write", pathGlobs:    ["src/**"] },
+      ],
+    },
+  },
+};
+delete v2PerTool.contractHash;
+v2PerTool.contractHash = hashContract(v2PerTool);
+const vcV2PT = validateContract(v2PerTool);
+assert(vcV2PT.valid, "validateContract: v2 with scopes.tools.perToolAllow passes schema");
+if (!vcV2PT.valid) vcV2PT.errors.forEach((e) => console.error("    " + e));
+
+// v2 field tampering changes the hash (v2 fields participate in hash)
+const v2TamperedValidity = { ...v2Validity, validity: { activeHoursUtc: { start: "08:00", end: "18:00" } } };
+assert(hashContract(v2TamperedValidity) !== v2Validity.contractHash,
+       "hashContract: v2 validity change mutates hash");
+
+const v2TamperedCT = { ...v2ContextTrust };
+v2TamperedCT.contextTrust = [{ branchPattern: "feature/*", trustPosture: "relaxed" }];
+assert(hashContract(v2TamperedCT) !== v2ContextTrust.contractHash,
+       "hashContract: v2 contextTrust change mutates hash");
+
+// scopeMatch on a v2 contract behaves identically to v1 for engine-known fields.
+// v2 fields (validity, contextTrust, scopes.tools) are schema-only at this stage;
+// the engine ignores them. Verify no regression: generic command still allowed.
+const sm4 = scopeMatch(v2Validity,      { commandClass: "generic",    payloadClass: "A" });
+const sm5 = scopeMatch(v2ContextTrust,  { commandClass: "generic",    payloadClass: "A" });
+const sm6 = scopeMatch(v2PerTool,       { commandClass: "generic",    payloadClass: "A" });
+assert(sm4.allowed, "scopeMatch: v2 validity contract — generic allowed (field ignored)");
+assert(sm5.allowed, "scopeMatch: v2 contextTrust contract — generic allowed (field ignored)");
+assert(sm6.allowed, "scopeMatch: v2 perToolAllow contract — generic allowed (field ignored)");
+
+// Gated class still blocked by v2 contract when not explicitly in scope
+const sm7 = scopeMatch(v2Validity, { commandClass: "auto-download", payloadClass: "A" });
+assert(!sm7.allowed, "scopeMatch: v2 validity contract — auto-download not in scope blocks");
+
 // Clean up
 fs.rmSync(tmpDir, { recursive: true, force: true });
 
