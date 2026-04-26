@@ -6,7 +6,37 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [3.0.0] — 2026-04-26
+
+> **Breaking:** All `ECC_*` environment variables renamed to `HORUS_*`. Config file `ecc.config.json` → `horus.config.json`. Contract file `ecc.contract.json` → `horus.contract.json`. State dir `~/.openclaw/agent-runtime-guard` → `~/.horus`. CLI `ecc-cli.sh` → `horus-cli.sh`. ContractId prefix `arg-` → `hap-`. See `scripts/horus-rebrand.sh` for the migration script.
+
+### Phase 1 — Foundation: rebrand + close structural weaknesses
+
+#### Added
+- `MASTER_PLAN.md`: Strategic architecture document (20 sections). Pass-1 sections fully authored: Vision, Product Identity, Research Findings (top 5 capability areas), Rebranding Specification, Architecture Overview, Phase Plan, Language Policy, Risk Assessment, Non-Goals, Decision Log, Execution Flow, Security Contract UX.
+- `references/v2-rewrite-plan-rev3.md`: Canonical W1–W14 weakness status reconstruction. 11 fully fixed, 3 closed by this release (W8, W11, W14).
+- `scripts/horus-rebrand.sh`: One-time rename script (ECC_ → HORUS_, ecc.* → horus.*). Supports `--dry-run` (default) and `--apply` modes.
+
+#### Fixed (W11 — High-risk non-destructive pre-approval)
+- `runtime/contract.js` (`scopeMatch`): Added `scopes.shell.toolAllow` prefix-matching before the class-specific remote-exec/auto-download/global-install gates. Commands listed in `toolAllow` (e.g. `"npx -y"`, `"curl | bash"`, `"npm install -g"`) return `reason: "tool-allow-matched"`.
+- `runtime/decision-engine.js` (Step 11): `canDemoteEscalate` flag — `escalate → allow` demotion is now permitted when `contractReason === "tool-allow-matched"`. All other hard floors (block, require-review, critical) are unchanged.
+- `scripts/run-fixtures.sh`: 6 new inline assertions for toolAllow pre-approval. Fixture count 180 → 186.
+
+#### Fixed (W14 — Docs/reality drift)
+- `ARCHITECTURE.md`: Added `index.js`, `intent-classifier.js`, `route-resolver.js` to the Runtime Module Map (count 20 → 23).
+- `MODULES.md`: Added `intent-classifier.js` and `route-resolver.js` to the Runtime Autonomy Layer table.
+- `DECISIONS.md` (D5): Updated from stale "hooks do not enforce" to accurate two-mode description (warn default / exit 2 enforce).
+
+#### Changed (W8 — state-paths.js unified + brand rename)
+- `runtime/state-paths.js`: `stateDir()` default → `~/.horus`. `hookStateDir()` legacy `.openclaw/ecc-safe-plus` default → `~/.horus`. `instinctDir()` default → `~/.horus/instincts`. Override via `HORUS_STATE_DIR`.
+- All 95 files touched by the rename: `ECC_*` → `HORUS_*`, `ecc.*` → `horus.*`, `arg-` contractId prefix → `hap-`.
+- `runtime/contract.js`: `newContractId()` generates `hap-YYYYMMDD-hex` (was `arg-`). `acceptedContractsPath()` reads `HORUS_STATE_DIR`.
+- `schemas/horus.contract.schema.json`: contractId pattern `^arg-` → `^hap-`.
+- File renames: `schemas/ecc.config.schema.json` → `schemas/horus.config.schema.json`, `schemas/ecc.contract.schema.json` → `schemas/horus.contract.schema.json`, `scripts/ecc-cli.sh` → `scripts/horus-cli.sh`, `scripts/ecc-diff-decisions.sh` → `scripts/horus-diff-decisions.sh`, `ecc.config.json.example` → `horus.config.json.example`, `ecc.contract.json.example` → `horus.contract.json.example`.
+
+Fixture count after Phase 1: **186 fixture-based tests**.
+
+---
 
 ### Phase 3 — Autonomous routing foundation
 
