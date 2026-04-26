@@ -12,7 +12,7 @@ ECC — the upfront-contract model — is the foundation we build on, not the fi
 
 ### Three horizons
 
-**Today — what runs.** A single enforcement spine across Claude Code, OpenCode, and OpenClaw; contract verification including acceptance, hash-checking, and schema validation; learned-allow with project-scoped fineKey; session trajectory nudges; workflow-shaped actions; a JSONL audit trail; an `ECC_KILL_SWITCH=1` emergency block; an amplification surface of agents, rules, and skills, plus a unified CLI. Cross-harness secret-scan parity (all harnesses call `scanSecrets()` and upgrade payloadClass to C on a hit); post-tool output sanitization (`output-sanitizer.js` PostToolUse hook); protected-branch glob matching (`release/*` patterns now match in `risk-score.js`); telemetry aggregation (`ecc-cli telemetry report`). 179 fixture pairs, 13 hooks. A post-ship audit (v2.1.1) closed gaps in the contract acceptance path and verification scripts.
+**Today — what runs.** A single enforcement spine across Claude Code, OpenCode, and OpenClaw; contract verification including acceptance, hash-checking, and schema validation; learned-allow with project-scoped fineKey; session trajectory nudges; workflow-shaped actions; a JSONL audit trail; an `ECC_KILL_SWITCH=1` emergency block; an amplification surface of agents, rules, and skills, plus a unified CLI. Cross-harness secret-scan parity (all harnesses call `scanSecrets()` and upgrade payloadClass to C on a hit); post-tool output sanitization (`output-sanitizer.js` PostToolUse hook); protected-branch glob matching (`release/*` patterns now match in `risk-score.js`); telemetry aggregation (`ecc-cli telemetry report`). 183 fixture pairs, 13 hooks. A post-ship audit (v2.1.1) closed gaps in the contract acceptance path and verification scripts.
 
 **In flight — what we are building now.** All three "in flight" items (contract schema v2 evolution, legacy 4-part key removal, scope-defined contract CI gate) are now closed — see `[Unreleased]` in CHANGELOG.md.
 
@@ -24,7 +24,7 @@ See `references/runtime-autonomy-roadmap.md` for the longer arc and per-sprint h
 
 ## [Unreleased]
 
-Cross-harness and post-tool hardening batch: secret-scan parity across all harnesses; PostToolUse output sanitization; protected-branch glob matching; enforce-mode fixture classification correction; 179 fixture pairs, 13 hooks. See [CHANGELOG.md](CHANGELOG.md) for the full diff.
+Cross-harness and post-tool hardening batch: secret-scan parity across all harnesses; PostToolUse output sanitization; protected-branch glob matching; enforce-mode fixture classification correction; 183 fixture pairs, 13 hooks. See [CHANGELOG.md](CHANGELOG.md) for the full diff.
 
 Correctness hardening batch (H1–H3 + doc sync):
 

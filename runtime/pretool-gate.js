@@ -165,7 +165,7 @@ function runPreToolGate({ harness, tool, command, cwd, rawInput, sessionRisk = 0
   let decision;
   let discovered;
   try {
-    discovered = discover({ targetPath });
+    discovered = discover({ targetPath, branch: String(rawInput?.branch || "").trim() });
     decision = decide({
       harness:     String(harness || ""),
       tool:        String(tool || "Bash"),

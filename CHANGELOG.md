@@ -8,6 +8,23 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Phase 1 — Context isolation + fixture correctness
+
+#### Added
+- `tests/fixtures/dangerous-command-gate/dcg-enforce-npx-y-feature-branch.*`: Companion fixture — `npx -y` on a non-protected feature branch with ECC_ENFORCE=1 routes (exit 0). Covers the medium-risk warn path.
+- `tests/fixtures/dangerous-command-gate/dcg-enforce-hard-reset-feature-branch.*`: Companion fixture — `git reset --hard` on a non-protected feature branch with ECC_ENFORCE=1 routes (exit 0).
+- `tests/fixtures/opencode/opencode-enforce-npx-y-feature-branch.*`: Same coverage for OpenCode adapter.
+- `tests/fixtures/opencode/opencode-enforce-hard-reset-feature-branch.*`: Same coverage for OpenCode adapter.
+
+#### Fixed
+- `runtime/pretool-gate.js`: `discover()` call now forwards `rawInput.branch` so fixture inputs (and real hook payloads) can supply a branch override, bypassing live git detection. Prevents protected-branch context from contaminating fixtures run from the `master` working tree.
+- `tests/fixtures/dangerous-command-gate/dcg-enforce-npx-y.*` and `dcg-enforce-hard-reset.*`: Corrected `expected_exit` 0 → 2 and `expected_stderr` → `BLOCKED`. These fixtures run without a branch override, so context-discovery detects `master` (protected), pushing the risk score from medium to critical — the runtime correctly blocks them.
+- `tests/fixtures/opencode/opencode-enforce-npx-y.*` and `opencode-enforce-hard-reset.*`: Same correction as above for the OpenCode adapter path.
+
+Fixture count after Phase 1: **183 fixture-based tests** (179 → 183; +4 companion fixtures).
+
+---
+
 ### Added
 - `claude/hooks/output-sanitizer.js`: PostToolUse hook scans tool output for 23 secret patterns. Warns when a credential is echoed by a tool; cannot block (PostToolUse is informational). Extends the same `runtime/secret-scan.js` patterns used by the PreToolUse spine.
 - `runtime/pretool-gate.js`: Cross-harness secret-scan parity — `scanSecrets()` is now called for every harness (claude, opencode, openclaw), not just via the Claude-specific `secret-warning.js` hook. Secrets upgrade `payloadClass` to C, triggering the hard floor in `decide()` identically across all harnesses.
