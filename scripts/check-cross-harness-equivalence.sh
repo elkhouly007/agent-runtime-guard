@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# check-cross-harness-equivalence.sh — Assert that all three harness adapters
-# (claude, openclaw, opencode) produce identical enforcement decisions for the
-# same command.
+# check-cross-harness-equivalence.sh — Assert that all six harness adapters
+# (claude, openclaw, opencode, codex, clawcode, antegravity) produce identical
+# enforcement decisions for the same command.
 #
 # Calls runtime/pretool-gate.js directly with each harness name and compares
 # exitCode + logAction.  Any divergence fails the check.
@@ -79,7 +79,7 @@ if (fs.existsSync(fixtureDir)) {
   ];
 }
 
-const harnesses = ["claude", "openclaw", "opencode"];
+const harnesses = ["claude", "openclaw", "opencode", "codex", "clawcode", "antegravity"];
 let failed = 0;
 
 for (const cmd of commands) {
@@ -100,15 +100,14 @@ for (const cmd of commands) {
 
   const allSame = results.every((r) => r === results[0]);
   if (!allSame) {
-    process.stderr.write(
-      `FAIL: "${cmd}"\n  claude=${results[0]}  openclaw=${results[1]}  opencode=${results[2]}\n`
-    );
+    const detail = harnesses.map((h, i) => `${h}=${results[i]}`).join("  ");
+    process.stderr.write(`FAIL: "${cmd}"\n  ${detail}\n`);
     failed++;
   }
 }
 
 if (failed === 0) {
-  process.stdout.write(`All ${commands.length} commands × 3 harnesses matched.\n`);
+  process.stdout.write(`All ${commands.length} commands × 6 harnesses matched.\n`);
 }
 try { fs.rmSync(tmpStateDir, { recursive: true, force: true }); } catch { /* best-effort */ }
 process.exit(failed > 0 ? 1 : 0);
