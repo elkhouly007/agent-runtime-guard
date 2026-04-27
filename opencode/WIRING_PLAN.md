@@ -48,13 +48,13 @@ OpenCode is a Claude Code fork and likely supports PostToolUse hooks via the sam
 
 Recommended project-local targets:
 
-- `tools/ecc-safe-plus/opencode/opencode.safe.jsonc`
-- `tools/ecc-safe-plus/opencode/prompts/`
-- `tools/ecc-safe-plus/opencode/WIRING_PLAN.md`
-- `tools/ecc-safe-plus/opencode/OPENCODE_POLICY_MAP.md`
-- `tools/ecc-safe-plus/opencode/OPENCODE_APPLY_CHECKLIST.md`
-- `tools/ecc-safe-plus/opencode/COMPATIBILITY_STRATEGY.md`
-- `tools/ecc-safe-plus/opencode/examples/`
+- `tools/horus/opencode/opencode.safe.jsonc`
+- `tools/horus/opencode/prompts/`
+- `tools/horus/opencode/WIRING_PLAN.md`
+- `tools/horus/opencode/OPENCODE_POLICY_MAP.md`
+- `tools/horus/opencode/OPENCODE_APPLY_CHECKLIST.md`
+- `tools/horus/opencode/COMPATIBILITY_STRATEGY.md`
+- `tools/horus/opencode/examples/`
 
 Potential future integration targets, only after explicit review:
 
@@ -94,7 +94,7 @@ Prefer project-local references and reviewed config copies over global mutation.
 
 If integration causes instability:
 
-1. delete the local `tools/ecc-safe-plus/opencode/` directory;
+1. delete the local `tools/horus/opencode/` directory;
 2. revert any manual changes to your project-local `.opencode.json` (if you were using the safe template).
 
 ## Definition Of Done

@@ -37,7 +37,7 @@ EOF
 }
 
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-target="./.ecc-safe-plus"
+target="./.horus"
 profile="minimal"
 auto_detect=0
 list_only=0

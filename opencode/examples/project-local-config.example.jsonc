@@ -2,11 +2,11 @@
   // Example project-local OpenCode config using Agent Runtime Guard as an external layer.
   "default_agent": "builder",
   "instructions": [
-    "tools/ecc-safe-plus/claude/AGENTS.md",
-    "tools/ecc-safe-plus/opencode/prompts/planner.md",
-    "tools/ecc-safe-plus/opencode/prompts/code-review.md",
-    "tools/ecc-safe-plus/opencode/prompts/security-review.md",
-    "tools/ecc-safe-plus/opencode/prompts/build-fix.md"
+    "tools/horus/claude/AGENTS.md",
+    "tools/horus/opencode/prompts/planner.md",
+    "tools/horus/opencode/prompts/code-review.md",
+    "tools/horus/opencode/prompts/security-review.md",
+    "tools/horus/opencode/prompts/build-fix.md"
   ],
   "permission": {
     "read": "ask",

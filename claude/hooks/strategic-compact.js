@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * strategic-compact.js — ECC Safe-Plus  (PostToolUse hook)
+ * strategic-compact.js — Horus Agentic Power  (PostToolUse hook)
  *
  * Fires after every tool use. Tracks a lightweight call counter and suggests
  * /compact when the context window may be filling up.
@@ -12,7 +12,7 @@
  * - No external packages, no network calls, no file content access.
  * - Silent fail on errors.
  *
- * Counter file is stored under ~/.openclaw/ (not /tmp/) to avoid the Linux
+ * Counter file is stored under ~/.horus/ (not /tmp/) to avoid the Linux
  * /tmp symlink attack: any local user can pre-create a symlink at a known
  * /tmp path and redirect writes to an arbitrary file.
  */
@@ -86,7 +86,7 @@ readStdin()
       if (suggest) {
         hookLog("strategic-compact", "INFO", `suggestion-fired count=${count}`);
         process.stderr.write(
-          `[ECC Safe-Plus] Context hint: consider /compact — ${reason}. Call count: ${count}.\n`
+          `[Agent Runtime Guard] Context hint: consider /compact — ${reason}. Call count: ${count}.\n`
         );
       }
     } catch {

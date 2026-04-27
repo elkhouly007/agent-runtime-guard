@@ -5,15 +5,14 @@ const fs   = require("fs");
 const os   = require("os");
 const path = require("path");
 const zlib = require("zlib");
+const { stateDir } = require("./state-paths");
 
 // Maximum size before rotation. Override with HORUS_JOURNAL_MAX_MB (integer MB).
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_GENERATIONS   = 3;               // keep .1.jsonl, .2.jsonl.gz, .3.jsonl.gz
 
 function journalPaths() {
-  const baseDir = process.env.HORUS_STATE_DIR
-    ? path.resolve(process.env.HORUS_STATE_DIR)
-    : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
+  const baseDir = stateDir();
   return {
     baseDir,
     logFile: path.join(baseDir, "decision-journal.jsonl"),

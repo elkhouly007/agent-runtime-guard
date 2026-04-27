@@ -8,7 +8,11 @@ artifacts/bench/
 
 # ── Claude Code session artifacts ─────────────────────────────────────────────
 .claude/scheduled_tasks.lock
+.claude/settings.local.json
 .claude/worktrees/
+
+# ── Corrupt-state backups ──────────────────────────────────────────────────────
+*.corrupt-*.bak
 
 # ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store

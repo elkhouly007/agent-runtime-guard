@@ -1,5 +1,5 @@
 {
-  "_comment": "ECC Safe-Plus per-project config. Copy to horus.config.json in your project root and customize. Run scripts/install-local.sh to apply.",
+  "_comment": "Horus Agentic Power per-project config. Copy to horus.config.json in your project root and customize. Run scripts/install-local.sh to apply.",
 
   "profile": "rules",
 

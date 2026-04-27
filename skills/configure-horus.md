@@ -11,14 +11,14 @@ Agent Runtime Guard has three layers:
 2. **Rules** — applied automatically to relevant file types during code operations
 3. **Skills** — slash commands invoked explicitly by the user
 
-Components live in `tools/ecc-safe-plus/` and are wired to tools via config files in `claude/`, `opencode/`, and `openclaw/`.
+Components live in `tools/horus/` and are wired to tools via config files in `claude/`, `opencode/`, and `openclaw/`.
 
 ## Setup Process
 
 ### Step 1 — Verify the repo is present
 
 ```bash
-ls tools/ecc-safe-plus/
+ls tools/horus/
 # Should contain: agents/ rules/ skills/ scripts/ references/
 ```
 
@@ -51,13 +51,13 @@ Enable a pack by listing it in the tool's config. Disable by removing it — no 
 
 ```bash
 # Run the status check
-bash tools/ecc-safe-plus/scripts/status-summary.sh
+bash tools/horus/scripts/status-summary.sh
 
 # Run the smoke test
-bash tools/ecc-safe-plus/scripts/smoke-test.sh
+bash tools/horus/scripts/smoke-test.sh
 
 # Run the audit
-bash tools/ecc-safe-plus/scripts/audit-local.sh
+bash tools/horus/scripts/audit-local.sh
 ```
 
 All checks must report `ok`. If any report `missing` or `fail`, read the error and install the missing component.

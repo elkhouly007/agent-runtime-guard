@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * memory-load.js — ECC Safe-Plus  (SessionStart hook)
+ * memory-load.js — Horus Agentic Power  (SessionStart hook)
  *
  * Fires at session start. Reads the memory index file and prints a brief
  * orientation summary to stderr so the user knows what context is loaded.
@@ -13,7 +13,7 @@
  * - No external packages, no network calls.
  * - Silent fail on errors.
  *
- * Memory file location: ~/.openclaw/memory/MEMORY.md
+ * Memory file location: ~/.horus/memory/MEMORY.md
  */
 
 "use strict";
@@ -25,7 +25,7 @@ const path = require("path");
 const HOME = os.homedir();
 
 const MEMORY_PATHS = [
-  path.join(HOME, ".openclaw", "memory", "MEMORY.md"),
+  path.join(HOME, ".horus", "memory", "MEMORY.md"),
 ];
 
 /** Extract entry titles from lines that start with `- [` (markdown list links). */
@@ -78,7 +78,7 @@ readStdin()
       const preview  = titles.slice(0, 3);
       const overflow = total - preview.length;
 
-      let msg = `[ECC Safe-Plus] Memory: ${total} item${total !== 1 ? "s" : ""} loaded.\n`;
+      let msg = `[Agent Runtime Guard] Memory: ${total} item${total !== 1 ? "s" : ""} loaded.\n`;
       for (const title of preview) {
         msg += `  \u2022 ${title}\n`;
       }

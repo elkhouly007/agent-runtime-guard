@@ -38,6 +38,9 @@ jobs:
       - name: Status summary
         run: bash scripts/status-summary.sh
 
+      - name: Version / changelog sync check
+        run: bash scripts/check-version.sh --check-changelog
+
       - name: Audit local (scripts + hooks)
         run: bash scripts/audit-local.sh
 

@@ -6,9 +6,18 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [3.0.0] — 2026-04-26
+## [3.0.0] — 2026-04-27
 
 > **Breaking:** All `ECC_*` environment variables renamed to `HORUS_*`. Config file `ecc.config.json` → `horus.config.json`. Contract file `ecc.contract.json` → `horus.contract.json`. State dir `~/.openclaw/agent-runtime-guard` → `~/.horus`. CLI `ecc-cli.sh` → `horus-cli.sh`. ContractId prefix `arg-` → `hap-`. See `scripts/horus-rebrand.sh` for the migration script.
+
+### Migration — existing state under `~/.openclaw/agent-runtime-guard/`
+
+The runtime default state directory has moved. If you have an existing installation:
+
+- **Option A (recommended):** Move your state dir — `mv ~/.openclaw/agent-runtime-guard ~/.horus`
+- **Option B (preserve old path):** Set `HORUS_STATE_DIR=$HOME/.openclaw/agent-runtime-guard` in your shell profile or `horus.config.json` to keep using the legacy location.
+
+The `HORUS_STATE_DIR` environment variable overrides the default in all runtime modules (`policy-store.js`, `contract.js`, `decision-journal.js`, `session-context.js`) and is already used by all CI/test scripts for isolation.
 
 ### Phase 1 — Foundation: rebrand + close structural weaknesses
 
@@ -20,7 +29,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 #### Fixed (W11 — High-risk non-destructive pre-approval)
 - `runtime/contract.js` (`scopeMatch`): Added `scopes.shell.toolAllow` prefix-matching before the class-specific remote-exec/auto-download/global-install gates. Commands listed in `toolAllow` (e.g. `"npx -y"`, `"curl | bash"`, `"npm install -g"`) return `reason: "tool-allow-matched"`.
 - `runtime/decision-engine.js` (Step 11): `canDemoteEscalate` flag — `escalate → allow` demotion is now permitted when `contractReason === "tool-allow-matched"`. All other hard floors (block, require-review, critical) are unchanged.
-- `scripts/run-fixtures.sh`: 6 new inline assertions for toolAllow pre-approval. Fixture count 180 → 186.
+- `scripts/run-fixtures.sh`: 6 new inline assertions for toolAllow pre-approval. Fixture count 180 → 183.
 
 #### Fixed (W14 — Docs/reality drift)
 - `ARCHITECTURE.md`: Added `index.js`, `intent-classifier.js`, `route-resolver.js` to the Runtime Module Map (count 20 → 23).
@@ -34,7 +43,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `schemas/horus.contract.schema.json`: contractId pattern `^arg-` → `^hap-`.
 - File renames: `schemas/ecc.config.schema.json` → `schemas/horus.config.schema.json`, `schemas/ecc.contract.schema.json` → `schemas/horus.contract.schema.json`, `scripts/ecc-cli.sh` → `scripts/horus-cli.sh`, `scripts/ecc-diff-decisions.sh` → `scripts/horus-diff-decisions.sh`, `ecc.config.json.example` → `horus.config.json.example`, `ecc.contract.json.example` → `horus.contract.json.example`.
 
-Fixture count after Phase 1: **186 fixture-based tests**.
+Fixture count after Phase 1: **183 fixture-based tests**.
 
 ---
 

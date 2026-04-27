@@ -1,5 +1,5 @@
 /**
- * instinct-utils.js — ECC Safe-Plus
+ * instinct-utils.js — Horus Agentic Power
  *
  * Shared utilities for the instinct learning system.
  *

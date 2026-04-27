@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * pr-notifier.js — ECC Safe-Plus  (PostToolUse hook, Bash only)
+ * pr-notifier.js — Horus Agentic Power  (PostToolUse hook, Bash only)
  *
  * Fires after Bash tool use. Detects when `gh pr create` was run and a PR URL
  * appeared in the output, then prints a useful summary to stderr.
@@ -70,7 +70,7 @@ readStdin()
       const number = match[1];
 
       process.stderr.write(
-        `[ECC Safe-Plus] PR created: ${url}\n` +
+        `[Agent Runtime Guard] PR created: ${url}\n` +
         `  Review:  gh pr view ${number} --web\n` +
         `  Checks:  gh pr checks ${number}\n`
       );

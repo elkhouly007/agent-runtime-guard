@@ -24,7 +24,7 @@ Do not patch OpenClaw core files when a project-local adapter or template can ac
 
 ## Update-Resilient Pattern
 
-1. Keep Agent Runtime Guard files under `tools/ecc-safe-plus/`.
+1. Keep Agent Runtime Guard files under `tools/horus/`.
 2. Reference them from project-local instructions or task flows.
 3. Treat any OpenClaw-facing config as replaceable glue, not core logic.
 4. Re-check only the glue layer when OpenClaw updates.

@@ -99,16 +99,9 @@ Kill-switch fixtures in `tests/fixtures/kill-switch/` verify every hook.
 ### W8 — State-paths.js existed but was not fully adopted
 **Statement:** `runtime/state-paths.js` was created as the single source of truth for storage paths, but many hooks and scripts still had hardcoded `~/.openclaw/...` paths.
 
-**Status: ⚠️ PARTIALLY FIXED**
+**Status: ✅ FIXED**
 
-**Evidence:** `runtime/state-paths.js` exists and exports `stateDir()`, `hookStateDir()`, `instinctDir()`, `ensureDir()`. `claude/hooks/hook-utils.js` does use `statePaths.hookStateDir()`. However:
-- `hookStateDir()` in `state-paths.js` still returns `.horus` as a default (legacy path).
-- Some scripts may still use hardcoded paths.
-
-**Outstanding work (Phase 1.6 + Phase 1 rebrand):**
-1. Audit all hooks and scripts for hardcoded `.openclaw/` paths.
-2. In `state-paths.js`: unify `hookStateDir()` with `stateDir()` — eliminate the legacy `.horus` default (migrate to `.horus/` as part of the rebrand).
-3. After rebrand: `stateDir()` should return `~/.horus/` (overridable via `HORUS_STATE_DIR`).
+**Resolution (v3.0.0, 2026-04-27):** Four runtime modules (`policy-store.js`, `contract.js`, `decision-journal.js`, `session-context.js`) that had hardcoded `~/.openclaw/agent-runtime-guard` fallback paths have been migrated to delegate to `state-paths.stateDir()`. All hooks and scripts audited; no remaining hardcoded `.openclaw/agent-runtime-guard` paths in live code (the comment in `state-paths.js:21` is historical documentation of the migration, not a live path). Closes commits `d2c5ea1` (rebrand) + v3.0.0 finalization pass.
 
 ---
 
@@ -133,14 +126,9 @@ Kill-switch fixtures in `tests/fixtures/kill-switch/` verify every hook.
 ### W11 — High-risk-non-destructive operations cannot be pre-approved
 **Statement:** Operations with high risk scores that aren't destructive (e.g., `curl | bash`, `npx -y`) had no path to pre-approval. Every occurrence required manual intervention, even after the user had approved the same pattern dozens of times.
 
-**Status: ⚠️ PARTIALLY FIXED**
+**Status: ✅ FIXED**
 
-**Evidence:** The contract v2 schema has `scopes.shell.toolAllow` (per-tool allow list) and `scopes.filesystem.destructiveAllow` (per-command-class path-glob destructive allows). `decision-engine.js` Step 11 checks `autoAllowOnce` for a single-use bypass. The learned-allow and promotion flow (Steps 10–11) provide a path from repeated approval to auto-allow.
-
-**Outstanding work (Phase 1.7):**
-1. Verify that `decision-engine.js` Step 11 correctly reads `scopes.shell.toolAllow` from the contract for pre-approved high-risk patterns.
-2. Add fixtures testing the `toolAllow` pre-approval path for `npx -y`, `curl|bash`, and `npm install -g` patterns.
-3. Document the pre-approval workflow in `CONTRACT.md`.
+**Resolution (v3.0.0, 2026-04-26, commit `6d73220`):** `decision-engine.js` Step 11 correctly reads `scopes.shell.toolAllow` prefix-matching before the class-specific remote-exec/auto-download/global-install gates. Six inline fixtures in `scripts/run-fixtures.sh` test the toolAllow pre-approval path for `npx -y`, `curl | bash`, and `npm install -g` patterns. `CONTRACT.md` documents the pre-approval workflow under "Scope Matching" and "Gated Capability Classes." Verified: the CHANGELOG entry for v3.0.0 W11 section and `run-fixtures.sh` assertion count confirm closure.
 
 ---
 
@@ -165,16 +153,14 @@ Kill-switch fixtures in `tests/fixtures/kill-switch/` verify every hook.
 ### W14 — Documentation / reality drift
 **Statement:** Docs (README, ARCHITECTURE, MODULES, DECISIONS) described an older system state. Runtime file counts, hook counts, and W-status in docs did not match the actual codebase.
 
-**Status: ⚠️ PARTIALLY FIXED**
+**Status: ✅ FIXED**
 
-**Evidence of remaining drift (pre-Phase 1):**
-- `ARCHITECTURE.md` listed 20 runtime files; actual count is 23 (missing `intent-classifier.js`, `route-resolver.js`, `index.js`).
-- `MODULES.md` did not list the new routing modules.
-- `DECISIONS.md` D5 stated "hooks print reminders, do not enforce policy" — stale since `dangerous-command-gate.js` + `secret-warning.js` now actively block in `HORUS_ENFORCE=1`.
-- `claude/hooks/README.md` listed 12 hooks; actual is 13.
-- Skill count in README says "200 skills"; actual is 22.
-
-**Resolution (Phase 1.8):** Update `ARCHITECTURE.md`, `MODULES.md`, `DECISIONS.md`, and `README.md` with verified counts from the codebase. This document (`v2-rewrite-plan-rev3.md`) is part of the W14 resolution.
+**Resolution (v3.0.0, 2026-04-26, commit `91ee4f8`):** All four drift items resolved:
+- `ARCHITECTURE.md` runtime module count updated: 20 → 23 (added `intent-classifier.js`, `route-resolver.js`, `index.js`).
+- `MODULES.md` updated to include routing modules.
+- `DECISIONS.md` D5 updated: "hooks print reminders, do not enforce policy" → accurate two-mode description (warn default / exit 2 enforce under `HORUS_ENFORCE=1`).
+- `claude/hooks/README.md` hook count 12 → 13 (adding `output-sanitizer.js`).
+- Skill count in README corrected from "200 skills" to the actual 22. This document (`v2-rewrite-plan-rev3.md`) is itself part of the W14 resolution record.
 
 ---
 
@@ -189,15 +175,15 @@ Kill-switch fixtures in `tests/fixtures/kill-switch/` verify every hook.
 | W5 | Secret scanning Claude-only | ✅ Fixed |
 | W6 | Journal unbounded growth | ✅ Fixed |
 | W7 | Policy store corruption | ✅ Fixed |
-| W8 | state-paths not fully adopted | ⚠️ Partial — Phase 1.6 + rebrand |
+| W8 | state-paths not fully adopted | ✅ Fixed (v3.0.0) |
 | W9 | Config has no schema | ✅ Fixed |
 | W10 | decisionKey too coarse | ✅ Fixed |
-| W11 | High-risk-non-destructive pre-approval | ⚠️ Partial — Phase 1.7 |
+| W11 | High-risk-non-destructive pre-approval | ✅ Fixed (v3.0.0) |
 | W12 | Adapter enforce coverage | ✅ Fixed |
 | W13 | No cross-harness equivalence test | ✅ Fixed |
-| W14 | Docs/reality drift | ⚠️ Partial — Phase 1.8 |
+| W14 | Docs/reality drift | ✅ Fixed (v3.0.0) |
 
-**Score: 11 fully fixed, 3 partial (W8, W11, W14). All 3 partials are closed in Phase 1.**
+**Score: All 14 fully fixed as of v3.0.0 (2026-04-27).**
 
 ---
 

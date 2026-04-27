@@ -8,7 +8,7 @@
 #
 # The generated config can be passed to install-local.sh:
 #   ./scripts/generate-config.sh myproject --output myproject/horus.config.json
-#   ./scripts/install-local.sh myproject/ecc-safe-plus
+#   ./scripts/install-local.sh myproject/horus
 
 set -eu
 

@@ -4,11 +4,11 @@ Use this as a project-local example for referencing reviewed Safe-Plus capabilit
 
 ## Example References
 
-- AGENTS -> `tools/ecc-safe-plus/claude/AGENTS.md`
-- hooks -> `tools/ecc-safe-plus/claude/hooks/`
-- MCP registry -> `tools/ecc-safe-plus/modules/mcp-pack/registry.json`
-- wrapper registry -> `tools/ecc-safe-plus/modules/wrapper-pack/registry.json`
-- plugin registry -> `tools/ecc-safe-plus/modules/plugin-pack/registry.json`
+- AGENTS -> `tools/horus/claude/AGENTS.md`
+- hooks -> `tools/horus/claude/hooks/`
+- MCP registry -> `tools/horus/modules/mcp-pack/registry.json`
+- wrapper registry -> `tools/horus/modules/wrapper-pack/registry.json`
+- plugin registry -> `tools/horus/modules/plugin-pack/registry.json`
 
 ## Example Rule
 

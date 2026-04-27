@@ -6,11 +6,10 @@ const os = require("os");
 const path = require("path");
 const { emitEvent } = require("./telemetry");
 const { fineKey: computeFineKey } = require("./decision-key");
+const { stateDir } = require("./state-paths");
 
 function paths() {
-  const baseDir = process.env.HORUS_STATE_DIR
-    ? path.resolve(process.env.HORUS_STATE_DIR)
-    : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
+  const baseDir = stateDir();
   return {
     baseDir,
     policyFile: path.join(baseDir, "learned-policy.json"),

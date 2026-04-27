@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * quality-gate.js — ECC Safe-Plus  (PostToolUse hook, Edit/Write only)
+ * quality-gate.js — Horus Agentic Power  (PostToolUse hook, Edit/Write only)
  *
  * Fires after Edit or Write tool use on source code files. Reminds the user
  * to run type checking and lint for the relevant language.
@@ -24,7 +24,7 @@ const EDIT_TOOLS = new Set(["Edit", "Write"]);
 /**
  * Maps file extension to a check command reminder.
  * Uses local project binaries (./node_modules/.bin/) instead of npx to avoid
- * remote package downloads, consistent with ECC Safe-Plus policy.
+ * remote package downloads, consistent with Horus Agentic Power policy.
  */
 const EXT_COMMANDS = {
   ".ts":    "./node_modules/.bin/tsc --noEmit  &&  ./node_modules/.bin/eslint <file>",
@@ -75,7 +75,7 @@ readStdin()
       const command = commandTemplate.replace(/<file>/g, filePath);
 
       process.stderr.write(
-        `[ECC Safe-Plus] After editing ${filename}: run ${command} to check.\n`
+        `[Agent Runtime Guard] After editing ${filename}: run ${command} to check.\n`
       );
     } catch {
       // Malformed input — do not block.

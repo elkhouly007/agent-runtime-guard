@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * session-end.js — ECC Safe-Plus  (Stop hook)
+ * session-end.js — Horus Agentic Power  (Stop hook)
  *
  * Fires when Claude Code signals the session is stopping.
  * Captures METADATA ONLY — never session content, prompts, or payloads.
@@ -82,7 +82,7 @@ readStdin()
     // Inform user via stderr — not visible to model, not blocking.
     const s = utils.summary();
     process.stderr.write(
-      `[ECC Safe-Plus] Session end recorded.\n` +
+      `[Agent Runtime Guard] Session end recorded.\n` +
       `  Instincts: ${s.pending} pending (${s.candidates} ready to review), ${s.confident} confident.\n` +
       `  Run /instinct-status to review and promote candidates.\n` +
       (s.expiringSoon > 0

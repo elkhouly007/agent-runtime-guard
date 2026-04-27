@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * session-start.js — ECC Safe-Plus  (SessionStart hook)
+ * session-start.js — Horus Agentic Power  (SessionStart hook)
  *
  * Fires when a new Claude Code session begins.
  * Shows a brief instinct status summary so Ahmed knows what's pending review.
@@ -57,7 +57,7 @@ readStdin()
     // Only print if there is something worth showing.
     if (s.pending === 0 && s.confident === 0) return;
 
-    const lines = ["[ECC Safe-Plus] Instinct store loaded."];
+    const lines = ["[Agent Runtime Guard] Instinct store loaded."];
     if (s.candidates > 0) {
       lines.push(`  → ${s.candidates} candidate(s) ready for your review — run /instinct-status.`);
     }

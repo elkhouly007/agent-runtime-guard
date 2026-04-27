@@ -8,9 +8,9 @@ This project uses Agent Runtime Guard as an external AGENTS and hook layer.
 
 Available local hook files:
 
-- `tools/ecc-safe-plus/claude/hooks/secret-warning.js`
-- `tools/ecc-safe-plus/claude/hooks/build-reminder.js`
-- `tools/ecc-safe-plus/claude/hooks/git-push-reminder.js`
+- `tools/horus/claude/hooks/secret-warning.js`
+- `tools/horus/claude/hooks/build-reminder.js`
+- `tools/horus/claude/hooks/git-push-reminder.js`
 
 Approval model:
 

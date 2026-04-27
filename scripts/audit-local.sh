@@ -18,7 +18,7 @@ esac
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 
-tmp="${TMPDIR:-/tmp}/ecc-safe-plus-audit.$$"
+tmp="${TMPDIR:-/tmp}/horus-audit.$$"
 trap 'rm -f "$tmp"' EXIT
 
 {
@@ -26,6 +26,7 @@ trap 'rm -f "$tmp"' EXIT
     ! -name 'audit-local.sh' \
     ! -name 'audit-examples.sh' \
     ! -name 'bench-runtime-decision.sh' \
+    ! -name 'run-fixtures.sh' \
     ! -name 'check-*'
   find ./claude/hooks -maxdepth 1 -type f -name '*.js' \
     ! -name 'dangerous-command-gate.js'

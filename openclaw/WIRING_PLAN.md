@@ -48,11 +48,11 @@ It does not overwrite existing OpenClaw workspace files or global OpenClaw confi
 
 Recommended project-local target paths:
 
-- `tools/ecc-safe-plus/openclaw/prompts/`
-- `tools/ecc-safe-plus/openclaw/WIRING_PLAN.md`
-- `tools/ecc-safe-plus/openclaw/OPENCLAW_POLICY_MAP.md`
-- `tools/ecc-safe-plus/openclaw/OPENCLAW_APPLY_CHECKLIST.md`
-- `tools/ecc-safe-plus/openclaw/examples/`
+- `tools/horus/openclaw/prompts/`
+- `tools/horus/openclaw/WIRING_PLAN.md`
+- `tools/horus/openclaw/OPENCLAW_POLICY_MAP.md`
+- `tools/horus/openclaw/OPENCLAW_APPLY_CHECKLIST.md`
+- `tools/horus/openclaw/examples/`
 
 Potential future integration targets, only after explicit review:
 
@@ -96,7 +96,7 @@ Do not change global OpenClaw defaults automatically in this step.
 If integration causes instability:
 
 1. remove the workspace prompt references from project instructions;
-2. delete the local `tools/ecc-safe-plus/openclaw/` directory;
+2. delete the local `tools/horus/openclaw/` directory;
 3. revert any manual changes made to `.openclaw/settings.json` if applicable.
 
 ## Definition Of Done

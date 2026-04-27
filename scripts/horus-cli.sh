@@ -213,7 +213,7 @@ case "$cmd" in
     ;;
 
   # ── ci ────────────────────────────────────────────────────────────────────
-  # Full superset: check + audit + fixture tests + bench.
+  # Full superset: check + audit + fixture tests + bench + CI-only checks.
   # Matches the GitHub Actions workflow step-for-step.
   ci)
     section() { printf '\n%s━━━ %s ━━━%s\n' "$CYAN" "$1" "$RESET"; }
@@ -233,6 +233,19 @@ case "$cmd" in
 
     section "Fixtures"
     bash "${scripts}/run-fixtures.sh" || failed=1
+
+    section "OpenCode adapter (CI parity)"
+    bash "${scripts}/check-opencode-adapter.sh" || failed=1
+
+    section "OpenClaw adapter (CI parity)"
+    bash "${scripts}/check-openclaw-adapter.sh" || failed=1
+
+    section "Decision replay (CI parity)"
+    HORUS_CONTRACT_ENABLED=0 HORUS_TRAJECTORY_WINDOW_MIN=0 \
+      bash "${scripts}/check-decision-replay.sh" || failed=1
+
+    section "Contract schema v2 migration (CI parity)"
+    bash "${scripts}/check-migrate-v1-v2.sh" || failed=1
 
     section "Runtime bench"
     bash "${scripts}/bench-runtime-decision.sh" || failed=1

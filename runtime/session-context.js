@@ -6,11 +6,10 @@ const os     = require("os");
 const path   = require("path");
 const crypto = require("crypto");
 const { emitEvent } = require("./telemetry");
+const { stateDir } = require("./state-paths");
 
 function paths() {
-  const baseDir = process.env.HORUS_STATE_DIR
-    ? path.resolve(process.env.HORUS_STATE_DIR)
-    : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
+  const baseDir = stateDir();
   return {
     baseDir,
     sessionFile: path.join(baseDir, "session-context.json"),

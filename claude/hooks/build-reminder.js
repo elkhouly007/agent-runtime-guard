@@ -29,8 +29,8 @@ readStdin()
       const input   = JSON.parse(raw || "{}");
       const command = commandFrom(input);
       if (LOCAL_BUILD_OR_TEST.test(command)) {
-        console.error("[ECC Safe-Plus] Build / test command detected.");
-        console.error("[ECC Safe-Plus] Review the full output before continuing — do not skip past failures.");
+        console.error("[Agent Runtime Guard] Build / test command detected.");
+        console.error("[Agent Runtime Guard] Review the full output before continuing — do not skip past failures.");
       }
     } catch {
       // Non-blocking by design.

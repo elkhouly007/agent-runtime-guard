@@ -24,6 +24,7 @@ const { validateContract } = require("./config-validator");
 const { globMatch }        = require("./glob-match");
 const { classifyCommand }  = require("./decision-key");
 const { extractPaths }     = require("./arg-extractor");
+const { stateDir }         = require("./state-paths");
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -38,10 +39,7 @@ function draftFilePath(projectRoot) {
 }
 
 function acceptedContractsPath() {
-  if (process.env.HORUS_STATE_DIR) {
-    return path.join(path.resolve(process.env.HORUS_STATE_DIR), "accepted-contracts.json");
-  }
-  return path.join(os.homedir(), ".openclaw", "agent-runtime-guard", "accepted-contracts.json");
+  return path.join(stateDir(), "accepted-contracts.json");
 }
 
 // ---------------------------------------------------------------------------

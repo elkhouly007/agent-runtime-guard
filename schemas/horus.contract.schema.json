@@ -7,7 +7,7 @@
   "required": ["version", "contractId", "revision", "acceptedAt", "harnessScope", "trustPosture", "scopes", "contractHash"],
   "properties": {
     "version":      { "type": "integer", "enum": [1, 2] },
-    "contractId":   { "type": "string",  "pattern": "^hap-[0-9]{8}-[0-9a-f]{12}$" },
+    "contractId":   { "type": "string",  "pattern": "^(hap|arg)-[0-9]{8}-[0-9a-f]{12}$" },
     "revision":     { "type": "integer", "minimum": 1 },
     "acceptedAt":   { "type": "string" },
     "acceptedBy":   { "type": "string" },

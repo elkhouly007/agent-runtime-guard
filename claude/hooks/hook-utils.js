@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// hook-utils.js — shared utilities for all ECC Safe-Plus hooks.
+// hook-utils.js — shared utilities for all Horus Agentic Power hooks.
 //
 // Usage in each hook:
 //   const { readStdin, commandFrom, collectText, ENFORCE, hookLog } = require("./hook-utils");
