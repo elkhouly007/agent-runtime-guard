@@ -240,6 +240,9 @@ case "$cmd" in
     section "OpenClaw adapter (CI parity)"
     bash "${scripts}/check-openclaw-adapter.sh" || failed=1
 
+    section "Claw Code adapter (CI parity)"
+    bash "${scripts}/check-clawcode-adapter.sh" || failed=1
+
     section "Decision replay (CI parity)"
     HORUS_CONTRACT_ENABLED=0 HORUS_TRAJECTORY_WINDOW_MIN=0 \
       bash "${scripts}/check-decision-replay.sh" || failed=1

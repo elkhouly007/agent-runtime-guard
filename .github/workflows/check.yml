@@ -121,6 +121,9 @@ jobs:
       - name: Check OpenClaw adapter
         run: bash scripts/check-openclaw-adapter.sh
 
+      - name: Check Claw Code adapter
+        run: bash scripts/check-clawcode-adapter.sh
+
       - name: Check zero deps (runtime/)
         run: bash scripts/check-zero-deps.sh
 

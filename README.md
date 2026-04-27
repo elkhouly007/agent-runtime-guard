@@ -100,7 +100,7 @@ Security, coding-style, patterns, testing, hooks, and performance rules across 1
 
 High-leverage workflow entry points: ARG runtime debug, policy tuning, learning review, capability audit, deep code analysis, intelligence amplification, autonomous improvement, multi-agent debug, semantic refactor, test intelligence, deployment safety, context maximizer, orchestration design, workflow acceleration, pattern extraction, plus domain-specific skills for git workflows, multi-agent orchestration, and infrastructure patterns.
 
-### Scripts (`scripts/`) — 65 files
+### Scripts (`scripts/`) — 66 files
 
 | Script | Purpose |
 |--------|---------|
@@ -136,6 +136,7 @@ High-leverage workflow entry points: ARG runtime debug, policy tuning, learning 
 | `check-harness-support.sh` | Verify harness support matrix, stub directories, wizard rejection paths, and apply-status planned entries |
 | `check-opencode-adapter.sh` | Verify OpenCode adapter.js syntax, safe pass-through, warn mode, enforce/block mode, and args.command field extraction |
 | `check-openclaw-adapter.sh` | Verify OpenClaw adapter.js syntax, safe pass-through, warn mode, enforce/block mode, and OpenClaw cmd field extraction |
+| `check-clawcode-adapter.sh` | Verify Claw Code adapter.js syntax, all 6 command-field fallback shapes (command/cmd/tool_input/input/args/params), enforce mode, kill-switch, and silent-fail contract |
 | `check-owasp-coverage.sh` | Verify OWASP Agentic Top 10 (2026) coverage matrix — every ASI row names a specific file or `NOT COVERED` |
 | `bench-runtime-decision.sh` | Latency benchmark — 1000 `runtime.decide()` calls, prints p50/p95/p99; platform-aware ceiling (500ms Windows, 10ms Linux CI) |
 | `classify-payload.sh` | A/B/C payload sensitivity classification |
