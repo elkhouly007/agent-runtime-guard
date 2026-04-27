@@ -26,7 +26,7 @@ The five architectural pillars this rewrite plan addresses:
 
 **Status: ✅ FIXED**
 
-**Resolution:** `runtime/pretool-gate.js` is the single enforcement spine. Every host adapter (claude, openclaw, opencode, clawcode, antegravity, codex) is a 15–24 LOC shim that calls `runPreToolGateAndExit({ harness:"<name>" })`. The full decision logic lives in `runtime/decision-engine.js`. Modified risk scoring or blocking rules require a change in exactly one file.
+**Resolution:** `runtime/pretool-gate.js` is the single enforcement spine. Every host adapter (claude, openclaw, opencode, clawcode, antegravity, codex) is a 15–24 LOC shim that calls `createAdapter({ harness:"<name>" })` from `hook-utils.js`, which delegates to `runPreToolGate()` in `pretool-gate.js`. The full decision logic lives in `runtime/decision-engine.js`. Modified risk scoring or blocking rules require a change in exactly one file.
 
 **Residual:** `secret-warning.js`, `git-push-reminder.js`, and `build-reminder.js` still implement their own lightweight decision logic (pattern matching only) outside `pretool-gate.js`. This is intentional: these hooks cover concerns orthogonal to the main gate (secret scanning, push reminders, build output warnings). They are not candidates for consolidation into `pretool-gate.js`.
 
@@ -48,7 +48,7 @@ The five architectural pillars this rewrite plan addresses:
 
 **Status: ✅ FIXED**
 
-**Resolution:** `runtime/contract.js` (496 LOC) implements the full contract lifecycle: `load()`, `verify()` (hash tamper check), `accept()`, `scopeMatch()`, `generate()`, `contractId()`. `schemas/horus.contract.schema.json` defines v1+v2 schemas. The CLI exposes `horus-cli.sh contract init|accept|verify|show|amend`. The decision engine enforces the contract at Steps 2–5–11 of the 11-step precedence matrix.
+**Resolution:** `runtime/contract.js` (496 LOC) implements the full contract lifecycle: `load()`, `verify()` (hash tamper check), `accept()`, `scopeMatch()`, `generate()`, `contractId()`. `schemas/horus.contract.schema.json` defines v1+v2 schemas. The CLI exposes `horus-cli.sh contract init|accept|verify|show|amend`. The decision engine enforces the contract at rungs 2, 5, and 11 of the 15-rung precedence matrix (see `ARCHITECTURE.md`).
 
 **Note:** The contract feature (v2 of the schema) is the architectural answer to W3. The UX (scan→analyze→present→approve→enforce three-mode flow) is Phase 3 of the master plan.
 
@@ -65,7 +65,7 @@ The five architectural pillars this rewrite plan addresses:
 
 Kill-switch fixtures in `tests/fixtures/kill-switch/` verify every hook.
 
-**Residual:** Stub adapters (clawcode, antegravity, codex) inherit the kill-switch check from `pretool-gate.js` via `runPreToolGateAndExit()`. Kill-switch fixtures for these stubs are deferred to Phase 2.
+**Residual:** Stub adapters (clawcode, antegravity, codex) inherit the kill-switch check from `pretool-gate.js` via `createAdapter()`. Kill-switch fixtures for these stubs are deferred to Phase 2.
 
 ---
 
@@ -137,7 +137,7 @@ Kill-switch fixtures in `tests/fixtures/kill-switch/` verify every hook.
 
 **Status: ✅ FIXED**
 
-**Resolution:** All adapters are thin shims into `runPreToolGateAndExit()` in `hook-utils.js`, which reads `HORUS_ENFORCE` and calls the runtime decision engine. Since the blocking/warning decision is made inside `pretool-gate.js` (not in the adapter), all adapters automatically inherit consistent enforce behavior. Cross-harness equivalence fixtures in `tests/fixtures/cross-harness/` and `tests/fixtures/openclaw/` and `tests/fixtures/opencode/` verify this.
+**Resolution:** All adapters are thin shims calling `createAdapter()` from `hook-utils.js`, which reads `HORUS_ENFORCE` and delegates to `runPreToolGate()` in `pretool-gate.js`. Since the blocking/warning decision is made inside `pretool-gate.js` (not in the adapter), all adapters automatically inherit consistent enforce behavior. Cross-harness equivalence fixtures in `tests/fixtures/cross-harness/` and `tests/fixtures/openclaw/` and `tests/fixtures/opencode/` verify this.
 
 ---
 

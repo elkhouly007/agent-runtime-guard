@@ -31,9 +31,9 @@ runtime/
 
 Adapters (thin, ~30–70 lines each):
 ```
-claude/hooks/dangerous-command-gate.js   → runPreToolGate({ harness:"claude", ... })
-openclaw/hooks/adapter.js                → runPreToolGate({ harness:"openclaw", ... })
-opencode/hooks/adapter.js                → runPreToolGate({ harness:"opencode", ... })
+claude/hooks/dangerous-command-gate.js   → createAdapter({ harness:"claude", ... })   (hook-utils.js)
+openclaw/hooks/adapter.js                → createAdapter({ harness:"openclaw", ... })  (hook-utils.js)
+opencode/hooks/adapter.js                → createAdapter({ harness:"opencode", ... })  (hook-utils.js)
 ```
 
 ## 2. Decision Flow — Section 4.6 Precedence Matrix
