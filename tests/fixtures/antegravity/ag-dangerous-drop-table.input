@@ -1,0 +1,1 @@
+{"tool_name":"Bash","tool_input":{"command":"sqlite3 /tmp/app.db 'DROP TABLE users;'"}}
