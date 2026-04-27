@@ -6,7 +6,33 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [3.1.0] — 2026-04-27 — Phase 2: Host Compatibility Layer + Phase 1 closure
+
+### Phase 2 — Host Compatibility Layer
+
+#### Added
+- `codex/hooks/adapter.js`: Best-effort PreToolUse adapter with confirmed payload shape `{tool_name, tool_input.command}` (primary) and `{tool, command, workdir}` Codex-native fallback. See root `WIRING_PLAN.md` for wiring steps.
+- `clawcode/hooks/adapter.js`: Best-effort PreToolUse adapter; assumed Claude Code hook API compat. See root `WIRING_PLAN.md`.
+- `antegravity/hooks/adapter.js`: Stub adapter using broadest-fallback extractors. API undocumented; included for completeness.
+- `tests/fixtures/codex/` (19 fixtures): Full safe / dangerous-warn / enforce-block / borderline coverage for the Codex adapter.
+- `tests/fixtures/clawcode/` (19 fixtures): Full safe / dangerous-warn / enforce-block / borderline coverage for the Claw Code adapter.
+- `tests/fixtures/antegravity/` (19 fixtures): Full safe / dangerous-warn / enforce-block / borderline coverage for the antegravity adapter.
+- `tests/fixtures/kill-switch/ks-codex-adapter.input`, `ks-clawcode-adapter.input`, `ks-antegravity-adapter.input`: Kill-switch fixtures; all three exit 2 under `HORUS_KILL_SWITCH=1 HORUS_ENFORCE=1`.
+- `WIRING_PLAN.md` (root): Step-by-step wiring for Codex (confirmed shape) and ClawCode (assumed Claude Code compat); explicit stub disclaimer for antegravity.
+- `COMPATIBILITY_NOTES.md` (root): 6-harness compatibility matrix documenting env vars, confirmed/assumed payload shapes, kill-switch verification status, and cross-harness equivalence.
+- `MASTER_PLAN.md §8 — Host Compatibility Matrix`: Filled in with per-harness adapter status, capability flags, confirmed hook payload shapes, and promotion path for best-effort adapters. Phase 2 deliverables marked ✅.
+
+#### Changed
+- `scripts/check-cross-harness-equivalence.sh`: Harness array extended from 3 to 6 hosts (`codex`, `clawcode`, `antegravity` added). FAIL debug output made generic (scales with harness count). Success message: `× 6 harnesses matched.`
+- `scripts/run-fixtures.sh`: Wired 3 new adapter fixture suites and 3 new kill-switch fixture checks.
+- `scripts/check-counts.sh`: `EXPECTED_FIXTURES` 183 → 243.
+- `README.md`: Fixture count 183 → 243.
+- `references/full-power-status.md`: Fixture count 183/183 → 243/243.
+- `VERSION`: 2.1.1 → 3.1.0.
+
+Fixture count after Phase 2: **243 fixture-based tests** (183 → 243; +60 Phase 2 adapter fixtures).
+
+---
 
 ### Phase 1 — Context isolation + fixture correctness
 
