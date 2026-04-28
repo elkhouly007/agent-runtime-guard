@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "ecc.contract.schema.json",
+  "$id": "horus.contract.schema.json",
   "title": "Agent Runtime Guard upfront security contract",
-  "description": "Schema for ecc.contract.json. Validated by runtime/config-validator.js. Hard floors (Section 4.5 of the v2.0 plan) are engine-baked and cannot be relaxed by this document. Version 2 adds optional validity windows, per-branch context trust overrides, and per-tool command allowlists.",
+  "description": "Schema for horus.contract.json. Validated by runtime/config-validator.js. Hard floors (Section 4.5 of the v2.0 plan) are engine-baked and cannot be relaxed by this document. Version 2 adds optional validity windows, per-branch context trust overrides, and per-tool command allowlists.",
   "type": "object",
   "required": ["version", "contractId", "revision", "acceptedAt", "harnessScope", "trustPosture", "scopes", "contractHash"],
   "properties": {
     "version":      { "type": "integer", "enum": [1, 2] },
-    "contractId":   { "type": "string",  "pattern": "^arg-[0-9]{8}-[0-9a-f]{12}$" },
+    "contractId":   { "type": "string",  "pattern": "^(hap|arg)-[0-9]{8}-[0-9a-f]{12}$" },
     "revision":     { "type": "integer", "minimum": 1 },
     "acceptedAt":   { "type": "string" },
     "acceptedBy":   { "type": "string" },

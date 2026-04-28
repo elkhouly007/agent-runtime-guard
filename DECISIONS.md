@@ -16,9 +16,9 @@ Trusted external prompts, agents, MCP, and browser tools are allowed when the ex
 
 `opencode/opencode.safe.jsonc` stays compact for now, but MCP, plugins, shell, and helper roles can be added later when each module is documented and classified against the approval policy.
 
-## D5: Hooks Warn First
+## D5: Hooks Have Two Modes: Warn (default) and Enforce (opt-in)
 
-The safe hooks print reminders and warnings. They echo input unchanged and do not enforce policy. This avoids surprising workflow breaks while still surfacing risk.
+Gate-class hooks (dangerous-command-gate, secret-warning, git-push-reminder) print reminders and echo stdin unchanged by default (`HORUS_ENFORCE=0`). When `HORUS_ENFORCE=1`, these hooks exit 2 to block the tool call. Informational hooks (session-start, session-end, quality-gate, strategic-compact, output-sanitizer) always exit 0 regardless of enforce mode. The two-mode design preserves a safe non-disruptive default while enabling active enforcement when the operator opts in via their harness config.
 
 ## D6: Installer Copies, It Does Not Configure
 
@@ -58,7 +58,7 @@ Decision output should include a compact explanation with action, risk, source, 
 
 ## D15: Runtime Policy Should Be Project-Aware
 
-Local learned policy is useful, but final runtime behavior should also honor per-project configuration. Trust posture, protected branch names, and sensitive path patterns belong in `ecc.config.json` so different repositories can operate under different safety assumptions without forking the runtime.
+Local learned policy is useful, but final runtime behavior should also honor per-project configuration. Trust posture, protected branch names, and sensitive path patterns belong in `horus.config.json` so different repositories can operate under different safety assumptions without forking the runtime.
 
 ## D16: Context Discovery Should Be Automatic Where Safe
 

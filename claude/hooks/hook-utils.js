@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// hook-utils.js — shared utilities for all ECC Safe-Plus hooks.
+// hook-utils.js — shared utilities for all Horus Agentic Power hooks.
 //
 // Usage in each hook:
 //   const { readStdin, commandFrom, collectText, ENFORCE, hookLog } = require("./hook-utils");
@@ -70,26 +70,26 @@ function collectText(value, depth = 0) {
 }
 
 /**
- * Whether ECC_ENFORCE=1 is set in the environment.
+ * Whether HORUS_ENFORCE=1 is set in the environment.
  * When true, hooks should exit with code 2 to block the tool call instead of just warning.
  */
-const ENFORCE = process.env.ECC_ENFORCE === "1";
+const ENFORCE = process.env.HORUS_ENFORCE === "1";
 
 /**
  * Append-only hook event log.
- * Only writes when ECC_HOOK_LOG=1 is set.
+ * Only writes when HORUS_HOOK_LOG=1 is set.
  *
  * Records METADATA ONLY — never payload content, commands, file paths, or secrets.
  * Fields: iso timestamp, hook name, event type, detection label.
  *
- * Log location: ~/.openclaw/ecc-safe-plus/hook-events.log
+ * Log location: ~/.horus/hook-events.log
  *
  * @param {string} hookName   — e.g. "dangerous-command-gate"
  * @param {string} eventType  — e.g. "WARN" | "BLOCK" | "PASS" | "SKIP"
  * @param {string} label      — short description e.g. "rm-rf" or "anthropic-key"
  */
 function hookLog(hookName, eventType, label) {
-  if (process.env.ECC_HOOK_LOG !== "1") return;
+  if (process.env.HORUS_HOOK_LOG !== "1") return;
 
   try {
     const eccDir  = statePaths.hookStateDir();
@@ -121,7 +121,7 @@ function hookLog(hookName, eventType, label) {
  * command — each hook runs in its own process.
  *
  * Solution: token-bucket rate limiter backed by a small JSON file in
- * ~/.openclaw/ecc-safe-plus/rate-<hookName>.json.
+ * ~/.horus/rate-<hookName>.json.
  *
  * The bucket refills at `refillRate` tokens per second; each call consumes one
  * token. If the bucket is empty the hook returns false immediately (caller
@@ -130,7 +130,7 @@ function hookLog(hookName, eventType, label) {
  * Default: 60 tokens, refill 30/s — allows short bursts while capping sustained
  * load to ~30 hook invocations per second per hook type.
  *
- * Set ECC_RATE_LIMIT=0 to disable rate limiting (e.g. in CI or tests).
+ * Set HORUS_RATE_LIMIT=0 to disable rate limiting (e.g. in CI or tests).
  *
  * @param {string} hookName    — used as the bucket file key, e.g. "dangerous-command-gate"
  * @param {number} capacity    — maximum token count (default: 60)
@@ -138,7 +138,7 @@ function hookLog(hookName, eventType, label) {
  * @returns {boolean}          — true = proceed, false = skip this invocation
  */
 function rateLimitCheck(hookName, capacity = 60, refillRate = 30) {
-  if (process.env.ECC_RATE_LIMIT === "0") return true;
+  if (process.env.HORUS_RATE_LIMIT === "0") return true;
 
   // KNOWN LIMITATION — TOCTOU race condition:
   //   Three PreToolUse hooks fire concurrently per Bash command. They all read

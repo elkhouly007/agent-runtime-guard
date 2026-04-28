@@ -20,13 +20,13 @@ It does not overwrite existing Claude Code user config or global files.
 
 Recommended project-local targets:
 
-- `tools/ecc-safe-plus/claude/AGENTS.md`
-- `tools/ecc-safe-plus/claude/hooks/`
-- `tools/ecc-safe-plus/claude/WIRING_PLAN.md`
-- `tools/ecc-safe-plus/claude/CLAUDE_POLICY_MAP.md`
-- `tools/ecc-safe-plus/claude/CLAUDE_APPLY_CHECKLIST.md`
-- `tools/ecc-safe-plus/claude/COMPATIBILITY_STRATEGY.md`
-- `tools/ecc-safe-plus/claude/examples/`
+- `tools/horus/claude/AGENTS.md`
+- `tools/horus/claude/hooks/`
+- `tools/horus/claude/WIRING_PLAN.md`
+- `tools/horus/claude/CLAUDE_POLICY_MAP.md`
+- `tools/horus/claude/CLAUDE_APPLY_CHECKLIST.md`
+- `tools/horus/claude/COMPATIBILITY_STRATEGY.md`
+- `tools/horus/claude/examples/`
 
 Potential future integration targets, only after explicit review:
 
@@ -66,8 +66,8 @@ Prefer project-local references and reviewed copied snippets over global mutatio
 
 If integration causes instability:
 
-1. remove the `tools/ecc-safe-plus/claude/` references from your project's `.claudecode/` or AGENTS files;
-2. delete the local `tools/ecc-safe-plus/claude/` directory;
+1. remove the `tools/horus/claude/` references from your project's `.claudecode/` or AGENTS files;
+2. delete the local `tools/horus/claude/` directory;
 3. revert any manual changes to your project-local Claude Code settings.
 
 ## Definition Of Done

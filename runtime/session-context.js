@@ -6,11 +6,10 @@ const os     = require("os");
 const path   = require("path");
 const crypto = require("crypto");
 const { emitEvent } = require("./telemetry");
+const { stateDir } = require("./state-paths");
 
 function paths() {
-  const baseDir = process.env.ECC_STATE_DIR
-    ? path.resolve(process.env.ECC_STATE_DIR)
-    : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
+  const baseDir = stateDir();
   return {
     baseDir,
     sessionFile: path.join(baseDir, "session-context.json"),
@@ -84,7 +83,7 @@ function loadState() {
 }
 
 function saveState(state) {
-  if (process.env.ECC_READONLY_CONTRACT === "1") { _stateCache = state; return; }
+  if (process.env.HORUS_READONLY_CONTRACT === "1") { _stateCache = state; return; }
   _stateCache = null;
   try {
     ensureBaseDir();
@@ -162,7 +161,7 @@ function recordDecision(entry = {}) {
 }
 
 function getSessionTrajectory() {
-  const windowMin   = Number(process.env.ECC_TRAJECTORY_WINDOW_MIN || "30");
+  const windowMin   = Number(process.env.HORUS_TRAJECTORY_WINDOW_MIN || "30");
   const state       = loadState();
   const recent      = sessionRecent(state);
   const windowStart = new Date(Date.now() - windowMin * 60 * 1000);

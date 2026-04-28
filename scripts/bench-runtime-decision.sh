@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # bench-runtime-decision.sh — Measure runtime.decide() latency over 1000 calls.
 # Prints p50/p95/p99 in ms and fails if p99 exceeds P99_CEILING_MS (default 5).
+#
+# BASELINE NOTE: The 1.5× regression guard compares against a stored baseline
+# that is keyed by platform AND node major version (e.g. win32-slowfs-v25).
+# Running with a different node on PATH will produce a fresh baseline rather
+# than a false regression. On Windows, ensure the correct node is on PATH:
+#   export PATH="/c/Users/Khouly/.lmstudio/.internal/utils:$PATH"
 set -eu
 
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -9,9 +15,9 @@ cleanup() { rm -rf "$workdir"; }
 trap cleanup EXIT
 
 # Default ceiling: 5ms on Linux (CI), 500ms on Windows (file-system overhead).
-# Override with ECC_BENCH_P99_MS=<n> to set explicitly.
-if [ -n "${ECC_BENCH_P99_MS:-}" ]; then
-  P99_CEILING_MS="$ECC_BENCH_P99_MS"
+# Override with HORUS_BENCH_P99_MS=<n> to set explicitly.
+if [ -n "${HORUS_BENCH_P99_MS:-}" ]; then
+  P99_CEILING_MS="$HORUS_BENCH_P99_MS"
 elif [ "${OS:-}" = "Windows_NT" ] || uname -s 2>/dev/null | grep -qiE 'mingw|msys|cygwin'; then
   P99_CEILING_MS=500
 elif uname -r 2>/dev/null | grep -qi 'microsoft' && pwd | grep -q '^/mnt/'; then
@@ -33,7 +39,7 @@ const root = process.argv[2];
 const workdir = process.argv[3];
 const p99Ceiling = Number(process.argv[4]);
 
-process.env.ECC_STATE_DIR = workdir;
+process.env.HORUS_STATE_DIR = workdir;
 const { decide } = require(path.join(root, 'runtime/decision-engine.js'));
 
 const inputs = [
@@ -66,8 +72,13 @@ const p95  = latencies[Math.floor(N * 0.95)];
 const p99  = latencies[Math.floor(N * 0.99)];
 
 const nodeVer = process.version;
+const nodeMajor = nodeVer.split(".")[0]; // e.g. "v25"
 const slowFs = process.argv[5] === "1";
-const platformKey = slowFs ? `${process.platform}-slowfs` : process.platform;
+// Include node major in the key so baselines from different node versions
+// don't trigger false regressions against each other.
+const platformKey = slowFs
+  ? `${process.platform}-slowfs-${nodeMajor}`
+  : `${process.platform}-${nodeMajor}`;
 
 // Split cold-cache (first 10) vs warm-cache reporting
 const coldLatencies = latencies.slice(0, 10).sort((a, b) => a - b);

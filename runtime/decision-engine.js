@@ -12,11 +12,12 @@ const { build } = require("./action-planner");
 const { evaluate } = require("./promotion-guidance");
 const { recommend } = require("./workflow-router");
 const { classifyCommand } = require("./decision-key");
+const { classifyIntent } = require("./intent-classifier");
 
-// Contract is loaded lazily — disabled only when ECC_CONTRACT_ENABLED=0
+// Contract is loaded lazily — disabled only when HORUS_CONTRACT_ENABLED=0
 let _contract = null;
 function getContract(projectRoot) {
-  if (process.env.ECC_CONTRACT_ENABLED === "0") return null;
+  if (process.env.HORUS_CONTRACT_ENABLED === "0") return null;
   if (_contract !== null) return _contract;
   try {
     const { load } = require("./contract");
@@ -75,7 +76,7 @@ function buildEarlyBlock(reasonCode, enriched, discovered, input, explanation) {
 }
 
 function decide(input = {}) {
-  if (process.env.ECC_KILL_SWITCH === "1") {
+  if (process.env.HORUS_KILL_SWITCH === "1") {
     return {
       action: "block",
       enforcementAction: "block",
@@ -116,6 +117,9 @@ function decide(input = {}) {
     sessionRisk: input.sessionRisk != null ? input.sessionRisk : getSessionRisk(),
   };
 
+  // Classify command intent for routing intelligence and journaling
+  const intentResult = classifyIntent(input.command || "");
+
   // ── Section 4.6 precedence matrix: contract verification (Steps 2 + 5) ──
   const contract    = getContract(discovered.projectRoot || process.cwd());
   const cmdClass    = classifyCommand(input.command || "");
@@ -126,7 +130,7 @@ function decide(input = {}) {
 
   if (contract) {
     // Step 2: contract-hash-mismatch in strict mode — block
-    if (process.env.ECC_CONTRACT_REQUIRED === "1") {
+    if (process.env.HORUS_CONTRACT_REQUIRED === "1") {
       try {
         const { verify } = require("./contract");
         const vResult = verify(discovered.projectRoot || process.cwd());
@@ -147,10 +151,10 @@ function decide(input = {}) {
 
     // Step 5: strict-mode + gated class + no contract coverage → block
     const harness = String(input.harness || enriched.harness || "");
-    if (process.env.ECC_CONTRACT_REQUIRED === "1" && harness && !harnessInScope(contract, harness)) {
+    if (process.env.HORUS_CONTRACT_REQUIRED === "1" && harness && !harnessInScope(contract, harness)) {
       if (isGated) {
         return buildEarlyBlock("harness-out-of-scope", enriched, discovered, input,
-          `harness '${harness}' not in contract harnessScope — run: ecc-cli contract amend --add-harness ${harness}`);
+          `harness '${harness}' not in contract harnessScope — run: horus-cli contract amend --add-harness ${harness}`);
       }
     }
 
@@ -168,10 +172,10 @@ function decide(input = {}) {
         contractReason = sm.reason;
       }
     } catch { /* scopeMatch error → contractAllow stays false */ }
-  } else if (process.env.ECC_CONTRACT_REQUIRED === "1" && isGated) {
+  } else if (process.env.HORUS_CONTRACT_REQUIRED === "1" && isGated) {
     // No contract + strict mode + gated class → block
     return buildEarlyBlock("no-contract-strict", enriched, discovered, input,
-      "no accepted contract — run: ecc-cli contract init && ecc-cli contract accept");
+      "no accepted contract — run: horus-cli contract init && horus-cli contract accept");
   }
 
   const learnedAllow = isLearnedAllowed(enriched);
@@ -216,9 +220,15 @@ function decide(input = {}) {
     floorFired = floorFired || "session-risk-floor";
   }
 
-  // Step 11: contract-allow — demotes baseline only; never demotes a floor.
-  // B4: also protects require-review (protected-branch floor) from demotion.
-  if (contractAllow && risk.level !== "critical" && action !== "block" && action !== "escalate" && action !== "require-review") {
+  // Step 11: contract-allow — demotes baseline only; never demotes hard floors.
+  // B4: protects require-review (protected-branch floor) from demotion.
+  // W11: tool-allow reason permits escalate demotion (explicit per-tool pre-approval).
+  const canDemoteEscalate = contractAllow && contractReason === "tool-allow-matched";
+  if (contractAllow &&
+      risk.level !== "critical" &&
+      action !== "block" &&
+      action !== "require-review" &&
+      (action !== "escalate" || canDemoteEscalate)) {
     action = "allow";
     source = "contract-allow";
   }
@@ -230,7 +240,7 @@ function decide(input = {}) {
   }
 
   const trajectory = getSessionTrajectory();
-  const trajectoryThreshold = Number(process.env.ECC_TRAJECTORY_THRESHOLD || "3");
+  const trajectoryThreshold = Number(process.env.HORUS_TRAJECTORY_THRESHOLD || "3");
   let trajectoryNudge = null;
   if (source !== "learned-allow" && source !== "auto-allow-once" && source !== "contract-allow" && trajectory.recentEscalations >= trajectoryThreshold) {
     if (action === "allow") { action = "route"; trajectoryNudge = "allow\u2192route"; }
@@ -256,6 +266,7 @@ function decide(input = {}) {
   if (discovered.primaryStack) explanationParts.push(`stack=${discovered.primaryStack}`);
   if (discovered.hasConfig === false && discovered.primaryStack) explanationParts.push('config=missing');
   if (projectPolicy.trustPosture) explanationParts.push(`trust=${projectPolicy.trustPosture}`);
+  if (intentResult.intent !== "unknown") explanationParts.push(`intent=${intentResult.intent}`);
 
   const actionPlan = build(action, enriched, risk, discovered, policyFacts);
   const promotionGuidance = evaluate(policyFacts, risk);
@@ -303,6 +314,7 @@ function decide(input = {}) {
     workflowRoute,
     actionPlan,
     trajectoryNudge,
+    intent: intentResult.intent,
     context: risk.context,
   };
 
@@ -313,6 +325,7 @@ function decide(input = {}) {
     riskScore: result.riskScore,
     reasonCodes: result.reasonCodes,
     tool: input.tool || "",
+    intent: intentResult.intent,
     branch: input.branch || "",
     targetPath: input.targetPath || "",
     notes: `${source}${input.notes ? ` | ${input.notes}` : ""}`,

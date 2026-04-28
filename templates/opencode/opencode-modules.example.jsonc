@@ -2,11 +2,11 @@
   // Example project-local OpenCode config that references reviewed Safe-Plus capability packs.
   "default_agent": "builder",
   "instructions": [
-    "tools/ecc-safe-plus/claude/AGENTS.md",
-    "tools/ecc-safe-plus/opencode/prompts/planner.md",
-    "tools/ecc-safe-plus/opencode/prompts/code-review.md",
-    "tools/ecc-safe-plus/opencode/prompts/security-review.md",
-    "tools/ecc-safe-plus/opencode/prompts/build-fix.md"
+    "tools/horus/claude/AGENTS.md",
+    "tools/horus/opencode/prompts/planner.md",
+    "tools/horus/opencode/prompts/code-review.md",
+    "tools/horus/opencode/prompts/security-review.md",
+    "tools/horus/opencode/prompts/build-fix.md"
   ],
   "permission": {
     "read": "ask",
@@ -15,8 +15,8 @@
     "bash": "ask"
   },
   "notes": {
-    "mcp_registry": "tools/ecc-safe-plus/modules/mcp-pack/registry.json",
-    "wrapper_registry": "tools/ecc-safe-plus/modules/wrapper-pack/registry.json",
-    "plugin_registry": "tools/ecc-safe-plus/modules/plugin-pack/registry.json"
+    "mcp_registry": "tools/horus/modules/mcp-pack/registry.json",
+    "wrapper_registry": "tools/horus/modules/wrapper-pack/registry.json",
+    "plugin_registry": "tools/horus/modules/plugin-pack/registry.json"
   }
 }

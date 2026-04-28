@@ -6,7 +6,7 @@ Status: **planned, not implemented**
 
 - Whether Claw Code exposes a PreToolUse / PostToolUse hook event model compatible with Agent Runtime Guard hooks
 - Whether hook scripts are invoked as Node.js processes, shell commands, or some other mechanism
-- Whether `ECC_ENFORCE=1` exit-code-2 blocking is honored
+- Whether `HORUS_ENFORCE=1` exit-code-2 blocking is honored
 - How stdin payload format compares to Claude Code's JSON shape
 - Whether `settings.json` wiring is the correct entry point
 
@@ -17,7 +17,7 @@ None. This stub makes no assumptions about the Claw Code API.
 ## Deferred Decisions
 
 - Trust posture defaults for Claw Code sessions
-- Whether Claw Code sessions use the same `ecc.config.json` runtime config or a separate file
+- Whether Claw Code sessions use the same `horus.config.json` runtime config or a separate file
 - Rate-limiting behavior under Claw Code invocation patterns
 
 ## Path to Support

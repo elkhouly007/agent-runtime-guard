@@ -14,7 +14,7 @@ Agent Runtime Guard currently includes:
 - **82 rule files** covering 12 language directories plus common, database, infrastructure, and web domains;
 - **22 skills** for ARG debug, policy tuning, capability auditing, code analysis, orchestration design, and more;
 - 20 approval-boundary scenarios and 14 prompt-injection scenarios;
-- executable fixture coverage with **179/179 passing**;
+- executable fixture coverage with **183/183 passing**;
 - clean verification across audit, smoke, payload protection, fixtures, integration smoke, installation/profile checks, config/settings integration checks, apply-status validation, executable hygiene, setup-wizard edge cases, per-tool wiring-doc coverage, unified status-artifact checks, policy-lint, sensitive-data-detection, and superiority-evidence checks.
 
 ## Verification Snapshot
@@ -25,7 +25,7 @@ Current verified state:
 - `audit-examples.sh` — passing
 - `check-registries.sh` — passing
 - `check-scenarios.sh` — passing
-- `run-fixtures.sh` — passing (179/179)
+- `run-fixtures.sh` — passing (183/183)
 - `test-payload-protection.sh` — passing
 - `check-integration-smoke.sh` — passing
 - `smoke-test.sh` — passing
@@ -63,7 +63,7 @@ Current verified state:
 - **Sprint R2, Runtime autonomy follow-on / policy lifecycle auditability**: complete
 - Delivered emphasis: adaptive action plans, explicit promotion flows, reviewed-default lifecycle visibility, lifecycle timing, and audit-friendly runtime history
 - **Sprint R3, Routing and workflow fidelity**: CLOSED
-- Sprint R3 delivered: `payloadClass` and `sessionRisk` flow through the hook path at full fidelity; `escalate` action has a dedicated human-gated workflow lane; one-time opt-in auto-allow (eligible-gated, single-use); session-trajectory-driven routing nudges actions up after repeated escalations (threshold/window env-tunable); `ECC_KILL_SWITCH=1` emergency block.
+- Sprint R3 delivered: `payloadClass` and `sessionRisk` flow through the hook path at full fidelity; `escalate` action has a dedicated human-gated workflow lane; one-time opt-in auto-allow (eligible-gated, single-use); session-trajectory-driven routing nudges actions up after repeated escalations (threshold/window env-tunable); `HORUS_KILL_SWITCH=1` emergency block.
 
 ## Runtime Performance
 
@@ -87,7 +87,7 @@ All content in Agent Runtime Guard is original — written specifically for the 
 
 The correct current description is:
 
-> **Agent Runtime Guard is a purpose-built, all-original agentic policy and amplification framework with a verified runtime decisioning layer, comprehensive rule coverage across 12 languages, and 179 passing integration fixtures.**
+> **Agent Runtime Guard is a purpose-built, all-original agentic policy and amplification framework with a verified runtime decisioning layer, comprehensive rule coverage across 12 languages, and 183 passing integration fixtures.**
 
 ## v1.0.x Runtime Sprint Highlights
 
@@ -101,5 +101,5 @@ The runtime sprint (R1–R3, now closed) delivered:
 6. promoted and dismissed default tracking with audit timestamps,
 7. lifecycle timing output (`created-at`, `eligible-at`, accepted/dismissed, `last-approved-at`),
 8. compact lifecycle summaries in `runtime explain`,
-9. `ECC_KILL_SWITCH=1` emergency block; `auto-allow-once` single-use eligibility-gated grants; session-trajectory-driven routing nudges,
-10. clean verification across `check-runtime-core.sh`, `check-runtime-cli.sh`, and the full `ecc-cli.sh check` path.
+9. `HORUS_KILL_SWITCH=1` emergency block; `auto-allow-once` single-use eligibility-gated grants; session-trajectory-driven routing nudges,
+10. clean verification across `check-runtime-core.sh`, `check-runtime-cli.sh`, and the full `horus-cli.sh check` path.

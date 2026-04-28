@@ -5,7 +5,7 @@
 // possible fallback chain to cover likely input shapes. Test against your
 // actual Claw Code hook payload before relying on this in production.
 //
-// To enable block mode: export ECC_ENFORCE=1
+// To enable block mode: export HORUS_ENFORCE=1
 
 "use strict";
 

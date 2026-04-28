@@ -7,16 +7,17 @@ Agent Runtime Guard is a runtime decision spine and amplification surface. ECC (
 | Module | Path | Default | Purpose |
 | --- | --- | --- | --- |
 | Claude local instructions | `claude/AGENTS.md` | enabled by copying | Local-first agent operating rules. |
-| Secret warning hook | `claude/hooks/secret-warning.js` | optional local hook (PreToolUse) | Scans prompt JSON for 23 secret patterns (API keys, tokens, JWTs, etc.). Blocks in `ECC_ENFORCE=1`. |
-| Dangerous command gate | `claude/hooks/dangerous-command-gate.js` | optional local hook (PreToolUse Bash) | Blocks/warns on 21 dangerous shell patterns: rm -rf, force-push, curl\|sh, DROP TABLE, prompt injection, etc. Highest-severity match wins. Blocks in `ECC_ENFORCE=1`. |
+| Secret warning hook | `claude/hooks/secret-warning.js` | optional local hook (PreToolUse) | Scans prompt JSON for 23 secret patterns (API keys, tokens, JWTs, etc.). Blocks in `HORUS_ENFORCE=1`. |
+| Dangerous command gate | `claude/hooks/dangerous-command-gate.js` | optional local hook (PreToolUse Bash) | Blocks/warns on 21 dangerous shell patterns: rm -rf, force-push, curl\|sh, DROP TABLE, prompt injection, etc. Highest-severity match wins. Blocks in `HORUS_ENFORCE=1`. |
 | Build reminder hook | `claude/hooks/build-reminder.js` | optional local hook (PreToolUse Bash) | Reminds the user to review build/test output before continuing. |
-| Git push reminder hook | `claude/hooks/git-push-reminder.js` | optional local hook (PreToolUse Bash) | Reminds before push; blocks force-push in `ECC_ENFORCE=1`. |
+| Git push reminder hook | `claude/hooks/git-push-reminder.js` | optional local hook (PreToolUse Bash) | Reminds before push; blocks force-push in `HORUS_ENFORCE=1`. |
 | Quality gate hook | `claude/hooks/quality-gate.js` | optional local hook (PostToolUse Edit/Write) | Suggests linter/test commands after file edits based on file extension. |
 | Session start hook | `claude/hooks/session-start.js` | optional local hook (SessionStart) | Loads instinct store, shows pending review count. |
 | Session end hook | `claude/hooks/session-end.js` | optional local hook (Stop) | Captures session metadata to instinct store for future sessions. |
 | Strategic compact hook | `claude/hooks/strategic-compact.js` | optional local hook (PostToolUse) | Suggests /compact when context window may be filling. |
 | Memory load hook | `claude/hooks/memory-load.js` | optional local hook (SessionStart) | Loads project memory context at session start. |
 | PR notifier hook | `claude/hooks/pr-notifier.js` | optional local hook (PostToolUse) | Notifies after PR-related actions. |
+| Output sanitizer hook | `claude/hooks/output-sanitizer.js` | optional local hook (PostToolUse) | Scans tool output for secrets before they propagate into context. Warns to stderr (PostToolUse cannot block). Uses the same 23-pattern set as `secret-warning.js`. |
 | Hook utilities | `claude/hooks/hook-utils.js` | shared library | readStdin (5 MB cap), commandFrom, collectText, hookLog, rateLimitCheck, classifyCommandPayload, classifyPathSensitivity (advisory, feeds risk-score), readSessionRisk. Used by all hooks. |
 | Instinct utilities | `claude/hooks/instinct-utils.js` | shared library | Instinct store read/write/prune/TTL management for session-start and session-end hooks. |
 | Dangerous patterns config | `claude/hooks/dangerous-patterns.json` | config | 21 extensible patterns with severity (critical/high/medium) for dangerous-command-gate. |
@@ -82,18 +83,30 @@ Agent Runtime Guard is a runtime decision spine and amplification surface. ECC (
 | Module | Path | Purpose |
 | --- | --- | --- |
 | Runtime entry point | `runtime/index.js` | Re-exports all runtime module functions as a flat namespace. Required by hooks via `require("../../../runtime")`. |
-| Decision engine | `runtime/decision-engine.js` | Core `decide(input)` function — scores risk, checks learned policy and auto-allow-once, applies trajectory nudge, returns action/explanation/workflow-route. `ECC_KILL_SWITCH=1` returns block immediately. |
+| Decision engine | `runtime/decision-engine.js` | Core `decide(input)` function — scores risk, checks learned policy and auto-allow-once, applies trajectory nudge, returns action/explanation/workflow-route. `HORUS_KILL_SWITCH=1` returns block immediately. |
+| Intent classifier | `runtime/intent-classifier.js` | Maps shell commands to 8 intents (explore/build/deploy/modify/configure/cleanup/debug/unknown) using pure pattern matching. Zero I/O, zero deps. |
+| Route resolver | `runtime/route-resolver.js` | Maps intents to routing lanes (direct/verification/review) via a static table with per-project override support. |
 | Risk scorer | `runtime/risk-score.js` | Computes 0–10 risk score from command patterns, path sensitivity, payload class, branch, session risk, and trust posture. |
-| Policy store | `runtime/policy-store.js` | Learned local allows, approval counts, pending suggestions, and auto-allow-once tokens. Persists to `~/.openclaw/agent-runtime-guard/learned-policy.json` (overridable via `ECC_STATE_DIR`). |
+| Policy store | `runtime/policy-store.js` | Learned local allows, approval counts, pending suggestions, and auto-allow-once tokens. Persists to `~/.horus/learned-policy.json` (overridable via `HORUS_STATE_DIR`). |
 | Session context | `runtime/session-context.js` | Rolling per-session decision history (last 12 entries). Powers `getSessionRisk()` and `getSessionTrajectory()`. State file mode 0600. |
-| Decision journal | `runtime/decision-journal.js` | Append-only JSONL audit log at `~/.openclaw/agent-runtime-guard/decision-journal.jsonl`. Mode 0600. Set `ECC_DECISION_JOURNAL=0` to disable writes (`ARG_DECISION_JOURNAL=0` is a deprecated alias). |
+| Decision journal | `runtime/decision-journal.js` | Append-only JSONL audit log at `~/.horus/decision-journal.jsonl`. Mode 0600. Set `HORUS_DECISION_JOURNAL=0` to disable writes (`ARG_DECISION_JOURNAL=0` is a deprecated alias). |
 | Workflow router | `runtime/workflow-router.js` | Maps action → lane/surface/target/command for checks, review, setup, payload, wiring, escalation, and direct paths. |
 | Action planner | `runtime/action-planner.js` | Builds structured action plans (commands, review types, modification hints) attached to each decision. |
 | Promotion guidance | `runtime/promotion-guidance.js` | Lifecycle-aware guidance (new → approaching → eligible → promoted/dismissed) with concrete CLI hints. |
-| Project policy | `runtime/project-policy.js` | Loads per-project `ecc.config.json` for trust posture, protected branches, sensitive path patterns, and project scope. |
+| Project policy | `runtime/project-policy.js` | Loads per-project `horus.config.json` for trust posture, protected branches, sensitive path patterns, and project scope. |
 | Context discovery | `runtime/context-discovery.js` | Auto-detects project root, git branch, primary stack, and config presence from filesystem. |
+| Contract | `runtime/contract.js` | Full contract lifecycle: `load`, `verify` (hash tamper check), `accept`, `generate`, `scopeMatch`, `harnessInScope`, `newContractId`. Enforced at Steps 2–5–11 of the decision engine. |
+| Pre-tool gate | `runtime/pretool-gate.js` | Single enforcement spine called by all host adapters. Reads HORUS_ENFORCE, delegates to decision engine, exits 0 (allow/warn) or 2 (block). |
+| State paths | `runtime/state-paths.js` | Single source of truth for runtime storage locations. `stateDir()` → `HORUS_STATE_DIR` override or `~/.horus`. Also exports `hookStateDir()` and `instinctDir()`. |
+| Config validator | `runtime/config-validator.js` | JSON schema validator for `horus.config.json` and `horus.contract.json`. Validates types, required fields, enum values, and pattern constraints. |
+| Decision key | `runtime/decision-key.js` | `fineKey(command)` → SHA-256 hash (full command string, precise match). `legacyKey(command)` → coarse class (backward-compatible). Policy store uses `fineKey`. |
+| Secret scan | `runtime/secret-scan.js` | Cross-harness secret scanner with 23 built-in patterns. Called by `pretool-gate.js` before the decision step so all adapters get secret scanning. |
+| Glob match | `runtime/glob-match.js` | Zero-dependency glob pattern matcher. Powers scope matching (`readAllow`, `writeAllow`, path glob rules). Supports `**`, `*`, `?`. |
+| Arg extractor | `runtime/arg-extractor.js` | Minimal argv splitter for scope matching. Extracts positional paths and flags from shell command strings. |
+| Canonical JSON | `runtime/canonical-json.js` | Deterministic JSON stringify for contract hashing. Keys sorted recursively; used by `contract.js` to produce stable SHA-256 hashes. |
+| Telemetry | `runtime/telemetry.js` | Lightweight append-only internal event log at `<stateDir>/telemetry.jsonl`. Records corruption and state-migration events only — never payload content, commands, or secrets. Disabled via `HORUS_TELEMETRY=0`. |
 
-All runtime modules write only to `ECC_STATE_DIR` (or `~/.openclaw/agent-runtime-guard/`). No network access. No package manager invocations. State files are created with mode 0700 directories and 0600 files.
+All runtime modules write only to `HORUS_STATE_DIR` (or `~/.horus/`). No network access. No package manager invocations. State files are created with mode 0700 directories and 0600 files.
 
 ## Upstream Adoption Model
 

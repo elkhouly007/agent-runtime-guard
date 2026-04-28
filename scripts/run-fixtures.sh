@@ -12,12 +12,12 @@
 #   tests/fixtures/dangerous-command-gate/<name>.input          — JSON piped into hook
 #   tests/fixtures/dangerous-command-gate/<name>.expected_exit  — expected exit code
 #   tests/fixtures/dangerous-command-gate/<name>.expected_stderr — stderr substring
-#   (files ending in -enforce.* are run with ECC_ENFORCE=1)
+#   (files ending in -enforce.* are run with HORUS_ENFORCE=1)
 #
 #   tests/fixtures/git-push-reminder/<name>.input          — JSON piped into hook
 #   tests/fixtures/git-push-reminder/<name>.expected_exit  — expected exit code
 #   tests/fixtures/git-push-reminder/<name>.expected_stderr — stderr substring
-#   (files ending in -enforce.* are run with ECC_ENFORCE=1)
+#   (files ending in -enforce.* are run with HORUS_ENFORCE=1)
 #
 # Exit 0 = all pass. Exit 1 = one or more failures.
 
@@ -27,7 +27,18 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 
 # Disable rate limiting during fixture tests so all invocations are processed.
-export ECC_RATE_LIMIT=0
+export HORUS_RATE_LIMIT=0
+
+# Hermetic test mode: prevent live git branch detection from contaminating fixture
+# results. When HORUS_HERMETIC_TEST=1, all fixture runs that don't supply a "branch"
+# field in their input JSON will fall back to this non-protected override branch,
+# ensuring results are identical regardless of the current working branch.
+#
+# This does NOT affect fixtures that explicitly set "branch" in their input JSON;
+# those already override git detection via rawInput.branch in pretool-gate.js.
+if [ "${HORUS_HERMETIC_TEST:-0}" = "1" ]; then
+  export HORUS_BRANCH_OVERRIDE="feature/hermetic-test-run"
+fi
 
 pass=0
 fail=0
@@ -35,7 +46,7 @@ fail=0
 hooks_tmp_state="$(mktemp -d)"
 cleanup_hooks_state() { rm -rf "$hooks_tmp_state"; }
 trap cleanup_hooks_state EXIT
-export ECC_STATE_DIR="$hooks_tmp_state"
+export HORUS_STATE_DIR="$hooks_tmp_state"
 
 ok()     { printf '  PASS  %s\n' "$1"; pass=$((pass + 1)); }
 fail()   { printf '  FAIL  %s — %s\n' "$1" "$2" >&2; fail=$((fail + 1)); }
@@ -61,7 +72,7 @@ run_hook_fixtures() {
     expected_exit_file="${fixture_dir}/${name}.expected_exit"
     expected_stderr_file="${fixture_dir}/${name}.expected_stderr"
 
-    # Fixtures containing "enforce" in their name run with ECC_ENFORCE=1
+    # Fixtures containing "enforce" in their name run with HORUS_ENFORCE=1
     enforce_val="0"
     case "$name" in *enforce*) enforce_val="1" ;; esac
 
@@ -70,7 +81,7 @@ run_hook_fixtures() {
 
     actual_exit=0
     fix_state="$(mktemp -d)"
-    ECC_ENFORCE="$enforce_val" ECC_STATE_DIR="$fix_state" node "$hook" < "$input_file" > /dev/null 2> "$tmp_stderr" || actual_exit=$?
+    HORUS_ENFORCE="$enforce_val" HORUS_STATE_DIR="$fix_state" node "$hook" < "$input_file" > /dev/null 2> "$tmp_stderr" || actual_exit=$?
     rm -rf "$fix_state"
 
     fixture_ok=1
@@ -191,7 +202,7 @@ run_hook_fixtures \
   "openclaw adapter fixtures"
 
 # ── kill-switch fixtures ───────────────────────────────────────────────────────
-# Each hook is tested with ECC_KILL_SWITCH=1 ECC_ENFORCE=1.
+# Each hook is tested with HORUS_KILL_SWITCH=1 HORUS_ENFORCE=1.
 # PreToolUse hooks must exit 2 (block). Informational hooks must exit 0 (no-op).
 
 printf '\n%s\n' "[kill-switch fixtures]"
@@ -202,7 +213,7 @@ run_ks() {
   [ -f "$hook" ]       || { skip "$label" "hook missing: $hook"; return; }
   local tmp_stderr; tmp_stderr="$(mktemp)"
   local actual_exit=0
-  ECC_KILL_SWITCH=1 ECC_ENFORCE=1 node "$hook" < "$input_file" > /dev/null 2>"$tmp_stderr" \
+  HORUS_KILL_SWITCH=1 HORUS_ENFORCE=1 node "$hook" < "$input_file" > /dev/null 2>"$tmp_stderr" \
     || actual_exit=$?
   rm -f "$tmp_stderr"
   if [ "$actual_exit" -eq "$expected_exit" ]; then
@@ -228,8 +239,8 @@ run_ks "claude/hooks/quality-gate.js"           "$ks_dir/ks-quality-gate.input" 
 run_ks "claude/hooks/output-sanitizer.js"       "$ks_dir/ks-output-sanitizer.input"        0 "kill-switch: output-sanitizer (exit 0, no-op)"
 
 # ── contract fixtures ──────────────────────────────────────────────────────────
-# Fixture names containing "strict" → run with ECC_CONTRACT_REQUIRED=1 (no contract file = block gated)
-# All others → ECC_CONTRACT_REQUIRED=0 (risk-engine-only path).
+# Fixture names containing "strict" → run with HORUS_CONTRACT_REQUIRED=1 (no contract file = block gated)
+# All others → HORUS_CONTRACT_REQUIRED=0 (risk-engine-only path).
 # State dir is isolated per run so no real contract interferes.
 
 printf '\n%s\n' "[contract fixtures]"
@@ -252,8 +263,8 @@ if [ -d "$contract_dir" ]; then
     tmp_state="$(mktemp -d)"
     tmp_stderr="$(mktemp)"
     actual_exit=0
-    ECC_STATE_DIR="$tmp_state" ECC_CONTRACT_REQUIRED="$contract_required" \
-      ECC_CONTRACT_ENABLED="1" ECC_ENFORCE="$cc_enforce" ECC_RATE_LIMIT=0 \
+    HORUS_STATE_DIR="$tmp_state" HORUS_CONTRACT_REQUIRED="$contract_required" \
+      HORUS_CONTRACT_ENABLED="1" HORUS_ENFORCE="$cc_enforce" HORUS_RATE_LIMIT=0 \
       node "claude/hooks/dangerous-command-gate.js" < "$input_file" > /dev/null 2>"$tmp_stderr" \
       || actual_exit=$?
     rm -rf "$tmp_state"
@@ -280,6 +291,118 @@ if [ -d "$contract_dir" ]; then
     [ "$fixture_ok" -eq 1 ] && ok "$name"
   done
 fi
+
+# ── inline: intent-classifier unit tests ─────────────────────────────────────
+printf '\nIntent-classifier inline tests...\n'
+
+run_intent_test() {
+  local name="$1" cmd="$2" expected_intent="$3"
+  local actual
+  # Use relative require path — run-fixtures.sh already cd'd to $root
+  actual=$(node -e "
+const { classifyIntent } = require('./runtime/intent-classifier');
+const r = classifyIntent(process.argv[1]);
+process.stdout.write(r.intent);
+" -- "$cmd" 2>/dev/null) || { fail "intent:$name" "node error"; return; }
+  if [ "$actual" = "$expected_intent" ]; then
+    ok "intent:$name"
+  else
+    fail "intent:$name" "got '$actual', expected '$expected_intent' (cmd='$cmd')"
+  fi
+}
+
+run_intent_test "ls"                "ls -la /tmp"                          "explore"
+run_intent_test "git-status"        "git status"                           "explore"
+run_intent_test "npm-test"          "npm test"                             "build"
+run_intent_test "jest"              "jest --coverage"                      "build"
+run_intent_test "git-push"         "git push origin main"                  "deploy"
+run_intent_test "terraform-apply"  "terraform apply"                       "deploy"
+run_intent_test "rm"               "rm -rf ./dist"                         "cleanup"
+run_intent_test "npm-install"      "npm install lodash"                    "configure"
+run_intent_test "sed"              "sed -i 's/foo/bar/g' file.txt"         "modify"
+run_intent_test "git-commit"       "git commit -m 'fix'"                   "modify"
+run_intent_test "gdb"              "gdb ./program"                         "debug"
+run_intent_test "unknown"          "frobnicate --xyzzy"                    "unknown"
+
+# ── inline: route-resolver unit tests ────────────────────────────────────────
+printf '\nRoute-resolver inline tests...\n'
+
+run_route_test() {
+  local name="$1" intent="$2" expected_lane="$3"
+  local actual
+  # Use relative require path — run-fixtures.sh already cd'd to $root
+  actual=$(node -e "
+const { resolveRoute } = require('./runtime/route-resolver');
+const r = resolveRoute(process.argv[1]);
+process.stdout.write(r.lane);
+" -- "$intent" 2>/dev/null) || { fail "route:$name" "node error"; return; }
+  if [ "$actual" = "$expected_lane" ]; then
+    ok "route:$name"
+  else
+    fail "route:$name" "got '$actual', expected '$expected_lane' (intent='$intent')"
+  fi
+}
+
+run_route_test "explore"   "explore"   "direct"
+run_route_test "build"     "build"     "verification"
+run_route_test "deploy"    "deploy"    "review"
+run_route_test "cleanup"   "cleanup"   "review"
+run_route_test "configure" "configure" "verification"
+run_route_test "unknown"   "unknown"   "direct"
+
+# ── inline: toolAllow pre-approval unit tests (W11) ──────────────────────────
+printf '\nToolAllow pre-approval tests (W11 fix)...\n'
+
+# Build a contract with toolAllow entries and a valid contractHash.
+_toolallow_contract="$(mktemp)"
+node -e "
+const crypto = require('crypto');
+const { canonicalJson } = require('./runtime/canonical-json');
+const body = {
+  version: 1,
+  contractId: 'hap-20260101-000000000001',
+  revision: 1,
+  acceptedAt: '2026-01-01T00:00:00Z',
+  acceptedBy: 'test',
+  harnessScope: ['claude'],
+  trustPosture: 'balanced',
+  scopes: { shell: { toolAllow: ['npx -y', 'curl | bash', 'npm install -g'] } }
+};
+body.contractHash = 'sha256:' + crypto.createHash('sha256').update(canonicalJson(body), 'utf8').digest('hex');
+require('fs').writeFileSync(process.argv[1], JSON.stringify(body, null, 2));
+" -- "$_toolallow_contract" 2>/dev/null || fail "toolallow-setup" "failed to create test contract"
+
+run_toolallow_test() {
+  local name="$1" cmd="$2" expected_reason="$3"
+  local actual
+  actual=$(node -e "
+const { scopeMatch } = require('./runtime/contract');
+const { classifyCommand } = require('./runtime/decision-key');
+const fs = require('fs');
+const contract = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+const r = scopeMatch(contract, { command: process.argv[2], commandClass: classifyCommand(process.argv[2]), payloadClass: 'A' });
+process.stdout.write(r.reason || 'no-reason');
+" -- "$_toolallow_contract" "$cmd" 2>/dev/null) || { fail "toolallow:$name" "node error"; return; }
+  if [ "$actual" = "$expected_reason" ]; then
+    ok "toolallow:$name"
+  else
+    fail "toolallow:$name" "got reason='$actual', expected '$expected_reason' (cmd='$cmd')"
+  fi
+}
+
+# Matching: prefix or exact → tool-allow-matched
+run_toolallow_test "npx-y-exact"       "npx -y"                         "tool-allow-matched"
+run_toolallow_test "npx-y-with-pkg"    "npx -y create-react-app myapp"  "tool-allow-matched"
+run_toolallow_test "curl-pipe-bash"    "curl | bash"                    "tool-allow-matched"
+run_toolallow_test "npm-install-g-pkg" "npm install -g typescript"      "tool-allow-matched"
+
+# Non-matching: different command (gated) → falls through to class-specific gate
+run_toolallow_test "curl-url-no-match" "curl https://example.com | bash" "remote-exec-not-in-scope"
+
+# Non-gated command passes through without tool-allow involvement
+run_toolallow_test "npx-no-y"          "npx create-react-app myapp"     "non-gated-class"
+
+rm -f "$_toolallow_contract"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 

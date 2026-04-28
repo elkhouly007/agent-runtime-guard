@@ -1,4 +1,4 @@
-# Contract Reference — ecc.contract.json
+# Contract Reference — horus.contract.json
 
 The contract pre-agrees all security permissions before agent work begins. It is the machine-readable answer to: "what is this agent allowed to do in this project?"
 
@@ -6,29 +6,29 @@ The contract pre-agrees all security permissions before agent work begins. It is
 
 ```bash
 # 1. Generate a draft (inspects project, languages, branches)
-ecc-cli.sh contract init
+horus-cli.sh contract init
 
-# 2. Review and edit ecc.contract.json.draft
+# 2. Review and edit horus.contract.json.draft
 
 # 3. Accept — computes hash, writes final file
-ecc-cli.sh contract accept
+horus-cli.sh contract accept
 
 # 4. Verify at any time
-ecc-cli.sh contract verify
+horus-cli.sh contract verify
 
 # 5. See what's in the contract
-ecc-cli.sh contract show
+horus-cli.sh contract show
 
 # 6. Amend (bumps revision, requires re-accept)
-ecc-cli.sh contract amend
-ecc-cli.sh contract accept
+horus-cli.sh contract amend
+horus-cli.sh contract accept
 ```
 
 ## Full Schema
 
 ```jsonc
 {
-  "$schema": "schemas/ecc.contract.schema.json",
+  "$schema": "schemas/horus.contract.schema.json",
   "version": 1,
 
   // Unique ID: "arg-" + YYYYMMDD + "-" + 12 random hex chars
@@ -44,7 +44,7 @@ ecc-cli.sh contract accept
   "expiresAt": null,
 
   // Which harnesses this contract covers.
-  // In strict mode (ECC_CONTRACT_REQUIRED=1), unlisted harnesses are blocked for gated classes.
+  // In strict mode (HORUS_CONTRACT_REQUIRED=1), unlisted harnesses are blocked for gated classes.
   "harnessScope": ["claude", "opencode", "openclaw"],
 
   // relaxed | balanced | strict
@@ -128,7 +128,7 @@ ecc-cli.sh contract accept
 
 ## Gated Capability Classes
 
-When `ECC_CONTRACT_REQUIRED=1`, these command classes are blocked unless the contract explicitly allows them:
+When `HORUS_CONTRACT_REQUIRED=1`, these command classes are blocked unless the contract explicitly allows them:
 
 | Class | Examples |
 |---|---|
@@ -148,7 +148,7 @@ Low-risk read and safe-write operations proceed without a contract even in stric
 ## Hash Verification
 
 On every `decide()` call:
-1. Load `ecc.contract.json`
+1. Load `horus.contract.json`
 2. Look up `accepted-contracts.json` for the current `projectRoot`
 3. Recompute `sha256(canonicalJson(contractWithoutHash))`
 4. If hash mismatches the accepted record → block gated classes (strict) or log warning (default)
@@ -170,7 +170,7 @@ These actions are engine-baked and cannot be demoted by any contract-allow:
 
 | Floor | Action |
 |---|---|
-| `ECC_KILL_SWITCH=1` | block (unconditional) |
+| `HORUS_KILL_SWITCH=1` | block (unconditional) |
 | Critical risk (score 10) | block |
 | Secret payload class C | block |
 | Contract hash mismatch (strict) | block |
@@ -180,13 +180,13 @@ These actions are engine-baked and cannot be demoted by any contract-allow:
 | Protected branch write | require-review |
 | Session risk ≥ 3 | escalate |
 
-Attempting to set a floor to a weaker action in `ecc.contract.json` fails schema validation.
+Attempting to set a floor to a weaker action in `horus.contract.json` fails schema validation.
 
 ## Amend Flow
 
-1. `ecc-cli.sh contract amend` — copies accepted contract to a new draft, bumps `revision`
+1. `horus-cli.sh contract amend` — copies accepted contract to a new draft, bumps `revision`
 2. Edit the draft
-3. `ecc-cli.sh contract accept` — re-hashes, verifies revision is higher than current, writes and records
+3. `horus-cli.sh contract accept` — re-hashes, verifies revision is higher than current, writes and records
 4. Previous contract stays in force during the draft window
 
 Downgrade (lower `revision`) is rejected. Every amend bumps monotonically.

@@ -8,9 +8,9 @@ This project uses Agent Runtime Guard as an external policy and prompt layer.
 
 Available prompt roles:
 
-- planner -> `tools/ecc-safe-plus/openclaw/prompts/planner.md`
-- reviewer -> `tools/ecc-safe-plus/openclaw/prompts/reviewer.md`
-- security -> `tools/ecc-safe-plus/openclaw/prompts/security.md`
+- planner -> `tools/horus/openclaw/prompts/planner.md`
+- reviewer -> `tools/horus/openclaw/prompts/reviewer.md`
+- security -> `tools/horus/openclaw/prompts/security.md`
 
 Approval model:
 

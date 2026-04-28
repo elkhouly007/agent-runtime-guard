@@ -6,15 +6,15 @@
 #
 # What it does:
 #   1. Reads the old VERSION from INSTALLED_DIR/VERSION.
-#   2. Reads the profile from INSTALLED_DIR/ecc.config.json (falls back to minimal).
+#   2. Reads the profile from INSTALLED_DIR/horus.config.json (falls back to minimal).
 #   3. Re-runs install-local.sh with the same profile, updating all kit files.
-#   4. Preserves INSTALLED_DIR/ecc.config.json — never overwritten.
+#   4. Preserves INSTALLED_DIR/horus.config.json — never overwritten.
 #   5. Prints a summary: old version → new version, files updated.
 #
 # What it does NOT touch:
-#   - Your ecc.config.json (preserved always).
+#   - Your horus.config.json (preserved always).
 #   - State files (learned-policy.json, session-context.json, decision-journal.jsonl)
-#     which live in ECC_STATE_DIR (~/.openclaw/agent-runtime-guard/ by default)
+#     which live in HORUS_STATE_DIR (~/.horus/ by default)
 #     and are completely outside the install directory.
 
 set -eu
@@ -73,10 +73,10 @@ if [ "$old_version" = "$new_version" ]; then
   exit 0
 fi
 
-# ── read profile from installed ecc.config.json ───────────────────────────────
+# ── read profile from installed horus.config.json ───────────────────────────────
 
 profile="minimal"
-config_path="$target/ecc.config.json"
+config_path="$target/horus.config.json"
 
 if [ -f "$config_path" ] && command -v node >/dev/null 2>&1; then
   _read_profile="$(node -e "
@@ -90,11 +90,11 @@ if [ -f "$config_path" ] && command -v node >/dev/null 2>&1; then
   [ -n "$_read_profile" ] && profile="$_read_profile"
 fi
 
-info "Profile     : $profile (from ecc.config.json)"
+info "Profile     : $profile (from horus.config.json)"
 printf '\n'
 
-# ── preserve ecc.config.json ──────────────────────────────────────────────────
-# install-local.sh does not copy ecc.config.json, so it is never overwritten.
+# ── preserve horus.config.json ──────────────────────────────────────────────────
+# install-local.sh does not copy horus.config.json, so it is never overwritten.
 # We record its mtime for the post-upgrade check, as belt-and-suspenders.
 
 config_exists=0
@@ -114,14 +114,14 @@ ok "Kit files updated"
 [ -f "${root}/VERSION" ] && cp "${root}/VERSION" "$target/VERSION"
 ok "VERSION updated: $old_version → $new_version"
 
-# ── verify ecc.config.json was not touched ────────────────────────────────────
+# ── verify horus.config.json was not touched ────────────────────────────────────
 
 if [ "$config_exists" -eq 1 ]; then
   if [ ! -f "$config_path" ]; then
-    warn "ecc.config.json was unexpectedly removed — restoring from backup is not possible."
+    warn "horus.config.json was unexpectedly removed — restoring from backup is not possible."
     warn "Re-generate it with: bash ${root}/scripts/generate-config.sh \"$target\" --output \"$config_path\""
   else
-    ok "ecc.config.json preserved"
+    ok "horus.config.json preserved"
   fi
 fi
 
@@ -131,6 +131,6 @@ printf '\n%s%s Upgrade complete %s%s\n' "$BOLD$GREEN" "═══" "═══" "$
 printf '  %s → %s\n' "$old_version" "$new_version"
 printf '  Location : %s\n' "$target"
 printf '\n'
-printf '  State files in ~/.openclaw/agent-runtime-guard/ were not touched.\n'
+printf '  State files in ~/.horus/ were not touched.\n'
 printf '  To verify hooks: bash %s/scripts/wire-hooks.sh --verify\n' "$root"
 printf '\n'

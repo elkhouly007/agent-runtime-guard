@@ -49,7 +49,7 @@ function findConfig(startPath = "") {
   }
 
   while (true) {
-    const candidate = path.join(current, "ecc.config.json");
+    const candidate = path.join(current, "horus.config.json");
     if (fs.existsSync(candidate)) return candidate;
     const parent = path.dirname(current);
     if (parent === current) break;
@@ -77,8 +77,8 @@ function loadProjectPolicy(input = {}) {
       try {
         const bak = `${candidate}.corrupt-${Date.now()}.bak`;
         fs.copyFileSync(candidate, bak);
-        process.stderr.write(`[ARG] WARNING: ecc.config.json corrupt — backed up to ${path.basename(bak)}, using defaults.\n`);
-        emitEvent("project-policy-corrupt", { file: "ecc.config.json", errCode: String(err.code || "parse-error") });
+        process.stderr.write(`[ARG] WARNING: horus.config.json corrupt — backed up to ${path.basename(bak)}, using defaults.\n`);
+        emitEvent("project-policy-corrupt", { file: "horus.config.json", errCode: String(err.code || "parse-error") });
       } catch { /* backup is best-effort */ }
     }
     return defaultPolicy();

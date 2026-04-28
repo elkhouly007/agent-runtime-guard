@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -37,6 +39,9 @@ jobs:
 
       - name: Status summary
         run: bash scripts/status-summary.sh
+
+      - name: Version / changelog sync check
+        run: bash scripts/check-version.sh --check-changelog
 
       - name: Audit local (scripts + hooks)
         run: bash scripts/audit-local.sh
@@ -118,6 +123,9 @@ jobs:
       - name: Check OpenClaw adapter
         run: bash scripts/check-openclaw-adapter.sh
 
+      - name: Check Claw Code adapter
+        run: bash scripts/check-clawcode-adapter.sh
+
       - name: Check zero deps (runtime/)
         run: bash scripts/check-zero-deps.sh
 
@@ -129,7 +137,7 @@ jobs:
 
       - name: Decision replay (sample journal CI gate)
         run: |
-          ECC_CONTRACT_ENABLED=0 ECC_TRAJECTORY_WINDOW_MIN=0 \
+          HORUS_CONTRACT_ENABLED=0 HORUS_TRAJECTORY_WINDOW_MIN=0 \
           bash scripts/check-decision-replay.sh
 
       - name: Contract module
@@ -149,7 +157,7 @@ jobs:
           restore-keys: bench-baseline-${{ matrix.os }}-
 
       - name: Runtime decision bench
-        run: ECC_BENCH_P99_MS=${{ matrix.bench_p99_ms }} bash scripts/bench-runtime-decision.sh
+        run: HORUS_BENCH_P99_MS=${{ matrix.bench_p99_ms }} bash scripts/bench-runtime-decision.sh
 
       - name: Save bench baseline
         uses: actions/cache@v4

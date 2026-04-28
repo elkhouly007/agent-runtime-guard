@@ -6,11 +6,10 @@ const os = require("os");
 const path = require("path");
 const { emitEvent } = require("./telemetry");
 const { fineKey: computeFineKey } = require("./decision-key");
+const { stateDir } = require("./state-paths");
 
 function paths() {
-  const baseDir = process.env.ECC_STATE_DIR
-    ? path.resolve(process.env.ECC_STATE_DIR)
-    : path.join(os.homedir(), ".openclaw", "agent-runtime-guard");
+  const baseDir = stateDir();
   return {
     baseDir,
     policyFile: path.join(baseDir, "learned-policy.json"),
@@ -60,7 +59,7 @@ function loadPolicy() {
 }
 
 function savePolicy(policy) {
-  if (process.env.ECC_READONLY_CONTRACT === "1") { _policyCache = policy; return; }
+  if (process.env.HORUS_READONLY_CONTRACT === "1") { _policyCache = policy; return; }
   _policyCache = null;
   try {
     ensureBaseDir();

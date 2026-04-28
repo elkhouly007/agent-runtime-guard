@@ -5,18 +5,18 @@ function checksCommandForStack(primaryStack = "") {
   switch (String(primaryStack || "").trim().toLowerCase()) {
     case "node":
     case "typescript":
-      return "ecc-cli.sh check && npm test";
+      return "horus-cli.sh check && npm test";
     case "python":
-      return "ecc-cli.sh check && pytest";
+      return "horus-cli.sh check && pytest";
     case "golang":
-      return "ecc-cli.sh check && go test ./...";
+      return "horus-cli.sh check && go test ./...";
     case "rust":
-      return "ecc-cli.sh check && cargo test";
+      return "horus-cli.sh check && cargo test";
     case "java":
     case "kotlin":
-      return "ecc-cli.sh check && ./gradlew test";
+      return "horus-cli.sh check && ./gradlew test";
     default:
-      return "ecc-cli.sh check";
+      return "horus-cli.sh check";
   }
 }
 
@@ -45,8 +45,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
     out.lane = "verification";
     out.reason = "Risky change should flow through test/verification before continuing.";
     out.suggestedSurface = "checks";
-    out.suggestedTarget = "ecc-cli.check";
-    out.suggestedCommand = "ecc-cli.sh check";
+    out.suggestedTarget = "horus-cli.check";
+    out.suggestedCommand = "horus-cli.sh check";
     return out;
   }
 
@@ -54,8 +54,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
     out.lane = "review";
     out.reason = branch ? `Protected or sensitive work on branch ${branch} should route through review.` : "Sensitive work should route through review.";
     out.suggestedSurface = "review";
-    out.suggestedTarget = "ecc-cli.review";
-    out.suggestedCommand = "ecc-cli.sh review";
+    out.suggestedTarget = "horus-cli.review";
+    out.suggestedCommand = "horus-cli.sh review";
     return out;
   }
 
@@ -63,8 +63,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
     out.lane = "narrow";
     out.reason = "The runtime wants a safer or narrower form before execution.";
     out.suggestedSurface = "runtime-explain";
-    out.suggestedTarget = "ecc-cli.runtime.explain";
-    out.suggestedCommand = "ecc-cli.sh runtime explain --tool <tool> --command '<cmd>' --target <path>";
+    out.suggestedTarget = "horus-cli.runtime.explain";
+    out.suggestedCommand = "horus-cli.sh runtime explain --tool <tool> --command '<cmd>' --target <path>";
     return out;
   }
 
@@ -81,8 +81,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
     out.lane = "blocked";
     out.reason = "Action is blocked by runtime policy. No workflow route is available — resolve the policy concern first.";
     out.suggestedSurface = "runtime-explain";
-    out.suggestedTarget = "ecc-cli.runtime.explain";
-    out.suggestedCommand = "ecc-cli.sh runtime explain --tool <tool> --command '<cmd>' --target <path>";
+    out.suggestedTarget = "horus-cli.runtime.explain";
+    out.suggestedCommand = "horus-cli.sh runtime explain --tool <tool> --command '<cmd>' --target <path>";
     return out;
   }
 
@@ -93,7 +93,7 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
         ? `This looks like a low-risk verification workflow for a ${primaryStack} project.`
         : "This looks like a low-risk verification workflow.";
       out.suggestedSurface = "checks";
-      out.suggestedTarget = "ecc-cli.check";
+      out.suggestedTarget = "horus-cli.check";
       out.suggestedCommand = checksCommandForStack(primaryStack);
       return out;
     }
@@ -102,8 +102,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
       out.lane = "review";
       out.reason = "Class C payloads should route through explicit review before any other low-risk workflow choice.";
       out.suggestedSurface = "review";
-      out.suggestedTarget = "ecc-cli.review";
-      out.suggestedCommand = "ecc-cli.sh review <file>";
+      out.suggestedTarget = "horus-cli.review";
+      out.suggestedCommand = "horus-cli.sh review <file>";
       return out;
     }
 
@@ -111,8 +111,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
       out.lane = "payload";
       out.reason = "Class B payloads should go through payload tooling before direct continuation.";
       out.suggestedSurface = "payload-tools";
-      out.suggestedTarget = "ecc-cli.review";
-      out.suggestedCommand = "ecc-cli.sh review <file>";
+      out.suggestedTarget = "horus-cli.review";
+      out.suggestedCommand = "horus-cli.sh review <file>";
       return out;
     }
 
@@ -127,8 +127,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
             ? `This target looks like source code on protected branch ${branch}, so direct edits should route through review first.`
             : `This target looks like source code on protected branch ${branch}, so it should route through review first.`);
         out.suggestedSurface = "review";
-        out.suggestedTarget = "ecc-cli.review";
-        out.suggestedCommand = "ecc-cli.sh review";
+        out.suggestedTarget = "horus-cli.review";
+        out.suggestedCommand = "horus-cli.sh review";
         return out;
       }
 
@@ -141,7 +141,7 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
           ? "This target looks like source code, so direct edits should route through local checks first."
           : "This target looks like source code, so the safest default route is through local checks.");
       out.suggestedSurface = "checks";
-      out.suggestedTarget = "ecc-cli.check";
+      out.suggestedTarget = "horus-cli.check";
       out.suggestedCommand = checksCommandForStack(primaryStack);
       return out;
     }
@@ -151,15 +151,15 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
       out.reason = "This looks like payload review/redaction work.";
       out.suggestedSurface = "payload-tools";
       out.suggestedTarget = /redact/.test(command)
-        ? "ecc-cli.redact"
+        ? "horus-cli.redact"
         : /review/.test(command)
-          ? "ecc-cli.review"
-          : "ecc-cli.classify";
+          ? "horus-cli.review"
+          : "horus-cli.classify";
       out.suggestedCommand = /redact/.test(command)
-        ? "ecc-cli.sh redact <file>"
+        ? "horus-cli.sh redact <file>"
         : /review/.test(command)
-          ? "ecc-cli.sh review <file>"
-          : "ecc-cli.sh classify <file>  # or ecc-cli.sh redact <file>";
+          ? "horus-cli.sh review <file>"
+          : "horus-cli.sh classify <file>  # or horus-cli.sh redact <file>";
       return out;
     }
 
@@ -167,8 +167,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
       out.lane = "review";
       out.reason = "This looks like a review or audit workflow.";
       out.suggestedSurface = "review";
-      out.suggestedTarget = "ecc-cli.review";
-      out.suggestedCommand = "ecc-cli.sh review";
+      out.suggestedTarget = "horus-cli.review";
+      out.suggestedCommand = "horus-cli.sh review";
       return out;
     }
 
@@ -182,12 +182,12 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
           ? "This looks like install or setup workflow work with project config already present."
           : "This looks like install or setup workflow work.";
       out.suggestedSurface = "setup";
-      out.suggestedTarget = shouldGenerateConfig ? "ecc-cli.generate-config" : (/setup/.test(command) ? "ecc-cli.setup" : "ecc-cli.install");
+      out.suggestedTarget = shouldGenerateConfig ? "horus-cli.generate-config" : (/setup/.test(command) ? "horus-cli.setup" : "horus-cli.install");
       out.suggestedCommand = shouldGenerateConfig
         ? (projectRoot
-          ? `bash scripts/generate-config.sh ${projectRoot} --output ${projectRoot}/ecc.config.json`
-          : "bash scripts/generate-config.sh <project-root> --output <project-root>/ecc.config.json")
-        : (/setup/.test(command) ? "ecc-cli.sh setup" : "ecc-cli.sh install <target> --auto");
+          ? `bash scripts/generate-config.sh ${projectRoot} --output ${projectRoot}/horus.config.json`
+          : "bash scripts/generate-config.sh <project-root> --output <project-root>/horus.config.json")
+        : (/setup/.test(command) ? "horus-cli.sh setup" : "horus-cli.sh install <target> --auto");
       return out;
     }
 
@@ -198,8 +198,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
           ? "This looks like hook or settings work, and strict trust posture prefers review before wiring changes continue."
           : `This looks like hook or settings work on protected branch ${branch}, so it should route through review before wiring changes continue.`;
         out.suggestedSurface = "review";
-        out.suggestedTarget = "ecc-cli.review";
-        out.suggestedCommand = "ecc-cli.sh review";
+        out.suggestedTarget = "horus-cli.review";
+        out.suggestedCommand = "horus-cli.sh review";
         return out;
       }
 
@@ -208,8 +208,8 @@ function recommend(action, input = {}, risk = {}, discovered = {}) {
         ? "This looks like direct hook or settings editing, so route through wiring guidance first."
         : "This looks like hook or tool wiring work.";
       out.suggestedSurface = "wiring";
-      out.suggestedTarget = "ecc-cli.wire";
-      out.suggestedCommand = "ecc-cli.sh wire <target>";
+      out.suggestedTarget = "horus-cli.wire";
+      out.suggestedCommand = "horus-cli.sh wire <target>";
       return out;
     }
 

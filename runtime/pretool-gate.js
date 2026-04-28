@@ -7,7 +7,7 @@
 // All three harnesses (claude, openclaw, opencode) delegate here for:
 //   - dangerous-command pattern scanning
 //   - runtime.decide() with unified policy and trajectory tracking
-//   - enforce / warn mode based on ECC_ENFORCE
+//   - enforce / warn mode based on HORUS_ENFORCE
 //   - kill-switch check
 //
 // Each adapter is responsible only for extracting the command + cwd strings
@@ -120,10 +120,10 @@ function classifyPathSensitivity(targetPath) {
 function runPreToolGate({ harness, tool, command, cwd, rawInput, sessionRisk = 0 }) {
   const stderrLines = [];
   const emit = (msg) => stderrLines.push(msg);
-  const ENFORCE = process.env.ECC_ENFORCE === "1";
+  const ENFORCE = process.env.HORUS_ENFORCE === "1";
 
   // Kill-switch: block all tool calls immediately (floor F1).
-  if (process.env.ECC_KILL_SWITCH === "1") {
+  if (process.env.HORUS_KILL_SWITCH === "1") {
     return { exitCode: 2, stderrLines: ["[Agent Runtime Guard] Kill-switch engaged — all tool calls blocked."], logAction: "BLOCK", logHitName: null };
   }
 
@@ -165,7 +165,7 @@ function runPreToolGate({ harness, tool, command, cwd, rawInput, sessionRisk = 0
   let decision;
   let discovered;
   try {
-    discovered = discover({ targetPath });
+    discovered = discover({ targetPath, branch: String(rawInput?.branch || "").trim() });
     decision = decide({
       harness:     String(harness || ""),
       tool:        String(tool || "Bash"),
@@ -188,11 +188,11 @@ function runPreToolGate({ harness, tool, command, cwd, rawInput, sessionRisk = 0
       if (secretHit) closeReasons.push("secret-payload");
       if (pathSensitivity === "high") closeReasons.push("sensitive-path");
       if (closeReasons.length > 0) {
-        emit(`[Agent Runtime Guard] BLOCKED — runtime unavailable under ECC_ENFORCE=1 (signals: ${closeReasons.join(",")}).`);
+        emit(`[Agent Runtime Guard] BLOCKED — runtime unavailable under HORUS_ENFORCE=1 (signals: ${closeReasons.join(",")}).`);
         return { exitCode: 2, stderrLines, logAction: "BLOCK", logHitName: hit?.name || secretHit?.name || null };
       }
     }
-    emit("[Agent Runtime Guard] Proceeding in warn mode (runtime unavailable). Set ECC_ENFORCE=1 to tighten behavior.");
+    emit("[Agent Runtime Guard] Proceeding in warn mode (runtime unavailable). Set HORUS_ENFORCE=1 to tighten behavior.");
     return { exitCode: 0, stderrLines, logAction: "WARN", logHitName: hit?.name || secretHit?.name || null };
   }
 
@@ -236,7 +236,7 @@ function runPreToolGate({ harness, tool, command, cwd, rawInput, sessionRisk = 0
     if (decision.promotionGuidance.cliHint) emit(`[Agent Runtime Guard] Promotion CLI: ${decision.promotionGuidance.cliHint}`);
   }
   if (decision.pendingSuggestion) {
-    emit(`[Agent Runtime Guard] Pending local suggestion: ./scripts/ecc-cli.sh runtime accept '${decision.pendingSuggestion}'`);
+    emit(`[Agent Runtime Guard] Pending local suggestion: ./scripts/horus-cli.sh runtime accept '${decision.pendingSuggestion}'`);
   }
   if (decision.actionPlan?.summary) emit(`[Agent Runtime Guard] Action plan: ${decision.actionPlan.summary}`);
   if (Array.isArray(decision.actionPlan?.commands)) {
@@ -256,7 +256,7 @@ function runPreToolGate({ harness, tool, command, cwd, rawInput, sessionRisk = 0
     emit(`[Agent Runtime Guard] ${decision.action} — proceeding in warn mode.`);
     logAction = "WARN";
   } else {
-    emit("[Agent Runtime Guard] Proceeding in warn mode. Set ECC_ENFORCE=1 to tighten behavior.");
+    emit("[Agent Runtime Guard] Proceeding in warn mode. Set HORUS_ENFORCE=1 to tighten behavior.");
     logAction = "WARN";
   }
 

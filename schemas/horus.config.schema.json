@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "ecc.config.schema.json",
+  "$id": "horus.config.schema.json",
   "title": "Agent Runtime Guard project config",
-  "description": "Schema for ecc.config.json. Validated by runtime/config-validator.js.",
+  "description": "Schema for horus.config.json. Validated by runtime/config-validator.js.",
   "type": "object",
   "properties": {
     "_comment":  { "type": "string" },

@@ -2,7 +2,7 @@
 // adapter.js — OpenClaw PreToolUse adapter for Agent Runtime Guard.
 // OpenClaw primary shape: { "tool": "shell", "cmd": "...", "cwd": "..." }
 // Falls back to Claude Code shapes for cross-harness compatibility.
-// Delegates all enforcement to runtime/pretool-gate.js. ECC_ENFORCE=1 = block mode.
+// Delegates all enforcement to runtime/pretool-gate.js. HORUS_ENFORCE=1 = block mode.
 
 "use strict";
 
