@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # bench-runtime-decision.sh — Measure runtime.decide() latency over 1000 calls.
 # Prints p50/p95/p99 in ms and fails if p99 exceeds P99_CEILING_MS (default 5).
+#
+# BASELINE NOTE: The 1.5× regression guard compares against a stored baseline
+# that is keyed by platform AND node major version (e.g. win32-slowfs-v25).
+# Running with a different node on PATH will produce a fresh baseline rather
+# than a false regression. On Windows, ensure the correct node is on PATH:
+#   export PATH="/c/Users/Khouly/.lmstudio/.internal/utils:$PATH"
 set -eu
 
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -66,8 +72,13 @@ const p95  = latencies[Math.floor(N * 0.95)];
 const p99  = latencies[Math.floor(N * 0.99)];
 
 const nodeVer = process.version;
+const nodeMajor = nodeVer.split(".")[0]; // e.g. "v25"
 const slowFs = process.argv[5] === "1";
-const platformKey = slowFs ? `${process.platform}-slowfs` : process.platform;
+// Include node major in the key so baselines from different node versions
+// don't trigger false regressions against each other.
+const platformKey = slowFs
+  ? `${process.platform}-slowfs-${nodeMajor}`
+  : `${process.platform}-${nodeMajor}`;
 
 // Split cold-cache (first 10) vs warm-cache reporting
 const coldLatencies = latencies.slice(0, 10).sort((a, b) => a - b);
